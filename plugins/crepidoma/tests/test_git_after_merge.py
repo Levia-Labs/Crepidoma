@@ -71,3 +71,30 @@ def test_main_step_failure_exit_1(monkeypatch, capsys, tmp_path):
 
 def test_main_missing_path_exit_2(tmp_path):
     assert gam.main([str(tmp_path / "nope")]) == 2
+
+
+def test_main_already_deleted_branch_exit_0(monkeypatch, capsys, tmp_path):
+    fake_git(
+        monkeypatch,
+        {
+            ("symbolic-ref",): (0, "refs/remotes/origin/main\n"),
+            ("log",): (0, "abc1234 feat: x\n"),
+            ("branch", "-D"): (1, "error: branch 'feat/done' not found.\n"),
+        },
+    )
+    assert gam.main([str(tmp_path), "feat/done"]) == 0
+    assert capsys.readouterr().out.splitlines() == [
+        "main abc1234 feat: x | dirty 0 | deleted none | branch feat/done already gone"
+    ]
+
+
+def test_main_other_delete_failure_exit_1(monkeypatch, capsys, tmp_path):
+    fake_git(
+        monkeypatch,
+        {
+            ("symbolic-ref",): (0, "refs/remotes/origin/main\n"),
+            ("branch", "-D"): (1, "error: cannot delete checked out branch\n"),
+        },
+    )
+    assert gam.main([str(tmp_path), "feat/done"]) == 1
+    assert "branch -D failed" in capsys.readouterr().out

@@ -5,7 +5,8 @@ Usage: todo.py list [--status S] [--class C] [--limit N] | show ID |
        add --title T --class C [--body B] | set ID --status S | drop ID
 
 Each entry is a `## <id> <title>` heading, then `status:` and `class:` lines, then a free body.
-Text before the first entry is kept as is. `--file PATH` overrides the default `TODO.md` in
+Written files match prettier output (blank line after each heading). Text before the first
+entry is kept as is. `--file PATH` overrides the default `TODO.md` in
 `CLAUDE_PROJECT_DIR` or the current directory. Exit codes: 0 ok, 1 unknown id or missing file,
 2 usage error.
 """
@@ -32,6 +33,8 @@ def parse(text: str) -> tuple[list[str], list[list[str]]]:
         if HEADING.match(line):
             entries.append([line])
         elif entries:
+            if len(entries[-1]) == 1 and not line.strip():
+                continue
             entries[-1].append(line)
         else:
             preamble.append(line)
@@ -45,7 +48,7 @@ def render(preamble: list[str], entries: list[list[str]]) -> str:
             entry.pop()
         if lines and lines[-1].strip():
             lines.append("")
-        lines.extend(entry)
+        lines.extend([entry[0], "", *entry[1:]])
     return "\n".join(lines) + "\n"
 
 

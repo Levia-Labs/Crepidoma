@@ -22,6 +22,7 @@
 - [`test_push_guard.py`](test_push_guard.py) - Pushing is main-thread only: settings no longer deny it, so the subagent Bash hook must.
 - [`test_raw_read_guard.py`](test_raw_read_guard.py) - Tests for `raw_read_guard`.
 - [`test_repo_nav.py`](test_repo_nav.py) - Tests for `repo_nav`.
+- [`test_rtk_route.py`](test_rtk_route.py) - Tests for `rtk_route`.
 - [`test_shipped_directives.py`](test_shipped_directives.py) - Tests for `shipped_directives`.
 - [`test_skills.py`](test_skills.py) - Tests for `skills`.
 - [`test_spend.py`](test_spend.py) - Tests for `spend`.
