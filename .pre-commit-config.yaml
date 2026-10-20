@@ -5,6 +5,7 @@ repos:
     rev: v6.0.0
     hooks:
       - id: check-yaml
+        args: [--allow-multiple-documents]
       - id: check-json
       - id: check-toml
       - id: end-of-file-fixer
@@ -45,6 +46,12 @@ repos:
       - id: zizmor
   - repo: local
     hooks:
+      - id: ast-grep
+        name: ast-grep scan (shared rules)
+        entry: ast-grep scan --config configs/sgconfig.yml
+        language: python
+        additional_dependencies: [ast-grep-cli==0.51.0]
+        pass_filenames: false
       - id: crepidoma-scrub
         name: crepidoma scrub (paths, emails, tokens, private names)
         entry: uv run --no-project --quiet python tools/scrub_check.py

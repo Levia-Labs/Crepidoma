@@ -1,0 +1,17 @@
+line-length = 100
+target-version = "py312"
+output-format = "concise"
+extend-exclude = ["graphify-out"]
+
+[lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "PTH", "RUF", "S"]
+ignore = [
+    "S101",  # assert is how pytest checks; per-file globs resolve relative to this file, not the pillar
+    "S603",  # subprocess call with a list argument
+    "S607",  # executable resolved through PATH
+]
+
+[format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"

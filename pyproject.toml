@@ -31,8 +31,4 @@ pythonpath = ["tools", "plugins/crepidoma-core/scripts"]
 addopts = "--import-mode=importlib -q"
 
 [tool.ruff]
-line-length = 100
-target-version = "py312"
-
-[tool.ruff.lint]
-select = ["E", "F", "W", "I", "B", "UP", "SIM"]
+extend = "configs/ruff.toml"

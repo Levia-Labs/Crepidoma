@@ -1,0 +1,16 @@
+title = "crepidoma"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Scrub fixtures, generated, vendored or lock files"
+paths = [
+  '''tests/test_scrub_check\.py''',
+  '''tests/test_denylist\.py''',
+  '''(^|/)\.git/''',
+  '''(^|/)\.venv/''',
+  '''(^|/)node_modules/''',
+  '''(^|/)uv\.lock$''',
+  '''(^|/)package-lock\.json$''',
+]

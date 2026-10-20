@@ -13,7 +13,7 @@ def test_output_is_bounded():
 
 def test_main_survives_narrow_console_encoding(tmp_path: Path, monkeypatch):
     target = tmp_path / "u.txt"
-    target.write_text("info ℹ sign\n", encoding="utf-8")
+    target.write_text("info " + chr(0x2139) + " sign\n", encoding="utf-8")
     raw = io.BytesIO()
     monkeypatch.setattr("sys.stdout", io.TextIOWrapper(raw, encoding="cp1250"))
     assert digest.main([str(target)]) == 0
