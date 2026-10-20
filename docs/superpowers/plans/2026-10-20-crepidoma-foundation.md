@@ -38,10 +38,12 @@
 ### Task 0: Branch, scaffold, merge agent
 
 **Files:**
+
 - Modify: `.gitignore`
 - Create: `pyproject.toml`, `.scrub-denylist.example`, `.claude/agents/merge-curator.md`, `CHANGELOG.md`
 
 **Interfaces:**
+
 - Produces: uv project with dev group (`pytest`, `ruff`, `pre-commit`); pytest `pythonpath` makes `tools/*.py` and `plugins/crepidoma-core/scripts/*.py` importable by module name; agent `merge-curator`.
 
 - [ ] **Step 1: Create branch**
@@ -154,10 +156,12 @@ git commit -m "chore: scaffold uv project and merge-curator agent"
 ### Task 1: scrub_check
 
 **Files:**
+
 - Create: `tools/scrub_check.py`
 - Test: `tests/test_scrub_check.py`
 
 **Interfaces:**
+
 - Produces: `RULES: dict[str, re.Pattern[str]]`, `allowed_email(address: str) -> bool`, `load_denylist(path: Path | None) -> re.Pattern[str] | None`, `scan_text(text: str, deny: re.Pattern[str] | None) -> list[tuple[int, str]]`, `scan_file(path: Path, deny) -> list[tuple[int, str]]`, `main(argv) -> int` (CLI: `[--denylist FILE] PATH...`, prints `path:line: rule`, exit 1 on any hit).
 
 - [ ] **Step 1: Write the failing tests**
@@ -364,10 +368,12 @@ git commit -m "feat(tools): add scrub_check publication guard"
 ### Task 2: ratchet
 
 **Files:**
+
 - Create: `tools/ratchet.py`
 - Test: `tests/test_ratchet.py`
 
 **Interfaces:**
+
 - Produces: `long_files(files: list[str], baseline: Path, max_lines: int, update: bool) -> int`, `metric(baseline: Path, value: float, direction: str, update: bool) -> int`, `main(argv) -> int` (CLI subcommands `long-files [--baseline F] [--max-lines N] [--update] [--git] FILES...` and `metric --baseline F --value X --direction up|down [--update]`). Baseline format for long files: `posix-path<TAB>lines` per line.
 
 - [ ] **Step 1: Write the failing tests**
@@ -537,9 +543,7 @@ def main(argv: list[str] | None = None) -> int:
         return metric(args.baseline, args.value, args.direction, args.update)
     files = args.files
     if args.git:
-        listing = subprocess.run(
-            ["git", "ls-files"], capture_output=True, text=True, check=True
-        )
+        listing = subprocess.run(["git", "ls-files"], capture_output=True, text=True, check=True)
         files = listing.stdout.splitlines()
     return long_files(files, args.baseline, args.max_lines, args.update)
 
@@ -565,9 +569,11 @@ git commit -m "feat(tools): add long-file and metric ratchet"
 ### Task 3: Commit gates and root Taskfile
 
 **Files:**
+
 - Create: `.pre-commit-config.yaml`, `Taskfile.yml`, `.ratchet/long-files.baseline`, `.yamllint`, `.prettierrc`, `.editorconfig`, `.gitattributes`
 
 **Interfaces:**
+
 - Consumes: `tools/scrub_check.py`, `tools/ratchet.py`.
 - Produces: hook ids `crepidoma-scrub`, `crepidoma-long-files`, `pytest`, `plugin-validate`; tasks `setup`, `fmt`, `lint`, `sec`, `test`, `plugin:validate`, `ratchet:update`, `hooks:pre-commit`, `hooks:pre-push`, `validate`. Later tasks add `scrub:denylist`, `drift`, `release`.
 
@@ -606,9 +612,9 @@ trim_trailing_whitespace = false
 ```yaml
 extends: default
 rules:
-  line-length: {max: 120}
+  line-length: { max: 120 }
   document-start: disable
-  truthy: {check-keys: false}
+  truthy: { check-keys: false }
 ```
 
 `.prettierrc`:
@@ -724,13 +730,13 @@ tasks:
   lint:
     desc: Run linters over the whole repo
     cmds:
-      - for: {var: LINT_HOOKS}
+      - for: { var: LINT_HOOKS }
         cmd: uv run pre-commit run {{.ITEM}} --all-files
 
   sec:
     desc: Secret scan and publication scrub over the whole repo
     cmds:
-      - for: {var: SEC_HOOKS}
+      - for: { var: SEC_HOOKS }
         cmd: uv run pre-commit run {{.ITEM}} --all-files
 
   test:
@@ -791,11 +797,13 @@ Expected: hook output lists every pre-commit hook as Passed, then the commit is 
 ### Task 4: Denylist generator
 
 **Files:**
+
 - Create: `tools/denylist.py`
 - Test: `tests/test_denylist.py`
 - Modify: `Taskfile.yml` (add `scrub:denylist`)
 
 **Interfaces:**
+
 - Produces: `parse_slug(url: str) -> str | None`, `remote_slug(repo: Path) -> str | None`, `is_private(slug: str) -> bool`, `collect(pillars: Path, remote=remote_slug, probe=is_private) -> list[str]`, `main(argv) -> int` (CLI: `PILLARS [--out .scrub-denylist]`).
 
 - [ ] **Step 1: Write the failing tests**
@@ -925,10 +933,10 @@ Expected: `3 passed`
 - [ ] **Step 5: Add the task to `Taskfile.yml`** (after `sec`)
 
 ```yaml
-  scrub:denylist:
-    desc: Generate gitignored .scrub-denylist from private repos under PILLARS
-    cmds:
-      - uv run python tools/denylist.py "{{.PILLARS}}" --out .scrub-denylist
+scrub:denylist:
+  desc: Generate gitignored .scrub-denylist from private repos under PILLARS
+  cmds:
+    - uv run python tools/denylist.py "{{.PILLARS}}" --out .scrub-denylist
 ```
 
 - [ ] **Step 6: Generate and run the full scrub**
@@ -951,10 +959,12 @@ git commit -m "feat(tools): generate scrub denylist from private pillar repos"
 ### Task 5: Plugin skeleton and digest
 
 **Files:**
+
 - Create: `.claude-plugin/marketplace.json`, `plugins/crepidoma-core/.claude-plugin/plugin.json`, `plugins/crepidoma-core/scripts/digest.py` (copied), `plugins/crepidoma-core/bin/digest`, `plugins/crepidoma-core/bin/digest.cmd`
 - Test: `plugins/crepidoma-core/tests/test_digest.py`
 
 **Interfaces:**
+
 - Produces: marketplace `crepidoma`, plugin `crepidoma-core` version `0.1.0`; module `digest` with `MAX_LINES = 20`, `digest(text, grep, tail, max_bytes, size=None) -> str`, `main(argv) -> int`; executable `digest` on PATH inside Claude sessions.
 
 - [ ] **Step 1: Write manifests**
@@ -1058,10 +1068,12 @@ git commit -m "feat(plugin): add crepidoma marketplace, core plugin and digest"
 ### Task 6: raw_read_guard and PreToolUse hook
 
 **Files:**
+
 - Create: `plugins/crepidoma-core/scripts/raw_read_guard.py` (copied, two edits), `plugins/crepidoma-core/hooks/hooks.json`
 - Test: `plugins/crepidoma-core/tests/test_raw_read_guard.py`, `plugins/crepidoma-core/tests/test_hooks_json.py`
 
 **Interfaces:**
+
 - Consumes: `bin/digest` from Task 5.
 - Produces: module `raw_read_guard` with `MAX_LINES = 20`, `decide(data: dict) -> str | None`, `main() -> int`; `hooks/hooks.json` with a `PreToolUse` entry.
 
@@ -1147,7 +1159,7 @@ Expected: FAIL on `test_plugin_digest_is_a_sink` and `test_reason_points_at_plug
 Replace the digest sink pattern:
 
 ```python
-    re.compile(r"(^|[\s/\\])digest(\.py)?\b"),
+(re.compile(r"(^|[\s/\\])digest(\.py)?\b"),)
 ```
 
 Replace the digest hint constant:
@@ -1233,11 +1245,13 @@ git commit -m "feat(plugin): ship raw-read guard as PreToolUse hook"
 ### Task 7: Directive injector and SessionStart hook
 
 **Files:**
+
 - Create: `plugins/crepidoma-core/scripts/inject_directives.py`, `plugins/crepidoma-core/directives/.gitkeep`
 - Modify: `plugins/crepidoma-core/hooks/hooks.json`, `plugins/crepidoma-core/tests/test_hooks_json.py`
 - Test: `plugins/crepidoma-core/tests/test_inject_directives.py`
 
 **Interfaces:**
+
 - Produces: `DIRECTIVES: Path`, `LIMIT = 10_000`, `TRUNCATED: str`, `build(directory: Path) -> str` (raises `FileNotFoundError` when the directory is missing), `payload(text: str) -> dict`, `main() -> int`.
 
 - [ ] **Step 1: Write the failing tests**
@@ -1391,11 +1405,13 @@ git commit -m "feat(plugin): inject directives at SessionStart"
 ### Task 8: Merge directives
 
 **Files:**
+
 - Create: `plugins/crepidoma-core/directives/10-communication-style.md`, `20-tool-first-loop.md`, `30-conventions.md`, `40-models.md`, `50-skills-and-plugins.md`, `60-taskfile-shell.md`
 - Delete: `plugins/crepidoma-core/directives/.gitkeep`
 - Test: `plugins/crepidoma-core/tests/test_shipped_directives.py`
 
 **Interfaces:**
+
 - Consumes: `inject_directives.build`, `inject_directives.DIRECTIVES`, `inject_directives.LIMIT`.
 
 - [ ] **Step 1: Write the failing test**
@@ -1476,6 +1492,7 @@ git commit -m "feat(plugin): merge shared directives from pillar repos"
 ### Task 9: Merge agents
 
 **Files:**
+
 - Create: `plugins/crepidoma-core/agents/*.md`
 - Test: `plugins/crepidoma-core/tests/test_agents.py`
 
@@ -1543,6 +1560,7 @@ git commit -m "feat(plugin): merge shared agents from pillar repos"
 ### Task 10: Merge hooks.py and shared Taskfiles
 
 **Files:**
+
 - Create: `plugins/crepidoma-core/scripts/hooks.py`, `taskfiles/claude/Taskfile.yml`, `taskfiles/lint/Taskfile.yml`, supporting scripts referenced by those Taskfiles under `taskfiles/<ns>/`
 - Test: `plugins/crepidoma-core/tests/test_hooks_py.py`, `tests/test_taskfiles.py`
 
@@ -1609,6 +1627,7 @@ git commit -m "feat: merge shared hooks.py and claude/lint Taskfiles"
 ### Task 11: Merge shared configs
 
 **Files:**
+
 - Create: `configs/.editorconfig`, `configs/.gitattributes`, `configs/.prettierrc`, `configs/eslint.config.js`, `configs/ruff.toml`, `configs/.yamllint`, `configs/sgconfig.yml`, `configs/ast-grep/rules/*.yml`, `configs/gitleaks.toml`, `configs/semgrep/rules.yml`, `configs/zizmor.yml`, `configs/.hadolint.yaml`, `configs/tsconfig.base.json`
 - Modify: root `.editorconfig`, `.gitattributes`, `.prettierrc`, `.yamllint`, `pyproject.toml` (ruff section), `.pre-commit-config.yaml` (ast-grep hook, gitleaks config)
 - Test: `tests/test_configs.py`
@@ -1623,9 +1642,18 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 CONFIGS = ROOT / "configs"
 EXPECTED = [
-    ".editorconfig", ".gitattributes", ".prettierrc", "eslint.config.js", "ruff.toml",
-    ".yamllint", "sgconfig.yml", "gitleaks.toml", "semgrep/rules.yml", "zizmor.yml",
-    ".hadolint.yaml", "tsconfig.base.json",
+    ".editorconfig",
+    ".gitattributes",
+    ".prettierrc",
+    "eslint.config.js",
+    "ruff.toml",
+    ".yamllint",
+    "sgconfig.yml",
+    "gitleaks.toml",
+    "semgrep/rules.yml",
+    "zizmor.yml",
+    ".hadolint.yaml",
+    "tsconfig.base.json",
 ]
 
 
@@ -1685,12 +1713,12 @@ path = "configs/gitleaks.toml"
 4. Add to `.pre-commit-config.yaml` before the `local` repo:
 
 ```yaml
-  - repo: https://github.com/ast-grep/ast-grep
-    rev: 0.28.0
-    hooks:
-      - id: ast-grep
-        args: [scan, --config, configs/sgconfig.yml]
-        pass_filenames: false
+- repo: https://github.com/ast-grep/ast-grep
+  rev: 0.28.0
+  hooks:
+    - id: ast-grep
+      args: [scan, --config, configs/sgconfig.yml]
+      pass_filenames: false
 ```
 
 Then run `uv run pre-commit autoupdate --repo https://github.com/ast-grep/ast-grep`.
@@ -1710,11 +1738,13 @@ git commit -m "feat(configs): merge shared lint, format and security configs"
 ### Task 12: drift_check
 
 **Files:**
+
 - Create: `tools/drift_check.py`, `tools/drift_map.toml`
 - Test: `tests/test_drift_check.py`
 - Modify: `Taskfile.yml` (add `drift`)
 
 **Interfaces:**
+
 - Produces: `ROOT: Path`, `DEFAULT_MAP: Path`, `MAX_SHOWN = 15`, `load_map(path: Path) -> list[dict]`, `check(pillar: Path, entries: list[dict], root: Path) -> list[tuple[str, str, str]]` with states `duplicate | drifted | absent`, `main(argv) -> int` (exit 0 clean, 1 on duplicate or drifted, 2 when pillar is not a directory).
 
 - [ ] **Step 1: Write the failing tests**
@@ -1904,10 +1934,10 @@ Expected: `4 passed`
 Add to `Taskfile.yml`:
 
 ```yaml
-  drift:
-    desc: "Compare a pillar with Crepidoma: task drift -- <pillar path>"
-    cmds:
-      - uv run python tools/drift_check.py {{.CLI_ARGS}} --report .local/drift-report.tsv
+drift:
+  desc: "Compare a pillar with Crepidoma: task drift -- <pillar path>"
+  cmds:
+    - uv run python tools/drift_check.py {{.CLI_ARGS}} --report .local/drift-report.tsv
 ```
 
 Run: `mkdir -p .local && task drift -- ../<any pillar dir>`
@@ -1925,10 +1955,12 @@ git commit -m "feat(tools): add pillar drift check"
 ### Task 13: Pillar-facing pre-commit hooks
 
 **Files:**
+
 - Create: `.pre-commit-hooks.yaml`
 - Test: `tests/test_precommit_hooks.py`
 
 **Interfaces:**
+
 - Consumes: console scripts `crepidoma-scrub`, `crepidoma-ratchet`, `crepidoma-drift` from `pyproject.toml`.
 - Produces: hook ids `crepidoma-scrub`, `crepidoma-long-files`.
 
@@ -1943,8 +1975,16 @@ ROOT = Path(__file__).resolve().parent.parent
 
 def test_try_repo_scrub_passes_on_readme():
     result = subprocess.run(
-        ["uv", "run", "pre-commit", "try-repo", str(ROOT), "crepidoma-scrub",
-         "--files", "README.md"],
+        [
+            "uv",
+            "run",
+            "pre-commit",
+            "try-repo",
+            str(ROOT),
+            "crepidoma-scrub",
+            "--files",
+            "README.md",
+        ],
         cwd=ROOT,
         capture_output=True,
         text=True,
@@ -1988,6 +2028,7 @@ git commit -m "feat: publish crepidoma pre-commit hooks for pillars"
 ### Task 14: Process ADRs
 
 **Files:**
+
 - Create: `docs/adr/README.md`, `docs/adr/template.md`, `docs/adr/0001-*.md` through `docs/adr/0006-*.md`, `docs/adr/0007-crepidoma-as-foundation.md`
 - Test: `tests/test_adrs.py`
 
@@ -2087,6 +2128,7 @@ git commit -m "docs(adr): merge process ADRs and record foundation decision"
 ### Task 15: Templates and migration guide
 
 **Files:**
+
 - Create: `templates/settings.json`, `templates/CLAUDE.md`, `templates/.pre-commit-config.yaml`, `templates/gitmodules.txt`, `templates/Taskfile.includes.yml`, `docs/migration.md`
 - Test: `tests/test_templates.py`
 
@@ -2204,6 +2246,7 @@ git commit -m "docs: add pillar templates and migration guide"
 ### Task 16: README
 
 **Files:**
+
 - Modify: `README.md`
 
 - [ ] **Step 1: Write `README.md`**
@@ -2270,17 +2313,17 @@ Full steps, including the third-party plugin list and every shared gate: [docs/m
 
 ## Contents
 
-| Path | What |
-| --- | --- |
-| `plugins/crepidoma-core/directives/` | Always-on rules, injected at session start |
-| `plugins/crepidoma-core/agents/` | Shared subagents |
-| `plugins/crepidoma-core/hooks/` | SessionStart directives, PreToolUse raw-read guard |
-| `plugins/crepidoma-core/bin/digest` | Bounded output digest on PATH in sessions |
-| `configs/` | editorconfig, gitattributes, prettier, eslint, ruff, yamllint, ast-grep, gitleaks, semgrep, zizmor, hadolint, tsconfig |
-| `taskfiles/` | Shared `claude:` and `lint:` Taskfile namespaces |
-| `tools/` | scrub, ratchet, drift check, denylist, release |
-| `docs/adr/` | Process decisions shared by all pillars |
-| `templates/` | Files a pillar copies once |
+| Path                                 | What                                                                                                                   |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| `plugins/crepidoma-core/directives/` | Always-on rules, injected at session start                                                                             |
+| `plugins/crepidoma-core/agents/`     | Shared subagents                                                                                                       |
+| `plugins/crepidoma-core/hooks/`      | SessionStart directives, PreToolUse raw-read guard                                                                     |
+| `plugins/crepidoma-core/bin/digest`  | Bounded output digest on PATH in sessions                                                                              |
+| `configs/`                           | editorconfig, gitattributes, prettier, eslint, ruff, yamllint, ast-grep, gitleaks, semgrep, zizmor, hadolint, tsconfig |
+| `taskfiles/`                         | Shared `claude:` and `lint:` Taskfile namespaces                                                                       |
+| `tools/`                             | scrub, ratchet, drift check, denylist, release                                                                         |
+| `docs/adr/`                          | Process decisions shared by all pillars                                                                                |
+| `templates/`                         | Files a pillar copies once                                                                                             |
 
 ## Working on Crepidoma
 
@@ -2310,6 +2353,7 @@ git commit -m "docs: write README with crepidoma origin and adoption steps"
 ### Task 17: CI and Dependabot
 
 **Files:**
+
 - Create: `.github/workflows/validate.yml`, `.github/dependabot.yml`
 
 - [ ] **Step 1: Write `.github/workflows/validate.yml`**
@@ -2391,11 +2435,13 @@ git commit -m "ci: run full gate, semgrep and osv-scanner; enable dependabot"
 ### Task 18: Release tool
 
 **Files:**
+
 - Create: `tools/release.py`
 - Test: `tests/test_release.py`
 - Modify: `Taskfile.yml` (add `release`)
 
 **Interfaces:**
+
 - Produces: `bump(root: Path, version: str, today: str) -> list[Path]`, `main(argv) -> int` (CLI `VERSION [--dry-run]`; exit 2 on non-semver; never pushes).
 
 - [ ] **Step 1: Write the failing tests**
@@ -2410,7 +2456,9 @@ import release
 def setup_repo(root: Path) -> Path:
     manifest = root / "plugins/crepidoma-core/.claude-plugin/plugin.json"
     manifest.parent.mkdir(parents=True)
-    manifest.write_text(json.dumps({"name": "crepidoma-core", "version": "0.1.0"}), encoding="utf-8")
+    manifest.write_text(
+        json.dumps({"name": "crepidoma-core", "version": "0.1.0"}), encoding="utf-8"
+    )
     (root / "CHANGELOG.md").write_text("# Changelog\n\n## v0.1.0 - 2026-10-20\n", encoding="utf-8")
     return manifest
 
@@ -2506,10 +2554,10 @@ Expected: `3 passed`
 Add to `Taskfile.yml`:
 
 ```yaml
-  release:
-    desc: "Bump version, changelog, commit and tag: task release -- 0.2.0"
-    cmds:
-      - uv run python tools/release.py {{.CLI_ARGS}}
+release:
+  desc: "Bump version, changelog, commit and tag: task release -- 0.2.0"
+  cmds:
+    - uv run python tools/release.py {{.CLI_ARGS}}
 ```
 
 ```bash

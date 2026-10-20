@@ -48,6 +48,17 @@ def test_metric_down(tmp_path: Path):
     assert ratchet.metric(base, 4.0, "down", update=False) == 0
 
 
+def test_baselines_are_written_with_lf(tmp_path: Path):
+    big = tmp_path / "big.py"
+    write(big, 5)
+    base = tmp_path / "long.baseline"
+    ratchet.long_files([str(big)], base, 3, update=True)
+    assert b"\r\n" not in base.read_bytes()
+    value = tmp_path / "coverage.baseline"
+    ratchet.metric(value, 80.0, "up", update=False)
+    assert b"\r\n" not in value.read_bytes()
+
+
 def test_main_long_files(tmp_path: Path):
     big = tmp_path / "big.py"
     write(big, 5)

@@ -32,7 +32,7 @@ def read_baseline(path: Path) -> dict[str, int]:
 def write_baseline(path: Path, entries: dict[str, int]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     body = "".join(f"{name}\t{lines}\n" for name, lines in sorted(entries.items()))
-    path.write_text(body, encoding="utf-8")
+    path.write_text(body, encoding="utf-8", newline="\n")
 
 
 def long_files(files: list[str], baseline: Path, max_lines: int, update: bool) -> int:
@@ -64,7 +64,7 @@ def metric(baseline: Path, value: float, direction: str, update: bool) -> int:
     text = baseline.read_text(encoding="utf-8").strip() if baseline.is_file() else ""
     if not text:
         baseline.parent.mkdir(parents=True, exist_ok=True)
-        baseline.write_text(f"{value}\n", encoding="utf-8")
+        baseline.write_text(f"{value}\n", encoding="utf-8", newline="\n")
         print(f"baseline set: {value}")
         return 0
     base = float(text)
@@ -73,7 +73,7 @@ def metric(baseline: Path, value: float, direction: str, update: bool) -> int:
         print(f"{value} is worse than baseline {base} ({direction} is better)")
         return 1
     if update and value != base:
-        baseline.write_text(f"{value}\n", encoding="utf-8")
+        baseline.write_text(f"{value}\n", encoding="utf-8", newline="\n")
         print(f"baseline improved: {base} -> {value}")
     return 0
 

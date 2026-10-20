@@ -1,0 +1,63 @@
+version: "3"
+
+vars:
+  PILLARS: '{{.PILLARS | default ".."}}'
+  LINT_HOOKS: [ruff, yamllint, shellcheck, actionlint, zizmor, check-yaml, check-json, check-toml]
+  SEC_HOOKS: [gitleaks, crepidoma-scrub]
+
+tasks:
+  setup:
+    desc: Install dev dependencies and git hooks
+    cmds:
+      - uv sync
+      - uv run pre-commit install
+
+  fmt:
+    desc: Format Python, Markdown, JSON, YAML
+    cmds:
+      - cmd: uv run pre-commit run ruff-format --all-files
+        ignore_error: true
+      - cmd: uv run pre-commit run prettier --all-files
+        ignore_error: true
+
+  lint:
+    desc: Run linters over the whole repo
+    cmds:
+      - for: { var: LINT_HOOKS }
+        cmd: uv run pre-commit run {{.ITEM}} --all-files
+
+  sec:
+    desc: Secret scan and publication scrub over the whole repo
+    cmds:
+      - for: { var: SEC_HOOKS }
+        cmd: uv run pre-commit run {{.ITEM}} --all-files
+
+  test:
+    desc: Run pytest
+    cmds:
+      - uv run pytest
+
+  plugin:validate:
+    desc: Validate marketplace and plugin manifests
+    cmds:
+      - claude plugin validate .
+
+  ratchet:update:
+    desc: Rewrite the long-file baseline from all tracked files
+    cmds:
+      - uv run python tools/ratchet.py long-files --max-lines 400 --update --git
+
+  hooks:pre-commit:
+    desc: Run the pre-commit stage on all files
+    cmds:
+      - uv run pre-commit run --all-files --hook-stage pre-commit
+
+  hooks:pre-push:
+    desc: Run the pre-push stage on all files
+    cmds:
+      - uv run pre-commit run --all-files --hook-stage pre-push
+
+  validate:
+    desc: Full gate, same as CI
+    cmds:
+      - task: hooks:pre-push
