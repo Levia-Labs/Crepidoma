@@ -42,6 +42,11 @@ tasks:
     cmds:
       - uv run python tools/drift_check.py {{.CLI_ARGS}} --report .local/drift-report.tsv
 
+  release:
+    desc: "Bump version, changelog, commit and tag: task release -- 0.2.0"
+    cmds:
+      - uv run python tools/release.py {{.CLI_ARGS}}
+
   test:
     desc: Run pytest
     cmds:
