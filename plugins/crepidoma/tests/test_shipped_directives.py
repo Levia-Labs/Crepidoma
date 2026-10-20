@@ -7,6 +7,7 @@ EXPECTED = {
     "40-models.md",
     "50-skills-and-plugins.md",
     "60-taskfile-shell.md",
+    "70-shell-and-safety.md",
 }
 
 
@@ -24,7 +25,7 @@ def test_no_user_scope_paths():
 
 def test_models_directive_names_all_three_tiers():
     text = (inj.DIRECTIVES / "40-models.md").read_text(encoding="utf-8")
-    for needle in ("claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5", "scout"):
+    for needle in ("claude-opus-5-5", "sonnet", "haiku", "scout", "95 percent"):
         assert needle in text, needle
 
 
@@ -38,3 +39,19 @@ def test_tool_first_covers_skills_lanes_and_history():
     text = (inj.DIRECTIVES / "20-tool-first-loop.md").read_text(encoding="utf-8")
     for needle in ("skill", "retire", "session history"):
         assert needle in text, needle
+
+
+def test_subagent_harness_is_compact_and_never_caveman():
+    text = inj.build(inj.DIRECTIVES / "subagent")
+    assert 0 < len(text) <= 1500
+    lowered = text.lower()
+    assert "never caveman" in lowered
+    assert "receipt" in lowered
+
+
+def test_main_directives_exclude_subagent_harness():
+    assert "Subagent harness" not in inj.build(inj.DIRECTIVES)
+
+
+def test_main_directives_leave_headroom_under_the_cap():
+    assert len(inj.build(inj.DIRECTIVES)) <= 8_500

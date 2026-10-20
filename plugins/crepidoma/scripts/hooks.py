@@ -319,6 +319,10 @@ def stop(event: dict, tasks: tuple[str, ...] = ()) -> int:
 
 
 def budget_script() -> Path | None:
+    """The plugin's own budget.py: trusted code, so no project opt-in is needed."""
+    bundled = Path(__file__).resolve().parent / "budget.py"
+    if bundled.is_file():
+        return bundled
     if not opted_in():
         return None
     return next((ROOT / name for name in BUDGET_SCRIPTS if (ROOT / name).is_file()), None)
@@ -404,7 +408,17 @@ def defined_model(agent_type: str) -> str:
     return ""
 
 
+def model_allowed(model: str) -> bool:
+    return model in MODELS or bool(re.fullmatch(r"claude-(?:sonnet|haiku)-[\w.-]+", model))
+
+
 def agent_refusal(arguments: dict) -> str | None:
+    default = os.environ.get("CLAUDE_CODE_SUBAGENT_MODEL", "").strip()
+    if default and not model_allowed(default):
+        return (
+            f"CLAUDE_CODE_SUBAGENT_MODEL is '{default}'. Set it to 'sonnet' or 'haiku' (or unset "
+            "it); subagents never run on Opus."
+        )
     kind = str(arguments.get("subagent_type") or "").strip()
     if kind in CATCH_ALL:
         return (
@@ -414,7 +428,7 @@ def agent_refusal(arguments: dict) -> str | None:
             "fits, write one first."
         )
     model = str(arguments.get("model") or defined_model(kind)).strip()
-    if not (model in MODELS or re.fullmatch(r"claude-(?:sonnet|haiku)-[\w.-]+", model)):
+    if not model_allowed(model):
         return (
             f"Agent '{kind}' would run on '{model or 'the orchestrator model'}'. Only the main "
             "thread runs on Opus. Pass model 'sonnet' (work) or 'haiku' (grep, read, small "

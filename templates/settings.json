@@ -1,5 +1,8 @@
 {
   "model": "claude-opus-5-5",
+  "env": {
+    "CLAUDE_CODE_SUBAGENT_MODEL": "sonnet"
+  },
   "permissions": {
     "allow": [
       "Bash(task *)",
@@ -13,16 +16,6 @@
       "Bash(git blame *)",
       "Bash(git add *)",
       "Bash(git commit *)",
-      "PowerShell(git status *)",
-      "PowerShell(git diff *)",
-      "PowerShell(git log *)",
-      "PowerShell(git show *)",
-      "PowerShell(git branch *)",
-      "PowerShell(git rev-parse *)",
-      "PowerShell(git ls-files *)",
-      "PowerShell(git blame *)",
-      "PowerShell(git add *)",
-      "PowerShell(git commit *)",
       "Bash(graphify *)",
       "Bash(ruff *)",
       "Bash(yamllint *)",
@@ -43,13 +36,11 @@
       "Bash(jq *)",
       "Bash(command -v *)",
       "Bash(which *)",
-      "PowerShell(task *)",
-      "PowerShell(graphify *)",
-      "PowerShell(Get-Content *)",
-      "PowerShell(Get-ChildItem *)",
-      "PowerShell(Test-Path *)"
+      "Bash(uv run --locked *)"
     ],
     "deny": [
+      "Bash(rm -rf *)",
+      "PowerShell",
       "ShareOnboardingGuide",
       "ListAgents",
       "Bash(sudo *)",
@@ -58,23 +49,12 @@
       "Bash(rtk git push *)",
       "Bash(git reset --hard *)",
       "Bash(git clean *)",
-      "PowerShell(git push)",
-      "PowerShell(git push *)",
-      "PowerShell(rtk git push *)",
-      "PowerShell(git reset --hard *)",
-      "PowerShell(git clean *)",
       "Bash(git diff *--output*)",
       "Bash(git diff *--ext-diff*)",
       "Bash(git log *--output*)",
       "Bash(git log *--ext-diff*)",
       "Bash(git show *--output*)",
-      "Bash(git show *--ext-diff*)",
-      "PowerShell(git diff *--output*)",
-      "PowerShell(git diff *--ext-diff*)",
-      "PowerShell(git log *--output*)",
-      "PowerShell(git log *--ext-diff*)",
-      "PowerShell(git show *--output*)",
-      "PowerShell(git show *--ext-diff*)"
+      "Bash(git show *--ext-diff*)"
     ]
   },
   "extraKnownMarketplaces": {
@@ -83,6 +63,13 @@
         "source": "github",
         "repo": "Levia-Labs/Crepidoma"
       }
+    },
+    "caveman": {
+      "source": {
+        "source": "github",
+        "repo": "JuliusBrussee/caveman",
+        "ref": "v4.0.1"
+      }
     }
   },
   "enabledPlugins": {
@@ -90,6 +77,7 @@
     "superpowers@claude-plugins-official": true,
     "code-review@claude-plugins-official": true,
     "feature-dev@claude-plugins-official": true,
-    "security-guidance@claude-plugins-official": true
+    "security-guidance@claude-plugins-official": true,
+    "caveman@caveman": true
   }
 }

@@ -5,6 +5,7 @@ import json
 import subprocess
 import sys
 import time
+from pathlib import Path
 
 import hooks
 import pytest
@@ -55,12 +56,12 @@ def test_stop_runs_no_project_code_without_opt_in(tmp_path, monkeypatch):
 
 
 @pytest.mark.no_opt_in
-def test_budget_script_ignored_without_opt_in(tmp_path, monkeypatch):
+def test_project_budget_script_never_preferred_over_plugin(tmp_path, monkeypatch):
     monkeypatch.setattr(hooks, "ROOT", tmp_path)
     script = tmp_path / hooks.BUDGET_SCRIPTS[0]
     script.parent.mkdir(parents=True)
     script.write_text("", encoding="utf-8")
-    assert hooks.budget_script() is None
+    assert hooks.budget_script() != script
 
 
 NAMED = {"subagent_type": "toolsmith", "model": "sonnet"}
@@ -489,6 +490,7 @@ def test_usage_reading_survives_cache_write_failure(cache, monkeypatch):
 
 
 def test_usage_reading_without_a_budget_script_is_empty(cache, monkeypatch):
+    monkeypatch.setattr(hooks, "budget_script", lambda: None)
     monkeypatch.setattr(hooks.subprocess, "run", lambda *a, **k: pytest.fail("spawned"))
     assert hooks.usage_reading() == {}
 
@@ -978,3 +980,17 @@ def test_subagent_models_allowed(model):
 @pytest.mark.parametrize("model", ["opus", "claude-opus-5-5", "fable", "inherit"])
 def test_subagent_heavy_models_refused(model):
     assert hooks.agent_refusal({"subagent_type": "toolsmith", "model": model})
+
+
+@pytest.mark.parametrize(("env", "refused"), [("sonnet", False), ("haiku", False), ("opus", True)])
+def test_subagent_model_env_must_be_sonnet_or_haiku(monkeypatch, env, refused):
+    monkeypatch.setenv("CLAUDE_CODE_SUBAGENT_MODEL", env)
+    result = hooks.agent_refusal({"subagent_type": "toolsmith", "model": "sonnet"})
+    assert bool(result) is refused
+
+
+def test_budget_script_is_the_plugin_copy():
+    script = hooks.budget_script()
+    assert script is not None
+    assert script.name == "budget.py"
+    assert script.parent == Path(hooks.__file__).resolve().parent

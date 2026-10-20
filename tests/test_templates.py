@@ -52,4 +52,14 @@ def test_templates_pin_opus_main_thread():
     for settings in (TEMPLATES / "settings.json", TEMPLATES.parent / ".claude" / "settings.json"):
         data = json.loads(settings.read_text(encoding="utf-8"))
         assert data["model"] == "claude-opus-5-5", settings
-        assert "CLAUDE_CODE_SUBAGENT_MODEL" not in data.get("env", {})
+        assert data.get("env", {}).get("CLAUDE_CODE_SUBAGENT_MODEL") in ("sonnet", None)
+
+
+def test_template_is_bash_only_and_subagents_default_to_sonnet():
+    data = json.loads((TEMPLATES / "settings.json").read_text(encoding="utf-8"))
+    perms = data["permissions"]
+    assert "PowerShell" in perms["deny"]
+    assert not [rule for rule in perms["allow"] if rule.startswith("PowerShell")]
+    assert data["env"]["CLAUDE_CODE_SUBAGENT_MODEL"] == "sonnet"
+    assert "Bash(rm -rf *)" in perms["deny"]
+    assert data["enabledPlugins"]["caveman@caveman"] is True

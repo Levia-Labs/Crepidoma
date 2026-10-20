@@ -1,19 +1,12 @@
 # Taskfile shell
 
-1. Write POSIX sh: the runner substitutes `{{...}}`, then runs its own interpreter (`mvdan.cc/sh`), not bash. No arrays, no `[[ ]]`, no `<<<`; lint embedded blocks as sh.
-2. Call `python3` on Linux and `python` on Windows, always through the `PY` var (`PY: '{{if eq OS "windows"}}python{{else}}python3{{end}}'`, used as `uv run {{.PY}}`); never `.venv/bin/python`.
-3. Pass root vars to included Taskfiles in the `includes:` entry (`vars: { PY: "{{.PY}}" }`); inheritance is unreliable.
-4. Prefix top-level vars of included Taskfiles with the namespace (`RUST_RUN`, not `RUN`); they share one scope and the last loaded wins. `task --verbose --dry <name>` shows the rendered command.
-5. Treat `{{.TASKFILE_DIR}}` as the including file's directory; never append the repository path to it.
+1. Write POSIX sh: the runner renders `{{...}}`, then runs `mvdan.cc/sh`, not bash. No arrays, `[[ ]]`, `<<<`; lint embedded blocks as sh.
+2. Invoke Python only via var `PY: '{{if eq OS "windows"}}python{{else}}python3{{end}}'` as `uv run {{.PY}}`; never `.venv/bin/python`.
+3. Pass root vars to includes via `vars: { PY: "{{.PY}}" }`; inheritance is unreliable.
+4. Prefix included top-level vars with the namespace (`RUST_RUN`, not `RUN`); scope is shared, last loaded wins. Inspect with `task --verbose --dry <name>`.
+5. `{{.TASKFILE_DIR}}` is the including file's directory; never append the repository path.
 6. Write paths relative to the repository root; commands run there.
-7. Never set `PATH` in `env:`; the runner ignores it, even static. Resolve user-installed binaries instead:
-
-   ```yaml
-   vars:
-     TOOL:
-       sh: command -v tool 2>/dev/null || printf '%s' "${PIPX_BIN_DIR:-$HOME/.local/bin}/tool"
-   ```
-
-8. Run locked dev-group tools through the locked environment runner; they need no resolving.
-9. Use `rm` then `mv`, never `mv -f`; shimmed coreutils on some machines fail on it.
-10. Gate every task that deletes data with a `preconditions` check on `CONFIRM=yes` and a matching deny rule in `.claude/settings.json`.
+7. Never set `PATH` in `env:`; the runner ignores it. Resolve user binaries with `vars: TOOL: {sh: command -v tool || printf '%s' "${PIPX_BIN_DIR:-$HOME/.local/bin}/tool"}`.
+8. Run locked dev-group tools via the locked environment runner; skip resolving.
+9. Use `rm` then `mv`, never `mv -f`; shimmed coreutils fail on it.
+10. Gate data-deleting tasks with `preconditions` on `CONFIRM=yes` plus a matching deny rule in `.claude/settings.json`.

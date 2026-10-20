@@ -55,6 +55,14 @@
         "hooks": [
           {
             "type": "command",
+            "command": "uv run --no-project --quiet python \"${CLAUDE_PLUGIN_ROOT}/scripts/inject_directives.py\" --event SubagentStart"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
             "command": "uv run --no-project --quiet python \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks.py\" subagent-start"
           }
         ]
