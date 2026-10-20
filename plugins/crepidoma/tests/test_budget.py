@@ -125,3 +125,35 @@ def test_wait_without_timeout_ignores_the_clock(monkeypatch):
     patch_fetch(monkeypatch, lambda: next(answers))
     monkeypatch.setattr(budget.time, "sleep", lambda nap: None)
     assert budget.main(["wait"]) == 0
+
+
+def test_wait_timeout_does_a_final_read(monkeypatch, capsys):
+    answers = iter([(payload(five=99.0), ""), (payload(five=10.0), "")])
+    patch_fetch(monkeypatch, lambda: next(answers))
+    monkeypatch.setattr(budget.time, "sleep", lambda nap: None)
+    assert budget.main(["wait", "--timeout", "30"]) == 0
+    assert "under 95%" in capsys.readouterr().out
+
+
+def test_wait_timeout_with_unknown_usage_says_so(monkeypatch, capsys):
+    answers = iter([(payload(five=99.0), ""), (None, "down")])
+    patch_fetch(monkeypatch, lambda: next(answers))
+    monkeypatch.setattr(budget.time, "sleep", lambda nap: None)
+    assert budget.main(["wait", "--timeout", "30"]) == 1
+    err = capsys.readouterr().err
+    assert "usage unknown" in err
+    assert "still over" not in err
+
+
+def test_subcommand_window_is_validated():
+    for command in ("show", "check", "wait"):
+        with pytest.raises(SystemExit) as raised:
+            budget.main([command, "--window", "typo"])
+        assert raised.value.code == 2
+
+
+def test_wait_with_no_matching_window_exits_instead_of_looping(monkeypatch, capsys):
+    patch_fetch(monkeypatch, (payload(), ""))
+    monkeypatch.setattr(budget.time, "sleep", lambda nap: pytest.fail("looped"))
+    assert budget.main(["wait", "--window", "seven_day_opus"]) == 1
+    assert "no windows" in capsys.readouterr().err

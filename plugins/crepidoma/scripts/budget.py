@@ -42,6 +42,7 @@ DEFAULT_POLL = 300
 # The endpoint answers 429 to a tight poll.
 MIN_POLL = 60
 UNDER, ERROR, OVER = 0, 1, 3
+NO_WINDOWS = "The usage endpoint reported no windows."
 
 
 def credentials_path() -> Path:
@@ -151,7 +152,7 @@ def load(only: list[str] | None = None) -> tuple[list[dict] | None, str]:
         return None, reason
     rows = readings(payload, only=only)
     if not rows:
-        return None, "The usage endpoint reported no windows."
+        return None, NO_WINDOWS
     return rows, ""
 
 
@@ -204,11 +205,29 @@ def check(args: argparse.Namespace) -> int:
     return OVER if over else UNDER
 
 
+def finish(args: argparse.Namespace) -> int:
+    """The deadline arrived: one last read decides, so a window that just cleared is not over."""
+    rows, reason = load(args.window)
+    if rows is None:
+        print(f"timed out; usage unknown: {reason}", file=sys.stderr)
+        return ERROR
+    over = breached(rows, args.ceiling)
+    if not over:
+        print(f"under {args.ceiling:g}%")
+        return UNDER
+    print("timed out still over the ceiling", file=sys.stderr)
+    return OVER
+
+
 def wait(args: argparse.Namespace) -> int:
     poll = max(MIN_POLL, args.poll)
     deadline = time.monotonic() + args.timeout if args.timeout else None
     while True:
         rows, reason = load(args.window)
+        if rows is None and reason == NO_WINDOWS:
+            # No window to wait on (bad filter or changed payload): waiting cannot help.
+            print(reason, file=sys.stderr)
+            return ERROR
         if rows is None:
             # A failed read is not an exhausted allowance: report and keep waiting.
             print(f"waiting: {reason}", file=sys.stderr, flush=True)
@@ -227,34 +246,36 @@ def wait(args: argparse.Namespace) -> int:
             if left <= MIN_POLL:
                 if left > 0:
                     time.sleep(left)
-                print("timed out still over the ceiling", file=sys.stderr)
-                return OVER
+                return finish(args)
             nap = min(nap, int(left))
         time.sleep(nap)
+
+
+def add_window(parser: argparse.ArgumentParser, default: object) -> None:
+    keys = [key for key, _ in WINDOWS]
+    parser.add_argument("--window", action="append", choices=keys, default=default)
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Claude usage windows against a ceiling.")
     parser.add_argument("--json", action="store_true", help="machine-readable output")
     parser.add_argument("--ceiling", type=float, default=DEFAULT_CEILING, help="percent (95)")
-    parser.add_argument(
-        "--window", action="append", choices=[key for key, _ in WINDOWS], help="judge only this one"
-    )
+    add_window(parser, None)
     commands = parser.add_subparsers(dest="command")
 
     # SUPPRESS keeps a subcommand from overwriting a flag given before it.
     sub_show = commands.add_parser("show", help="one line per window")
     sub_show.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
-    sub_show.add_argument("--window", action="append", default=argparse.SUPPRESS)
+    add_window(sub_show, argparse.SUPPRESS)
 
     sub_check = commands.add_parser("check", help="exit 0 under, 3 over, 1 unknown")
     sub_check.add_argument("--ceiling", type=float, default=argparse.SUPPRESS)
     sub_check.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
-    sub_check.add_argument("--window", action="append", default=argparse.SUPPRESS)
+    add_window(sub_check, argparse.SUPPRESS)
 
     sub_wait = commands.add_parser("wait", help="block until under the ceiling")
     sub_wait.add_argument("--ceiling", type=float, default=argparse.SUPPRESS)
-    sub_wait.add_argument("--window", action="append", default=argparse.SUPPRESS)
+    add_window(sub_wait, argparse.SUPPRESS)
     sub_wait.add_argument("--poll", type=int, default=DEFAULT_POLL, help="seconds between reads")
     sub_wait.add_argument(
         "--timeout", type=int, default=0, help="give up after S seconds (0 = never)"
