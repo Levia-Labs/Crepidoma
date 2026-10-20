@@ -60,7 +60,8 @@
     "levia-labs": {
       "source": {
         "source": "github",
-        "repo": "Levia-Labs/Crepidoma"
+        "repo": "Levia-Labs/Crepidoma",
+        "ref": "main"
       }
     },
     "caveman": {

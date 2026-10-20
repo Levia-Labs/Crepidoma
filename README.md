@@ -44,7 +44,7 @@ configs, Taskfiles and process ADRs. Pillars link Crepidoma; nothing is copied.
 2. Taskfiles and configs, as a submodule:
 
    ```sh
-   git submodule add https://github.com/Levia-Labs/Crepidoma .crepidoma
+   git submodule add -b main https://github.com/Levia-Labs/Crepidoma .crepidoma
    ```
 
    ```yaml
@@ -61,7 +61,7 @@ configs, Taskfiles and process ADRs. Pillars link Crepidoma; nothing is copied.
    ```yaml
    repos:
      - repo: https://github.com/Levia-Labs/Crepidoma
-       rev: v0.1.0
+       rev: main
        hooks:
          - id: crepidoma-scrub
          - id: crepidoma-long-files

@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   validate:
-    uses: Levia-Labs/Crepidoma/.github/workflows/reusable-validate.yml@v0.1.0
+    uses: Levia-Labs/Crepidoma/.github/workflows/reusable-validate.yml@main
     with:
       python: true
       node: false

@@ -7,7 +7,7 @@ TEMPLATES = Path(__file__).resolve().parent.parent / "templates"
 def test_settings_template_links_marketplace():
     data = json.loads((TEMPLATES / "settings.json").read_text(encoding="utf-8"))
     source = data["extraKnownMarketplaces"]["levia-labs"]["source"]
-    assert source == {"source": "github", "repo": "Levia-Labs/Crepidoma"}
+    assert source == {"source": "github", "repo": "Levia-Labs/Crepidoma", "ref": "main"}
     assert data["enabledPlugins"]["crepidoma@levia-labs"] is True
     assert "hooks" not in data
 
@@ -70,3 +70,11 @@ def test_template_has_no_wrapper_allows():
     wrappers = ("uv run", "xargs", "find ", "python", "bash -c", "sh -c", "env ")
     for rule in data["permissions"]["allow"]:
         assert not any(w in rule for w in wrappers), rule
+
+
+def test_templates_track_main():
+    root = TEMPLATES.parent
+    assert "rev: main" in (TEMPLATES / ".pre-commit-config.yaml").read_text(encoding="utf-8")
+    assert "reusable-validate.yml@main" in (TEMPLATES / "ci.yml").read_text(encoding="utf-8")
+    assert "-b main" in (TEMPLATES / "gitmodules.txt").read_text(encoding="utf-8")
+    assert "rev: v0" not in (root / "README.md").read_text(encoding="utf-8")

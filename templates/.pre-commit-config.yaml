@@ -1,7 +1,7 @@
 default_install_hook_types: [pre-commit, pre-push]
 repos:
   - repo: https://github.com/Levia-Labs/Crepidoma
-    rev: v0.1.0
+    rev: main
     hooks:
       - id: crepidoma-scrub
       - id: crepidoma-long-files
