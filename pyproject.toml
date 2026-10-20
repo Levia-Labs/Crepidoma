@@ -1,0 +1,35 @@
+[project]
+name = "crepidoma"
+version = "0.1.0"
+description = "LLM tooling foundation for Levia Labs pillar projects"
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = []
+
+[project.scripts]
+crepidoma-scrub = "scrub_check:main"
+crepidoma-ratchet = "ratchet:main"
+
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+only-include = ["tools"]
+sources = ["tools"]
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.6", "pre-commit>=4"]
+
+[tool.uv]
+package = false  # uv does not build the project locally; pre-commit try-repo and pillars do
+exclude-newer = "7 days"  # dependency cooldown: never resolve versions younger than a week
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "plugins/crepidoma/tests"]
+pythonpath = ["tools", "plugins/crepidoma/scripts"]
+addopts = "--import-mode=importlib -q"
+markers = ["no_opt_in: run without the autouse crepidoma opt-in stub"]
+
+[tool.ruff]
+extend = "configs/ruff.toml"

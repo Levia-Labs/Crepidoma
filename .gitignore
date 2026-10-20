@@ -218,3 +218,13 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Crepidoma local-only data
+.local/
+.scrub-denylist
+.claude/settings.local.json
+.credentials.json
+*.key
+*.pem
+node_modules/
+.superpowers/
