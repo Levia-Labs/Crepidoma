@@ -32,6 +32,11 @@ tasks:
       - for: { var: SEC_HOOKS }
         cmd: uv run pre-commit run {{.ITEM}} --all-files
 
+  scrub:denylist:
+    desc: Generate gitignored .scrub-denylist from private repos under PILLARS
+    cmds:
+      - uv run python tools/denylist.py "{{.PILLARS}}" --out .scrub-denylist
+
   test:
     desc: Run pytest
     cmds:
