@@ -953,3 +953,15 @@ def test_post_tool_use_writes_nothing_without_opt_in(tmp_path, monkeypatch):
     event = {"tool_input": {"file_path": str(tmp_path / "a.py")}}
     assert hooks.post_tool_use(event) == 0
     assert not marker.exists()
+
+
+def test_state_fallback_is_per_user_not_shared_temp(tmp_path, monkeypatch):
+    import tempfile
+    from pathlib import Path
+
+    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "state"))
+    bare = tmp_path / "plain"
+    bare.mkdir()
+    fallback = hooks.state_dir(bare)
+    assert fallback.is_relative_to(tmp_path / "state")
+    assert not fallback.is_relative_to(Path(tempfile.gettempdir()) / "crepidoma")

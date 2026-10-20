@@ -55,7 +55,9 @@ def state_dir(root: Path) -> Path:
             target = Path(text.removeprefix("gitdir:").strip())
             return target if target.is_absolute() else (root / target).resolve()
     key = hashlib.sha256(str(root.resolve()).encode("utf-8")).hexdigest()[:12]
-    return Path(tempfile.gettempdir()) / "crepidoma" / key
+    # Per-user, not the shared temp dir, so another account cannot plant state.
+    cache = Path(os.environ.get("XDG_STATE_HOME") or Path.home() / ".cache")
+    return cache / "crepidoma" / key
 
 
 STATE = state_dir(ROOT)
