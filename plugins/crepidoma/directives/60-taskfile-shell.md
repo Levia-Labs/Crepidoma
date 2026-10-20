@@ -1,7 +1,7 @@
 # Taskfile shell
 
 1. Write POSIX sh: the runner substitutes `{{...}}`, then runs its own interpreter (`mvdan.cc/sh`), not bash. No arrays, no `[[ ]]`, no `<<<`; lint embedded blocks as sh.
-2. Keep tasks portable across Windows and Linux: reference interpreters through Taskfile vars, never `.venv/bin/python` or `python3`.
+2. Call `python3` on Linux and `python` on Windows, always through the `PY` var (`PY: '{{if eq OS "windows"}}python{{else}}python3{{end}}'`, used as `uv run {{.PY}}`); never `.venv/bin/python`.
 3. Pass root vars to included Taskfiles in the `includes:` entry (`vars: { PY: "{{.PY}}" }`); inheritance is unreliable.
 4. Prefix top-level vars of included Taskfiles with the namespace (`RUST_RUN`, not `RUN`); they share one scope and the last loaded wins. `task --verbose --dry <name>` shows the rendered command.
 5. Treat `{{.TASKFILE_DIR}}` as the including file's directory; never append the repository path to it.

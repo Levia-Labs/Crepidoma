@@ -12,7 +12,7 @@
 1. Write Conventional Commits in normal prose.
 2. Never use `--no-verify`. If a formatting hook aborts a commit, re-stage and commit again.
 3. In a shared checkout, commit only owned paths: `git commit -- <paths>`.
-4. Never push, `git reset --hard` or `git clean` unless asked.
+4. Commit from the main thread with `task git:commit -- "<message>"`: it stages everything, commits and pushes. Never run bare `git push`, `git reset --hard` or `git clean` unless asked.
 5. Never commit secrets; read them from the environment and document them in `.env.example`.
 6. Keep files LF.
 
