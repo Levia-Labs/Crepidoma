@@ -11,6 +11,11 @@ Usage:
   python history.py commands [--min 3] [--top 10] [--dir DIR] [--report FILE]
   python history.py inline [--min 1] [--dir DIR]
   python history.py prompts [--min 2] [--prompts FILE]
+  python history.py sessions [--dir DIR]
+  python history.py untasked [--min 3] [--top 10] [--dir DIR] [--root REPO]
+
+`sessions` lists each transcript with its size; `untasked` is `commands` minus the ones that
+already run a task defined in the Taskfiles under --root (default: the working directory).
 
 Default transcript dir is the slug folder of the current project (`CLAUDE_PROJECT_DIR` or the
 working directory); `--dir` may also be the whole `projects` folder. Exit codes: 0 ok, 1 no
@@ -113,14 +118,43 @@ def render(rows: list[tuple[str, int]], top: int, max_bytes: int = MAX_BYTES) ->
     return "\n".join(out)
 
 
+def task_names(root: Path) -> set[str]:
+    """Every task name (bare and namespaced) defined by a .yml under taskfiles/ or tasks/."""
+    names: set[str] = set()
+    for folder in ("taskfiles", "tasks"):
+        for taskfile in (root / folder).rglob("*.yml"):
+            for line in taskfile.read_text(encoding="utf-8", errors="replace").splitlines():
+                match = re.match(r"^  ([a-z][a-z0-9:_-]*):\s*$", line)
+                if match:
+                    names.add(match.group(1))
+                    names.add(f"{taskfile.parent.name}:{match.group(1)}")
+    return names
+
+
+def untasked(commands: Iterator[str], root: Path) -> Iterator[str]:
+    """Commands that are not a `task` call and whose second word names no known task."""
+    known = task_names(root)
+    for command in commands:
+        words = command.split()
+        if words and words[0] in ("task", "cd", "echo", "ls", "cat", "printf", "true"):
+            continue
+        if len(words) > 1 and words[1] in known:
+            continue
+        yield command
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Find repeated ad-hoc work in Claude history.")
     sub = parser.add_subparsers(dest="mode", required=True)
-    for name, minimum in (("commands", 3), ("inline", 1), ("prompts", 2)):
+    listing = sub.add_parser("sessions", help="transcripts with their size")
+    listing.add_argument("--dir", help="transcript dir; default current project slug")
+    for name, minimum in (("commands", 3), ("inline", 1), ("prompts", 2), ("untasked", 3)):
         cmd = sub.add_parser(name)
         cmd.add_argument("--min", type=int, default=minimum, help="minimum repeat count")
         cmd.add_argument("--top", type=int, default=10, help=f"rows to show (max {MAX_LINES})")
         cmd.add_argument("--report", help="write every entry to this file")
+        if name == "untasked":
+            cmd.add_argument("--root", default=".", help="repo whose Taskfiles define the tasks")
         if name == "prompts":
             cmd.add_argument("--prompts", help="prompt log; default ~/.claude/history.jsonl")
         else:
@@ -130,6 +164,14 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if args.mode == "sessions":
+        source = Path(args.dir) if args.dir else default_dir()
+        if not source.is_dir():
+            print(f"history: no transcripts at {source}")
+            return 1
+        for transcript in sorted(source.rglob("*.jsonl")):
+            print(f"{transcript.stat().st_size / 1_000_000:8.1f} MB  {transcript.name}")
+        return 0
     if args.mode == "prompts":
         source = Path(args.prompts) if args.prompts else Path.home() / ".claude" / "history.jsonl"
         if not source.is_file():
@@ -145,6 +187,8 @@ def main(argv: list[str] | None = None) -> int:
         commands = shell_commands(source)
         if args.mode == "inline":
             rows = rank((normalise(c) for c in commands if is_inline(c)), args.min)
+        elif args.mode == "untasked":
+            rows = rank((normalise(c) for c in untasked(commands, Path(args.root))), args.min)
         else:
             rows = rank((normalise(c) for c in commands), args.min)
     if args.report:

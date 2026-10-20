@@ -1,0 +1,85 @@
+version: "3"
+
+vars:
+  BUDGET_PY: '{{if eq OS "windows"}}python{{else}}python3{{end}}'
+  BUDGET_SCRIPTS: "{{.TASKFILE_DIR}}/../../plugins/crepidoma/scripts"
+
+tasks:
+  budget:
+    desc: "Usage windows vs ceiling. Usage: task claude:budget -- [--json]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.BUDGET_PY}} "{{.BUDGET_SCRIPTS}}/budget.py" show {{.CLI_ARGS}}
+
+  budget:check:
+    desc: "Exit 0 under 95%, 3 over, 1 unknown. Usage: task claude:budget:check -- [--json]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.BUDGET_PY}} "{{.BUDGET_SCRIPTS}}/budget.py" check --ceiling 95 {{.CLI_ARGS}}
+
+  budget:wait:
+    desc: "Block until under the ceiling. Usage: task claude:budget:wait -- [--ceiling 95] [--poll 60]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.BUDGET_PY}} "{{.BUDGET_SCRIPTS}}/budget.py" wait {{.CLI_ARGS}}
+
+  resume:
+    desc: "Wait for budget, then print resume. Usage: task claude:resume -- [--ceiling 95] [--poll 60]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - task: budget:wait
+      - echo resume
+
+  rate:
+    desc: "Project time to the ceiling. Usage: task claude:rate -- [--window W] [--ceiling 95]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.BUDGET_PY}} "{{.BUDGET_SCRIPTS}}/usage_rate.py" project {{.CLI_ARGS}}
+
+  rate:record:
+    desc: "Append a usage sample. Usage: task claude:rate:record -- --percent 42 --window five_hour"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.BUDGET_PY}} "{{.BUDGET_SCRIPTS}}/usage_rate.py" record {{.CLI_ARGS}}
+
+  budget:json:
+    desc: "Usage windows as JSON (ok, over_ceiling, wait_seconds, windows). Usage: task claude:budget:json [CEILING=95]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.BUDGET_PY}} "{{.BUDGET_SCRIPTS}}/budget.py" --json --ceiling {{.CEILING | default 95}}
+
+  wait:
+    desc: "Block until every window is under the ceiling. Usage: task claude:wait [CEILING=95] [TIMEOUT=0]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - >-
+        uv run --no-project {{.BUDGET_PY}} "{{.BUDGET_SCRIPTS}}/budget.py" wait --ceiling {{.CEILING |
+        default 95}} --timeout {{.TIMEOUT | default 0}}
+
+  rate:sample:
+    desc: "Record a live reading, then project. Usage: task claude:rate:sample [CEILING=95] [MINUTES=0]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - >-
+        uv run --no-project {{.BUDGET_PY}} "{{.BUDGET_SCRIPTS}}/usage_rate.py" live --sample --ceiling
+        {{.CEILING | default 95}} --task-minutes {{.MINUTES | default 0}}
+
+  rate:json:
+    desc: >-
+      Live projection as JSON; exit 3 when MINUTES of work will not fit. Usage: task claude:rate:json
+      [CEILING=95] [MINUTES=0]
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - >-
+        uv run --no-project {{.BUDGET_PY}} "{{.BUDGET_SCRIPTS}}/usage_rate.py" live --json --ceiling
+        {{.CEILING | default 95}} --task-minutes {{.MINUTES | default 0}}

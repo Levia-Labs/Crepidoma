@@ -27,3 +27,10 @@ status: open
 class: bug
 
 An auditor transcript has a 2,065-char mcp_instructions_delta attachment, yet claude:spend:startup prints mcp 0 for every agent. Check the attachment matching in spend_startup.py.
+
+## 5 hooks.py exceeds the 300-line cap
+
+status: open
+class: debt
+
+plugins/crepidoma/scripts/hooks.py is 756 lines. Split it by hook event into modules under the cap.

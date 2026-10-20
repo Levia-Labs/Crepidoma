@@ -1,0 +1,42 @@
+version: "3"
+
+# Shell-linter tasks, flattened into the lint namespace by the sibling Taskfile.
+
+vars:
+  SHELL_PY: '{{if eq OS "windows"}}python{{else}}python3{{end}}'
+  SHELL_SCRIPTS: "{{.TASKFILE_DIR}}/../../plugins/crepidoma/scripts"
+
+tasks:
+  embedded:
+    desc: Extract the shell embedded in Taskfiles and shellcheck it. Reports; never gates.
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      # go-task templating is not shell, and shellcheck flags it. The extractor substitutes a
+      # placeholder so the command still parses; a finding is worth reading, not failing on.
+      - uv run --no-project {{.SHELL_PY}} "{{.SHELL_SCRIPTS}}/lint/embedded_shell.py"
+
+  taskfiles:
+    desc: Lint every Taskfile against the repository conventions. Usage task lint:taskfiles
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.SHELL_PY}} "{{.SHELL_SCRIPTS}}/taskfile_lint.py" all
+
+  setup:
+    desc: Install the shell linters (shellcheck, shfmt) with the system package manager
+    silent: true
+    cmds:
+      - |
+        if command -v apt-get >/dev/null 2>&1; then
+          sudo apt-get install -y shellcheck shfmt
+        elif command -v brew >/dev/null 2>&1; then
+          brew install shellcheck shfmt
+        elif command -v winget >/dev/null 2>&1; then
+          winget install --id koalaman.shellcheck -e
+          winget install --id mvdan.shfmt -e
+        else
+          echo "No supported package manager. Install shellcheck and shfmt by hand." >&2
+          exit 1
+        fi
+        echo "ruff, yamllint and ast-grep run through uvx; no install needed."

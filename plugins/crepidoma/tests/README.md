@@ -11,8 +11,12 @@
 - [`test_allow_tasks.py`](test_allow_tasks.py) - Tests for `allow_tasks`.
 - [`test_budget.py`](test_budget.py) - Tests for `budget`.
 - [`test_ci_runs.py`](test_ci_runs.py) - Tests for `ci_runs`.
+- [`test_claude_agents.py`](test_claude_agents.py) - Tests for `claude_agents`.
+- [`test_claude_plugins.py`](test_claude_plugins.py) - Tests for `claude_plugins`.
+- [`test_claude_vendor_plugins.py`](test_claude_vendor_plugins.py) - Tests for `claude_vendor_plugins`.
 - [`test_digest.py`](test_digest.py) - Tests for `digest`.
 - [`test_docs_gate.py`](test_docs_gate.py) - Tests for `docs_gate`.
+- [`test_embedded_shell.py`](test_embedded_shell.py) - Tests for `embedded_shell`.
 - [`test_gate_runner.py`](test_gate_runner.py) - Tests for `gate_runner`.
 - [`test_git_after_merge.py`](test_git_after_merge.py) - Tests for `git_after_merge`.
 - [`test_history.py`](test_history.py) - Tests for `history`.

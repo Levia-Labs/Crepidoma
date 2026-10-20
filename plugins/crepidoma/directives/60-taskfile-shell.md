@@ -1,6 +1,6 @@
 # Taskfile shell
 
-1. Write POSIX sh: the runner renders `{{...}}`, then runs `mvdan.cc/sh`, not bash. No arrays, `[[ ]]`, `<<<`; lint embedded blocks as sh.
+1. Write POSIX sh: the runner renders `{{...}}`, then runs `mvdan.cc/sh`, not bash. No arrays, `[[ ]]`, `<<<`; `task lint:embedded` checks blocks as sh (advisory), `task lint:sg` enforces the rules.
 2. Invoke Python only via var `PY: '{{if eq OS "windows"}}python{{else}}python3{{end}}'` as `uv run {{.PY}}`; never `.venv/bin/python`.
 3. Pass root vars to includes via `vars: { PY: "{{.PY}}" }`; inheritance is unreliable.
 4. Prefix included top-level vars with the namespace (`RUST_RUN`, not `RUN`); scope is shared, last loaded wins. Inspect with `task --verbose --dry <name>`.

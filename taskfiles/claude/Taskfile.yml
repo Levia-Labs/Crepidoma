@@ -6,6 +6,11 @@ vars:
   CLAUDE_PY: '{{if eq OS "windows"}}python{{else}}python3{{end}}'
   CLAUDE_SCRIPTS: "{{.TASKFILE_DIR}}/../../plugins/crepidoma/scripts"
 
+includes:
+  budget: { taskfile: ./budget.yml, flatten: true }
+  sessions: { taskfile: ./sessions.yml, flatten: true }
+  skills: ./skills.yml
+
 tasks:
   install:
     desc: Install or update the Claude Code CLI (npm global)
@@ -41,6 +46,24 @@ tasks:
         msg: |
           The `claude` CLI is not on PATH.
           Install it (https://claude.com/claude-code) or add its directory to PATH.
+
+  reach:
+    desc: Can this machine reach every host the Claude Code CLI needs? Changes nothing.
+    silent: true
+    cmds:
+      - |
+        # Any HTTP answer proves DNS, routing and TLS work; only a transport failure counts.
+        bad=0
+        for host in api.anthropic.com claude.ai console.anthropic.com registry.npmjs.org; do
+          if curl -s -m 10 -I "https://$host" > /dev/null; then
+            echo "reachable    $host"
+          else
+            echo "UNREACHABLE  $host"
+            bad=$((bad + 1))
+          fi
+        done
+        [ "$bad" -eq 0 ] || { echo "$bad host(s) unreachable: check DNS, proxy and firewall."; exit 1; }
+        echo "All reachable. If the CLI still fails, it is not the network: task claude:doctor"
 
   status:
     desc: "Auth status: account, subscription tier, org (JSON from the CLI)"
@@ -170,49 +193,6 @@ tasks:
       - >-
         echo '{"hook_event_name":"Stop"}'
         | uv run --no-project python "{{.TASKFILE_DIR}}/../../plugins/crepidoma/scripts/hooks.py" stop
-
-  budget:
-    desc: "Usage windows vs ceiling. Usage: task claude:budget -- [--json]"
-    silent: true
-    dir: "{{.USER_WORKING_DIR}}"
-    cmds:
-      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/budget.py" show {{.CLI_ARGS}}
-
-  budget:check:
-    desc: "Exit 0 under 95%, 3 over, 1 unknown. Usage: task claude:budget:check -- [--json]"
-    silent: true
-    dir: "{{.USER_WORKING_DIR}}"
-    cmds:
-      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/budget.py" check --ceiling 95 {{.CLI_ARGS}}
-
-  budget:wait:
-    desc: "Block until under the ceiling. Usage: task claude:budget:wait -- [--ceiling 95] [--poll 60]"
-    silent: true
-    dir: "{{.USER_WORKING_DIR}}"
-    cmds:
-      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/budget.py" wait {{.CLI_ARGS}}
-
-  resume:
-    desc: "Wait for budget, then print resume. Usage: task claude:resume -- [--ceiling 95] [--poll 60]"
-    silent: true
-    dir: "{{.USER_WORKING_DIR}}"
-    cmds:
-      - task: budget:wait
-      - echo resume
-
-  rate:
-    desc: "Project time to the ceiling. Usage: task claude:rate -- [--window W] [--ceiling 95]"
-    silent: true
-    dir: "{{.USER_WORKING_DIR}}"
-    cmds:
-      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/usage_rate.py" project {{.CLI_ARGS}}
-
-  rate:record:
-    desc: "Append a usage sample. Usage: task claude:rate:record -- --percent 42 --window five_hour"
-    silent: true
-    dir: "{{.USER_WORKING_DIR}}"
-    cmds:
-      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/usage_rate.py" record {{.CLI_ARGS}}
 
   spend:
     desc: "One line per session. Usage: task claude:spend -- [--last N] [--top N] [--dir D]"

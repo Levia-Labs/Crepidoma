@@ -1,5 +1,8 @@
 version: "3"
 
+includes:
+  shell: { taskfile: ./shell.yml, flatten: true }
+
 vars:
   LINT_CFG: "{{.TASKFILE_DIR}}/../../configs"
   LINT_RUFF: '{{.LINT_RUFF | default "uvx ruff"}}'
@@ -8,8 +11,6 @@ vars:
   LINT_PRETTIER: '{{.LINT_PRETTIER | default "npx --no prettier"}}'
   LINT_ESLINT: '{{.LINT_ESLINT | default "npx --no eslint"}}'
   LINT_PRECOMMIT: '{{.LINT_PRECOMMIT | default "uvx pre-commit"}}'
-  LINT_PY: '{{if eq OS "windows"}}python{{else}}python3{{end}}'
-  LINT_SCRIPTS: "{{.TASKFILE_DIR}}/../../plugins/crepidoma/scripts"
 
 tasks:
   check:
@@ -300,10 +301,3 @@ tasks:
             --config "{{.LINT_CFG}}/.prettierrc" $pr || exit 1
         fi
         [ -z "$py$pr" ] || git add -- $py $pr
-
-  taskfiles:
-    desc: Lint every Taskfile against the repository conventions. Usage task lint:taskfiles
-    silent: true
-    dir: "{{.USER_WORKING_DIR}}"
-    cmds:
-      - uv run --no-project {{.LINT_PY}} "{{.LINT_SCRIPTS}}/taskfile_lint.py" all
