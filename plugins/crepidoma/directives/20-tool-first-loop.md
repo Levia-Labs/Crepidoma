@@ -6,7 +6,7 @@
 4. Use named, single-job subagents and the specific skill for each job. Never use general-purpose, catch-all, fork, Explore or Plan agents. None fits: write the agent or skill first.
 5. Keep briefs short: point at the agent definition, name the tool calls, receipt and owned paths. Give each agent only the tools it uses.
 6. Agents call tools and return a receipt of at most 10 lines, never file contents.
-7. Run at most 6 concurrent subagents, on disjoint paths.
+7. Run at most 6 concurrent subagents, on disjoint paths. Dispatch through the pool (`task claude:pool`): reuse a warm agent of the same type via SendMessage, restating owned paths and branch; rotate past the context cap; `[fresh]` in the description for one-off jobs.
 8. Never let the main thread receive more than 20 lines or 1 KB of raw output per call. No `cat`, long `head`, `tail` or `sed -n`, whole-file reads or task output-file reads; a guard refuses raw reads.
 9. Qualify a large file with `digest <file>` first, a small-model agent second.
 10. Never re-read a file after editing; the edit errors on failure.

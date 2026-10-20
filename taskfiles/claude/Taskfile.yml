@@ -272,19 +272,19 @@ tasks:
     cmds:
       - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/lanes.py" handoff {{.CLI_ARGS}}
 
-  allow:check:
-    desc: "Check permission rules. Usage: task claude:allow:check -- [--settings PATH]"
+  allow:*:
+    desc: "Permission rules: check or report. Usage: task claude:allow:<check|report> -- [--settings PATH]"
     silent: true
     dir: "{{.USER_WORKING_DIR}}"
     cmds:
-      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/allow_tasks.py" check {{.CLI_ARGS}}
+      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/allow_tasks.py" {{index .MATCH 0}} {{.CLI_ARGS}}
 
-  allow:report:
-    desc: "Count permission rules. Usage: task claude:allow:report -- [--settings PATH]"
+  pool:
+    desc: "Reusable subagents. Usage: task claude:pool -- [--type T] [--max-context N] [--ttl S] [--top N]"
     silent: true
     dir: "{{.USER_WORKING_DIR}}"
     cmds:
-      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/allow_tasks.py" report {{.CLI_ARGS}}
+      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/agent_pool.py" list {{.CLI_ARGS}}
 
   plugins:verify:
     desc: "Fail when crepidoma@levia-labs is not installed. Usage: task claude:plugins:verify"

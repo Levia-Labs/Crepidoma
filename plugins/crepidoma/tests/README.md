@@ -6,6 +6,7 @@
 
 <!-- contents:start -->
 
+- [`test_agent_pool.py`](test_agent_pool.py) - Tests for `agent_pool`.
 - [`test_agents.py`](test_agents.py) - Tests for `agents`.
 - [`test_allow_tasks.py`](test_allow_tasks.py) - Tests for `allow_tasks`.
 - [`test_budget.py`](test_budget.py) - Tests for `budget`.
