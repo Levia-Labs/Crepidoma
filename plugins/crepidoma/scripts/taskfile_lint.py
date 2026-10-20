@@ -343,7 +343,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--report", type=Path, help="write all findings to FILE")
     try:
-        args = parser.parse_args(argv)
+        args = parser.parse_intermixed_args(argv)  # options may sit between positionals
     except SystemExit as exit_:
         return int(exit_.code or 0)
 

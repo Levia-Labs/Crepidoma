@@ -55,8 +55,11 @@ def fetch() -> tuple[dict | None, str]:
         USAGE_URL,
         headers={"Authorization": "Bearer " + access, "Content-Type": "application/json"},
     )
+    if not USAGE_URL.startswith("https://"):
+        return None, "Usage URL must be https."
     try:
-        with urllib.request.urlopen(request, timeout=30) as response:  # noqa: S310 - fixed https URL
+        # USAGE_URL is a module constant checked above; never a caller-supplied scheme.
+        with urllib.request.urlopen(request, timeout=30) as response:  # noqa: S310  # nosemgrep
             payload = json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as error:
         if error.code == 401:
