@@ -6,6 +6,7 @@
 
 <!-- contents:start -->
 
+- [`rules/`](rules/README.md) - Path-scoped Claude rules for this repo.
 - [`settings.json`](settings.json) - Claude Code settings.
 
 <!-- contents:end -->

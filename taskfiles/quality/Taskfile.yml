@@ -51,9 +51,13 @@ tasks:
         rc=0
         out=$(npx --no jscpd --silent --reporters console --threshold {{.QUALITY_DUP_THRESHOLD}} . 2>&1) || rc=1
         pct=$(printf '%s\n' "$out" | grep 'Total' | grep -o '[0-9.]*%' | head -n 1 | tr -d '%')
-        echo "duplication: ${pct:-0}%"
+        if [ -z "$pct" ]; then
+          echo "jscpd did not run; install it with: npm install -D jscpd" >&2
+          exit 1
+        fi
+        echo "duplication: ${pct}%"
         uv run --no-project {{.QUALITY_PY}} "{{.QUALITY_TOOLS}}/ratchet.py" metric \
-          --baseline .ratchet/duplication.baseline --direction down --value "${pct:-0}" || rc=1
+          --baseline .ratchet/duplication.baseline --direction down --value "$pct" || rc=1
         exit $rc
 
   bandit:
@@ -63,7 +67,7 @@ tasks:
     cmds:
       - |
         command -v uvx >/dev/null 2>&1 || { echo "missing uvx: install uv https://docs.astral.sh/uv/" >&2; exit 1; }
-        out=$(uvx bandit -q -r . -x ./tests,./.venv,./node_modules 2>&1 || true)
+        out=$(uvx bandit -q -r . -x '*/tests/*,*/.venv/*,*/node_modules/*' 2>&1 || true)
         n=$(printf '%s\n' "$out" | grep -c '>> Issue:' || true)
         echo "bandit findings: $n"
         uv run --no-project {{.QUALITY_PY}} "{{.QUALITY_TOOLS}}/ratchet.py" metric \

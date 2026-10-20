@@ -1,5 +1,19 @@
 version: "3"
 
+includes:
+  claude: ./taskfiles/claude
+  lint: ./taskfiles/lint
+  repo: ./taskfiles/repo
+  todo: ./taskfiles/todo
+  git: ./taskfiles/git
+  graph: ./taskfiles/graph
+  test: ./taskfiles/test
+  quality: ./taskfiles/quality
+  security: ./taskfiles/security
+  ci: ./taskfiles/ci
+  rtk: ./taskfiles/rtk
+  setup: ./taskfiles/setup
+
 vars:
   PILLARS: '{{.PILLARS | default ".."}}'
   LINT_HOOKS: [ruff, yamllint, shellcheck, actionlint, zizmor, check-yaml, check-json, check-toml]

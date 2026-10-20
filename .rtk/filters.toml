@@ -1,0 +1,42 @@
+# Copy to `.rtk/filters.toml` in the pillar. Overrides user-global and built-in filters.
+# Docs: https://github.com/rtk-ai/rtk#custom-filters
+#
+# Only success noise is stripped: a failing line never matches a pattern here, so an agent
+# still reads every error. Applied only after `rtk trust` on each machine.
+schema_version = 1
+
+# The gates print one line per clean check. A clean run collapses to one line.
+# Adjust the task names in match_command to the pillar's Taskfile.
+[filters.task-validate]
+description = "Collapse a clean task validate"
+match_command = "^task\\s+(check|validate|lint:check|quality:check|quality:types|types:check|test|test:run|security:\\S+)\\b"
+strip_lines_matching = [
+  "^All checks passed!$",
+  "^\\d+ files? already formatted$",
+  "known finding\\(s\\), none new\\.$",
+  "none new, none grown\\.$",
+  "no file below its baseline$",
+  "^\\d+ passed(, \\d+ skipped)?( in [\\d.]+s)?$",
+  # pytest progress: dots, s skip, x xfail, padded percentage. An F here is followed by an
+  # unstripped FAILED summary, so a failure still reaches the agent.
+  "^[.sxF]+\\s*(\\[\\s*\\d+%\\])?$",
+  "^0 errors, 0 warnings, 0 notes$",
+  "^coverage: \\d+ file\\(s\\), none dropped(, \\d+ rose)?$",
+  "^Running \\d+ tests$",
+  "^test result: ok\\. \\d+ passed; 0 failed;$",
+  "^$",
+]
+# A skipped scanner ("<name>: skipped - scanner not available here") is deliberately not
+# stripped: with on_empty it would read as "ok" when a scan never ran.
+on_empty = "gates: ok"
+
+# graphify repeats a Python RuntimeWarning and its source line for every file it skips,
+# plus an advert for other backends.
+[filters.graphify]
+description = "Drop graphify warnings that name no action"
+match_command = "^(task\\s+graphify:|graphify\\s)"
+strip_lines_matching = [
+  "RuntimeWarning: semantic cache skipped",
+  "^\\s+_scs\\($",
+  "^Tip: set GEMINI_API_KEY",
+]

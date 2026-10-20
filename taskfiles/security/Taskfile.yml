@@ -50,10 +50,8 @@ tasks:
           ran=1
           echo "== python (pip-audit)"
           if [ -f uv.lock ]; then
-            req=$(mktemp)
-            uv export --frozen --no-hashes --no-emit-project -q > "$req" || rc=1
-            uvx pip-audit --disable-pip --no-deps -r "$req" || rc=1
-            rm -f "$req"
+            # Audit the locked environment itself: no temp file, works the same on Windows.
+            uv run --frozen --with pip-audit pip-audit --progress-spinner off || rc=1
           else
             uvx pip-audit -r requirements.txt || rc=1
           fi

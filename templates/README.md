@@ -13,7 +13,7 @@
 - [`Taskfile.includes.yml`](Taskfile.includes.yml) - Includes block for every shared namespace.
 - [`ci.yml`](ci.yml) - Pillar workflow that calls the reusable workflow.
 - [`claude-README.md`](claude-README.md) - .claude
-- [`copilot-instructions.md`](copilot-instructions.md) - Copilot instructions
+- [`copilot-instructions.md`](copilot-instructions.md) - Pointer for Copilot.
 - [`gitmodules.txt`](gitmodules.txt) - Commands that add the .crepidoma submodule.
 - [`rtk-filters.toml`](rtk-filters.toml) - rtk filters a pillar copies to .rtk/filters.toml.
 - [`settings.json`](settings.json) - Claude Code settings.
