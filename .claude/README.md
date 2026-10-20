@@ -6,7 +6,6 @@
 
 <!-- contents:start -->
 
-- [`agents/`](agents/) - Folder.
 - [`settings.json`](settings.json) - Claude Code settings.
 
 <!-- contents:end -->
