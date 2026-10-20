@@ -29,6 +29,7 @@ package = false  # uv does not build the project locally; pre-commit try-repo an
 testpaths = ["tests", "plugins/crepidoma-core/tests"]
 pythonpath = ["tools", "plugins/crepidoma-core/scripts"]
 addopts = "--import-mode=importlib -q"
+markers = ["no_opt_in: run without the autouse crepidoma opt-in stub"]
 
 [tool.ruff]
 extend = "configs/ruff.toml"

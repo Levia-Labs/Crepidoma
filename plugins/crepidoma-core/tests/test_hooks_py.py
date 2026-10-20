@@ -9,6 +9,60 @@ import time
 import hooks
 import pytest
 
+
+@pytest.fixture(autouse=True)
+def opted_in(request, monkeypatch):
+    """Ported tests assume a pillar that adopted Crepidoma; opt-in tests mark themselves."""
+    if "no_opt_in" not in request.keywords:
+        monkeypatch.setattr(hooks, "opted_in", lambda: True)
+
+
+def write_settings(root, plugins):
+    settings = root / ".claude" / "settings.json"
+    settings.parent.mkdir(parents=True, exist_ok=True)
+    settings.write_text(json.dumps({"enabledPlugins": plugins}), encoding="utf-8")
+
+
+@pytest.mark.no_opt_in
+def test_opt_in_requires_project_enabled_plugin(tmp_path, monkeypatch):
+    monkeypatch.setattr(hooks, "ROOT", tmp_path)
+    assert hooks.opted_in() is False
+    write_settings(tmp_path, {"crepidoma-core@crepidoma": False})
+    assert hooks.opted_in() is False
+    write_settings(tmp_path, {"crepidoma-core@crepidoma": True})
+    assert hooks.opted_in() is True
+
+
+@pytest.mark.no_opt_in
+def test_malformed_settings_is_not_opt_in(tmp_path, monkeypatch):
+    monkeypatch.setattr(hooks, "ROOT", tmp_path)
+    (tmp_path / ".claude").mkdir()
+    (tmp_path / ".claude" / "settings.json").write_text("{not json", encoding="utf-8")
+    assert hooks.opted_in() is False
+
+
+@pytest.mark.no_opt_in
+def test_stop_runs_no_project_code_without_opt_in(tmp_path, monkeypatch):
+    monkeypatch.setattr(hooks, "ROOT", tmp_path)
+    marker = tmp_path / "dirty"
+    marker.write_text("", encoding="utf-8")
+    gate = hooks.GATES[0]._replace(marker=marker)
+    monkeypatch.setattr(hooks, "GATES", (gate,))
+    calls = []
+    monkeypatch.setattr(hooks, "run", lambda *args, **kw: calls.append(args))
+    assert hooks.stop({}) == 0
+    assert calls == []
+
+
+@pytest.mark.no_opt_in
+def test_budget_script_ignored_without_opt_in(tmp_path, monkeypatch):
+    monkeypatch.setattr(hooks, "ROOT", tmp_path)
+    script = tmp_path / hooks.BUDGET_SCRIPTS[0]
+    script.parent.mkdir(parents=True)
+    script.write_text("", encoding="utf-8")
+    assert hooks.budget_script() is None
+
+
 NAMED = {"subagent_type": "toolsmith", "model": "sonnet"}
 AGENT = {"tool_name": "Agent", "tool_input": NAMED}
 CHECK_SUFFIXES = (".yml", ".yaml", ".py", ".md", ".sh", ".toml")
@@ -654,7 +708,6 @@ def test_git_refusal_denies_discards(command):
         "git restore --staged a.py",
         "git add a.py",
         "git commit -m x -- a.py",
-        "echo 'unterminated",
         "rm build/out.txt",
     ],
 )
@@ -800,3 +853,45 @@ def test_cli_internal_error_fails_open(monkeypatch, capsys):
     monkeypatch.setattr(hooks, "pre_tool_use", boom)
     assert call(monkeypatch, ["pre-tool-use"], AGENT) == 0
     assert capsys.readouterr().out == ""
+
+
+# ---- Hardening from the security review -----------------------------------------------
+
+
+def untracked(_path, _root):
+    return False
+
+
+def test_unparseable_segment_fails_closed(tmp_path):
+    assert hooks.inner_refusal('git checkout "x', tmp_path, untracked)
+
+
+@pytest.mark.parametrize("flags", ["-c", "-lc", "-ec", "-xc"])
+def test_shell_flag_clusters_with_c_are_inspected(tmp_path, flags):
+    assert hooks.inner_refusal(f"bash {flags} 'git checkout .'", tmp_path, untracked)
+
+
+@pytest.mark.parametrize(
+    ("command", "refused"),
+    [
+        ("git rm notes.txt", True),
+        ("git rm --cached notes.txt", False),
+        ("git checkout-index -a -f", True),
+        ("git reset --keep HEAD~1", True),
+        ("git read-tree -u HEAD", True),
+        ("git status", False),
+    ],
+)
+def test_git_deny_table_covers_destructive_plumbing(tmp_path, command, refused):
+    assert bool(hooks.inner_refusal(command, tmp_path, untracked)) is refused
+
+
+def test_future_dated_usage_cache_is_ignored(tmp_path, monkeypatch):
+    cache = tmp_path / "usage.json"
+    reading = {"ok": True, "over_ceiling": True}
+    cache.write_text(
+        json.dumps({"read_at": time.time() + 10_000, "reading": reading}), encoding="utf-8"
+    )
+    monkeypatch.setattr(hooks, "USAGE_CACHE", cache)
+    monkeypatch.setattr(hooks, "budget_script", lambda: None)
+    assert hooks.usage_reading() == {}

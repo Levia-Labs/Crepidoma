@@ -119,7 +119,10 @@ GIT_DENY = (
     ("switch", r"^switch\b"),
     ("restore", r"^restore\b(?!.*(?:--staged\b|\s-[a-zA-Z]*S))"),
     ("restore-worktree", r"^restore\b.*(?:--worktree\b|\s-[a-zA-Z]*W)"),
-    ("reset-hard", r"^reset\b.*--(?:hard|merge)\b"),
+    ("reset-hard", r"^reset\b.*--(?:hard|merge|keep)\b"),
+    ("rm", r"^rm\b(?!.*--cached\b)"),
+    ("checkout-index", r"^checkout-index\b"),
+    ("read-tree-update", r"^read-tree\b.*\s(?:-u|--reset)\b"),
     ("clean", r"^clean\b"),
     ("stash", r"^stash\b"),
     ("add-all", r"^add\b.*\s(?:-u|--update|-A|--all|\.)(?:\s|$)"),
@@ -235,9 +238,25 @@ def failure(task: str, result: subprocess.CompletedProcess, hints: tuple[str, ..
     )
 
 
+def opted_in() -> bool:
+    """True when the project's committed settings enable crepidoma-core.
+
+    Hooks run project code (task gates, graphify, a budget script) only after this
+    opt-in, so a user-scope install never executes code from an untrusted checkout.
+    """
+    try:
+        settings = json.loads((ROOT / ".claude" / "settings.json").read_text(encoding="utf-8"))
+        plugins = settings.get("enabledPlugins") or {}
+    except (OSError, ValueError, AttributeError):
+        return False
+    return any(
+        key.startswith("crepidoma-core@") and value is True for key, value in plugins.items()
+    )
+
+
 def stop(event: dict, tasks: tuple[str, ...] = ()) -> int:
     # A blocked stop re-enters this hook once the agent replies. Without this the pair loops.
-    if event.get("stop_hook_active"):
+    if event.get("stop_hook_active") or not opted_in():
         return 0
     dirty = [gate._replace(tasks=tasks or gate.tasks) for gate in GATES if gate.marker.exists()]
     if not dirty:
@@ -280,6 +299,8 @@ def stop(event: dict, tasks: tuple[str, ...] = ()) -> int:
 
 
 def budget_script() -> Path | None:
+    if not opted_in():
+        return None
     return next((ROOT / name for name in BUDGET_SCRIPTS if (ROOT / name).is_file()), None)
 
 
@@ -290,8 +311,10 @@ def usage_reading() -> dict:
     """
     with contextlib.suppress(OSError, ValueError, TypeError, AttributeError):
         cached = json.loads(USAGE_CACHE.read_text(encoding="utf-8"))
-        if time.time() - float(cached.get("read_at", 0)) < CACHE_SECONDS:
-            return cached.get("reading", {})
+        age = time.time() - float(cached.get("read_at", 0))
+        reading = cached.get("reading")
+        if 0 <= age < CACHE_SECONDS and isinstance(reading, dict) and reading.get("ok"):
+            return reading
 
     budget = budget_script()
     if budget is None:
@@ -551,8 +574,14 @@ def segment_refusal(tokens: list[str], cwd: Path, tracked: Callable[[str, Path],
     if not tokens:
         return ""
     head = Path(tokens[0]).name.removesuffix(".exe")
-    if head in SHELLS and "-c" in tokens:
-        return inner_refusal(" ".join(tokens[tokens.index("-c") + 1 :]), cwd, tracked)
+    if head in SHELLS:
+        # Any short-option cluster holding c (-c, -lc, -ec) runs the next word as a script.
+        flag = next(
+            (i for i, t in enumerate(tokens[1:], 1) if re.fullmatch(r"-[a-zA-Z]*c[a-zA-Z]*", t)),
+            None,
+        )
+        if flag is not None:
+            return inner_refusal(" ".join(tokens[flag + 1 :]), cwd, tracked)
     if head == "rm":
         return rm_refusal(tokens, cwd, tracked)
     if head != "git":
@@ -568,7 +597,8 @@ def inner_refusal(command: str, cwd: Path, tracked: Callable[[str, Path], bool])
         try:
             tokens = shlex.split(part, posix=True)
         except ValueError:
-            continue
+            # Fail closed: a segment that cannot be parsed cannot be cleared.
+            return "unparseable command " + part.strip()
         found = segment_refusal(tokens, cwd, tracked)
         if found:
             return found

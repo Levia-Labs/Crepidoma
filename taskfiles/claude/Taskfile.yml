@@ -104,8 +104,10 @@ tasks:
           exit 0
         fi
 
-        resp=$(curl -s -w '\n%{http_code}' "{{.USAGE_URL}}" \
-                 -H "Authorization: Bearer $tok" -H "Content-Type: application/json")
+        # The token goes through a curl config on stdin, never argv (visible in ps).
+        resp=$(printf 'header = "Authorization: Bearer %s"\n' "$tok" \
+                 | curl -s -K - -w '\n%{http_code}' "{{.USAGE_URL}}" \
+                     -H "Content-Type: application/json")
         code=$(printf '%s' "$resp" | tail -n 1)
         body=$(printf '%s' "$resp" | sed '$d')
 
