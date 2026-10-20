@@ -65,3 +65,47 @@ def test_mirror_entries_expect_identical_copies(tmp_path: Path):
         ("mirror", "configs/.editorconfig", ".editorconfig"),
         ("drifted", "configs/.yamllint", ".yamllint"),
     ]
+
+
+def declare(pillar: Path, body: str) -> None:
+    make(pillar / ".crepidoma-drift.toml", body.encode())
+
+
+def state(pillar: Path, entries: list[dict], root: Path) -> str:
+    return drift_check.check(pillar, entries, root)[0][0]
+
+
+def test_extended_line_file(tmp_path: Path):
+    root, pillar = tmp_path / "crep", tmp_path / "pillar"
+    make(root / "c/.ga", b"* text=auto\n*.png   binary\n")
+    make(pillar / ".ga", b"* text=auto\r\n*.png binary\n*.cs text\n")
+    entries = [{"crepidoma": "c/.ga", "pillar": [".ga"], "mirror": True}]
+    assert state(pillar, entries, root) == "drifted"
+    declare(pillar, '[[extended]]\npath = ".ga"\n')
+    assert state(pillar, entries, root) == "extended"
+
+
+def test_extended_requires_shared_content(tmp_path: Path):
+    root, pillar = tmp_path / "crep", tmp_path / "pillar"
+    make(root / "c/.ga", b"a\nb\n")
+    make(pillar / ".ga", b"a\nc\n")
+    entries = [{"crepidoma": "c/.ga", "pillar": [".ga"]}]
+    declare(pillar, '[[extended]]\npath = ".ga"\n')
+    assert state(pillar, entries, root) == "drifted"
+    declare(pillar, '[[extended]]\npath = ".ga"\nwaive = ["b"]\n')
+    assert state(pillar, entries, root) == "extended"
+
+
+def test_extended_yaml(tmp_path: Path):
+    root, pillar = tmp_path / "crep", tmp_path / "pillar"
+    make(root / "c/sg.yml", b"ruleDirs:\n  - a\nname: x\n")
+    entries = [{"crepidoma": "c/sg.yml", "pillar": ["sg.yml"]}]
+    declare(pillar, '[[extended]]\npath = "sg.yml"\n')
+    make(pillar / "sg.yml", b"# c\nruleDirs:\n  - a\n  - b\nname: x\ntests:\n  - t: 1\n")
+    assert state(pillar, entries, root) == "extended"
+    make(pillar / "sg.yml", b"ruleDirs:\n  - b\nname: x\n")
+    assert state(pillar, entries, root) == "drifted"
+    make(pillar / "sg.yml", b"ruleDirs:\n  - a\nname: y\n")
+    assert state(pillar, entries, root) == "drifted"
+    declare(pillar, '[[extended]]\npath = "sg.yml"\nwaive = ["name|name: x"]\n')
+    assert state(pillar, entries, root) == "extended"

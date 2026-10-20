@@ -23,6 +23,12 @@
    `https://github.com/Levia-Labs/Crepidoma/blob/main/docs/adr/`.
 9. From the Crepidoma checkout run `task drift -- <pillar path>` until it reports
    `duplicate=0 drifted=0` (root config copies from step 6.5 report as `mirror`).
+   A copy that keeps all shared content and adds pillar-only content (Unity LFS lines, extra
+   `sgconfig.yml` ruleDirs) reports as `extended` once the pillar declares it in
+   `.crepidoma-drift.toml`: one `[[extended]]` table per file with `path` and an optional `waive`
+   list of shared facts the pillar intentionally drops. Facts are whitespace-normalised lines;
+   for `.yml` files `key|- item` or `key|key: value`, keyed by the top-level key. A missing,
+   unwaived shared fact or an altered value stays `drifted`.
 10. Open one PR per pillar.
 
 ## Optional pillar files
@@ -32,7 +38,7 @@
 2. `templates/claude-README.md` to `.claude/README.md`; `templates/rules/taskfile-shell.md` to
    `.claude/rules/taskfile-shell.md`.
 3. `templates/rtk-filters.toml` to `.rtk/filters.toml`.
-4. `templates/ci.yml` to `.github/workflows/ci.yml` (calls Crepidoma's reusable workflow).
+4. `templates/ci.yml` to the pillar's `ci.yml` workflow (calls Crepidoma's reusable workflow).
 5. Drop pillar copies of budget, rate, history, tokens, lanes, sessions, outline, section, todo, docs
    and gate scripts; the shared namespaces replace them.
 

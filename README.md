@@ -8,7 +8,9 @@
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-d97757.svg)](plugins/crepidoma/README.md)
 
-<img src="https://upload.wikimedia.org/wikipedia/commons/3/39/Crepidoma-stereobate-stylobate.svg" alt="Crepidoma, stereobate and stylobate" width="520">
+<img src="docs/crepidoma.svg" alt="Crepidoma, stereobate and stylobate" width="520">
+
+<sub>Image: [Gleb713](https://commons.wikimedia.org/wiki/File:Crepidoma-stereobate-stylobate.svg), CC BY-SA 4.0, white background added.</sub>
 
 > In classical Greek architecture, crepidoma is the foundation of one or more steps on which the superstructure of a building is erected.
 >

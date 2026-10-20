@@ -9,7 +9,9 @@ Usage:
   python spend.py sessions [--last N]     # id8, date, tokens, cost estimate
   python spend.py tools [--session ID]    # tool name, calls, bytes returned
   python spend.py reads [--session ID]    # files read by bytes (Read, cat/head/tail/sed)
+  python spend.py calls [--session ID]    # largest single tool results: tool, input, bytes
   python spend.py agents [--session ID]   # subagent runs: type, model, tokens
+  # ID = session prefix, SESSION/AGENT (as `agents` prints it) or agent id suffix: that agent only
   python spend.py cost [--session ID]     # totals per model
   python spend.py cost --dir PATH/TO/TRANSCRIPTS
 """
@@ -18,12 +20,12 @@ import argparse
 import json
 import os
 import re
-import shlex
 import sys
 from collections import Counter
 from dataclasses import dataclass, field
-from datetime import datetime
 from pathlib import Path
+
+from spend_parse import bash_read_files, scan  # noqa: F401  (bash_read_files re-exported)
 
 MAX_LINES = 20
 DEFAULT_TOP = 10
@@ -42,7 +44,6 @@ USAGE_KEYS = {
     "cache_read": "cache_read_input_tokens",
     "cache_write": "cache_creation_input_tokens",
 }
-READ_COMMANDS = {"cat", "head", "tail", "sed"}
 
 
 def project_slug(path: Path) -> str:
@@ -65,6 +66,7 @@ class Run:
     tool_calls: Counter = field(default_factory=Counter)
     tool_bytes: Counter = field(default_factory=Counter)
     read_bytes: Counter = field(default_factory=Counter)
+    calls: list[tuple[str, str, int]] = field(default_factory=list)  # tool, input, bytes
 
     def add_usage(self, model: str, usage: dict) -> None:
         bucket = self.usage.setdefault(model, Counter())
@@ -91,108 +93,40 @@ def model_cost(model: str, bucket: Counter) -> float:
     return 0.0
 
 
-def blocks(entry: dict) -> list[dict]:
-    message = entry.get("message")
-    content = message.get("content") if isinstance(message, dict) else None
-    return [b for b in content if isinstance(b, dict)] if isinstance(content, list) else []
-
-
-def result_bytes(content: object) -> int:
-    if isinstance(content, str):
-        return len(content.encode("utf-8", "replace"))
-    if isinstance(content, list):
-        return sum(
-            len(str(b.get("text", "")).encode("utf-8", "replace"))
-            for b in content
-            if isinstance(b, dict)
-        )
-    return 0
-
-
-def bash_read_files(command: str) -> list[str]:
-    """Files named by a cat/head/tail/sed invocation (first such command in the string)."""
-    try:
-        tokens = shlex.split(command, posix=True)
-    except ValueError:
-        tokens = command.split()
-    for index, token in enumerate(tokens):
-        if Path(token).name not in READ_COMMANDS:
-            continue
-        name = Path(token).name
-        files: list[str] = []
-        skip_script = name == "sed"
-        for arg in tokens[index + 1 :]:
-            if arg in {"|", "||", "&&", ";", ">", ">>", "2>&1"}:
-                break
-            if arg.startswith("-") or arg.isdigit():
-                continue
-            if skip_script:
-                skip_script = False
-                continue
-            files.append(arg)
-        return files
-    return []
-
-
 def parse(path: Path, name: str) -> Run:
     run = Run(name=name)
-    seen: set[str] = set()
-    pending: dict[str, tuple[str, list[str]]] = {}
-    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
-        try:
-            entry = json.loads(line)
-        except ValueError:
-            continue
-        if not isinstance(entry, dict):
-            continue
-        if not run.date and isinstance(entry.get("timestamp"), str):
-            run.date = entry["timestamp"][:10]
-        message = entry.get("message")
-        if isinstance(message, dict) and isinstance(message.get("usage"), dict):
-            # One API response is split across entries sharing id and usage: count once.
-            key = str(message.get("id") or entry.get("uuid") or len(seen))
-            if key not in seen:
-                seen.add(key)
-                run.add_usage(str(message.get("model") or "?"), message["usage"])
-        for block in blocks(entry):
-            if block.get("type") == "tool_use":
-                tool = str(block.get("name"))
-                params = block.get("input") if isinstance(block.get("input"), dict) else {}
-                files: list[str] = []
-                if tool == "Read" and params.get("file_path"):
-                    files = [str(params["file_path"])]
-                elif tool == "Bash":
-                    files = bash_read_files(str(params.get("command", "")))
-                pending[str(block.get("id"))] = (tool, [f.replace("\\", "/") for f in files])
-                run.tool_calls[tool] += 1
-            elif block.get("type") == "tool_result":
-                tool, files = pending.get(str(block.get("tool_use_id")), ("?", []))
-                size = result_bytes(block.get("content"))
-                run.tool_bytes[tool] += size
-                for file in files:
-                    run.read_bytes[file] += size // len(files)
-    if not run.date:
-        run.date = datetime.fromtimestamp(path.stat().st_mtime).strftime("%Y-%m-%d")
+    scan(path, run)
+    return run
+
+
+def load_agent(file: Path, transcript: Path) -> Run:
+    run = parse(file, f"{transcript.stem[:8]}/{file.stem[-8:]}")
+    try:
+        meta = json.loads(file.with_suffix(".meta.json").read_text(encoding="utf-8"))
+        run.agent_type = str(meta.get("agentType", "?"))
+    except (OSError, ValueError, AttributeError):
+        run.agent_type = "?"
     return run
 
 
 def load(folder: Path, session: str, with_agents: bool = True) -> tuple[list[Run], list[Run]]:
+    """`session`: session prefix, `<session>/<agent>`, or an agent id suffix (agent only)."""
+    sess, _, agent = session.partition("/")
+    transcripts = sorted(folder.glob("*.jsonl"), key=lambda p: p.stat().st_mtime)
+    chosen = [t for t in transcripts if t.stem.startswith(sess)]
+    if not agent and sess and not chosen:  # bare id matching no session: an agent suffix
+        chosen, agent = transcripts, sess
+    agent = agent.removeprefix("agent-")
     sessions: list[Run] = []
     agents: list[Run] = []
-    for transcript in sorted(folder.glob("*.jsonl"), key=lambda p: p.stat().st_mtime):
-        if session and not transcript.stem.startswith(session):
-            continue
-        sessions.append(parse(transcript, transcript.stem))
-        if not with_agents:
+    for transcript in chosen:
+        if not agent:
+            sessions.append(parse(transcript, transcript.stem))
+        if not with_agents and not agent:
             continue
         for file in sorted((folder / transcript.stem / "subagents").glob("agent-*.jsonl")):
-            run = parse(file, f"{transcript.stem[:8]}/{file.stem[-8:]}")
-            try:
-                meta = json.loads(file.with_suffix(".meta.json").read_text(encoding="utf-8"))
-                run.agent_type = str(meta.get("agentType", "?"))
-            except (OSError, ValueError, AttributeError):
-                run.agent_type = "?"
-            agents.append(run)
+            if file.stem.removeprefix("agent-").endswith(agent):
+                agents.append(load_agent(file, transcript))
     return sessions, agents
 
 
@@ -255,6 +189,14 @@ def cmd_reads(folder: Path, args: argparse.Namespace) -> list[str]:
     return table("files read by bytes", rows, f"total {sum(size.values()):,} B", args.top)
 
 
+def cmd_calls(folder: Path, args: argparse.Namespace) -> list[str]:
+    sessions, agents = load(folder, args.session or "")
+    calls = [c for run in merged(sessions, agents) for c in run.calls]
+    calls.sort(key=lambda c: c[2], reverse=True)
+    rows = [f"{b:>10,} B {t:<10} {s}" for t, s, b in calls]
+    return table("largest tool results", rows, f"calls {len(calls)}", args.top)
+
+
 def cmd_agents(folder: Path, args: argparse.Namespace) -> list[str]:
     _, agents = load(folder, args.session or "")
     ranked = sorted(agents, key=lambda a: a.tokens(), reverse=True)
@@ -296,9 +238,9 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
     one = sub.add_parser("sessions", parents=[common], help="one line per session")
     one.add_argument("--last", type=int, default=0, help="only the last N sessions")
-    for name in ("tools", "reads", "agents", "cost"):
+    for name in ("tools", "reads", "calls", "agents", "cost"):
         p = sub.add_parser(name, parents=[common])
-        p.add_argument("--session", help="session id prefix")
+        p.add_argument("--session", help="session prefix, SESSION/AGENT, or agent id suffix")
     return parser
 
 
@@ -306,6 +248,7 @@ COMMANDS = {
     "sessions": cmd_sessions,
     "tools": cmd_tools,
     "reads": cmd_reads,
+    "calls": cmd_calls,
     "agents": cmd_agents,
     "cost": cmd_cost,
 }

@@ -221,33 +221,14 @@ tasks:
     cmds:
       - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/spend.py" sessions {{.CLI_ARGS}}
 
-  spend:tools:
-    desc: "Tool-call spend. Usage: task claude:spend:tools -- [--session ID] [--top N]"
+  spend:*:
+    desc: >-
+      Spend by subcommand: tools, reads, calls, agents, cost.
+      Usage: task claude:spend:<sub> -- [--session ID] [--top N] (calls also takes SESSION/AGENT)
     silent: true
     dir: "{{.USER_WORKING_DIR}}"
     cmds:
-      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/spend.py" tools {{.CLI_ARGS}}
-
-  spend:reads:
-    desc: "File-read spend. Usage: task claude:spend:reads -- [--session ID] [--top N]"
-    silent: true
-    dir: "{{.USER_WORKING_DIR}}"
-    cmds:
-      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/spend.py" reads {{.CLI_ARGS}}
-
-  spend:agents:
-    desc: "Subagent spend. Usage: task claude:spend:agents -- [--session ID] [--top N]"
-    silent: true
-    dir: "{{.USER_WORKING_DIR}}"
-    cmds:
-      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/spend.py" agents {{.CLI_ARGS}}
-
-  spend:cost:
-    desc: "Cost per model. Usage: task claude:spend:cost -- [--session ID] [--top N]"
-    silent: true
-    dir: "{{.USER_WORKING_DIR}}"
-    cmds:
-      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/spend.py" cost {{.CLI_ARGS}}
+      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/spend.py" {{index .MATCH 0}} {{.CLI_ARGS}}
 
   history:
     desc: "Repeated shell commands. Usage: task claude:history -- [--min N] [--top N] [--report F]"
