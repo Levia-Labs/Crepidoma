@@ -74,16 +74,16 @@
 
 ## What you get
 
-| Layer          | Highlights                                                                                                                                                                      |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Directives** | Communication style with absolute mode, tool-first loop, conventions, model tiers, shell and safety                                                                             |
-| **Models**     | Opus orchestrates · Sonnet works · Haiku reads, greps and indexes                                                                                                               |
-| **Hooks**      | Compact subagent harness · raw-read guard · subagent policy and git guard · stop gate                                                                                           |
-| **Agents**     | auditor · diff-reviewer · docs-syncer · gate-fixer · implementer · integrator · pillar-migrator · rule-smith · scout · security-reviewer · todo-triage · toolsmith · translator |
-| **Skills**     | `docs-sweep` · `migrate-pillar`                                                                                                                                                 |
-| **Tasks**      | `claude` · `repo` · `todo` · `git` · `graph` · `test` · `quality` · `security` · `ci` · `lint` · `setup` · `rtk`                                                                |
-| **Configs**    | ruff · prettier · eslint · tsconfig · pyright · yamllint · ast-grep · semgrep · gitleaks · zizmor · hadolint                                                                    |
-| **Decisions**  | [ADRs 0001–0009](docs/adr/README.md)                                                                                                                                            |
+| Layer          | Highlights                                                                                                                                                                                                          |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Directives** | Communication style with absolute mode, tool-first loop, conventions, model tiers, shell and safety                                                                                                                 |
+| **Models**     | Opus orchestrates · Sonnet works · Haiku reads, greps and indexes                                                                                                                                                   |
+| **Hooks**      | Compact subagent harness · raw-read guard · subagent policy and git guard · stop gate                                                                                                                               |
+| **Agents**     | auditor · csharp-reviewer · diff-reviewer · docs-syncer · gate-fixer · implementer · integrator · pillar-migrator · python-reviewer · rule-smith · scout · security-reviewer · todo-triage · toolsmith · translator |
+| **Skills**     | `docs-sweep` · `migrate-pillar` · `python-patterns` · `python-testing`                                                                                                                                              |
+| **Tasks**      | `claude` · `repo` · `todo` · `git` · `graph` · `test` · `quality` · `security` · `ci` · `lint` · `setup` · `rtk`                                                                                                    |
+| **Configs**    | ruff · prettier · eslint · tsconfig · pyright · yamllint · ast-grep · semgrep · gitleaks · zizmor · hadolint                                                                                                        |
+| **Decisions**  | [ADRs 0001–0009](docs/adr/README.md)                                                                                                                                                                                |
 
 ## Repository map
 
