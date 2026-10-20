@@ -13,6 +13,7 @@
 - [`test_ci_runs.py`](test_ci_runs.py) - Tests for `ci_runs`.
 - [`test_digest.py`](test_digest.py) - Tests for `digest`.
 - [`test_docs_gate.py`](test_docs_gate.py) - Tests for `docs_gate`.
+- [`test_embedded_shell.py`](test_embedded_shell.py) - Tests for `embedded_shell`.
 - [`test_gate_runner.py`](test_gate_runner.py) - Tests for `gate_runner`.
 - [`test_git_after_merge.py`](test_git_after_merge.py) - Tests for `git_after_merge`.
 - [`test_history.py`](test_history.py) - Tests for `history`.

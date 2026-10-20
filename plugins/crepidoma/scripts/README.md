@@ -6,6 +6,7 @@
 
 <!-- contents:start -->
 
+- [`lint/`](lint/README.md) - Folder.
 - [`agent_pool.py`](agent_pool.py) - Subagent pool: list finished agents of the current session and steer dispatch to reuse them.
 - [`allow_tasks.py`](allow_tasks.py) - Keep .claude/settings.json permissions consistent with the Taskfile interface.
 - [`budget.py`](budget.py) - Claude usage windows against a ceiling: show, gate, wait.

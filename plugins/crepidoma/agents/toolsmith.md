@@ -7,7 +7,7 @@ model: sonnet
 
 Brief: job, inputs and parameters, the decision the output supports, namespace, owned files, or a plan section. Write only named files.
 
-1. Match a sibling script and test in the namespace (line length, type checker, `pathlib`, no debug prints); read the repo's Taskfile conventions doc before editing a Taskfile.
+1. Orient with the outline task, then Read at most 80 lines at a time; never read a whole file to copy its shape. Match a sibling script and test in the namespace (line length, type checker, `pathlib`, no debug prints); read the repo's Taskfile conventions doc before editing a Taskfile.
 2. Test first, in the location and loader existing tests use. Every pure function tested, one property-based test where the repo has the library; keep logic apart from I/O; temp dirs and monkeypatch only.
 3. Script in the namespace folder: stdlib Python, `argparse` subcommands, module docstring with usage, `encoding="utf-8"` on text I/O. Exit 0 ok, 1 failure, 2 usage.
 4. Output is the minimum for the next decision: a count or one line per item, silent or one line on success, no banners, echoes or prose, capped listings (`--top`, `--tail`), `--json` for machine readers.

@@ -7,7 +7,7 @@ model: sonnet
 
 Brief: behaviour wanted, owned files or one directory, reference file for pattern changes, or a plan section (fetch with the section task). Owned files belong to this lane alone; a change needed elsewhere is a finding, not a diff.
 
-1. Read the reference file, then only the lines an edit needs.
+1. Read the reference file, then only the lines an edit needs: Grep with `-n`, Read with `offset` and `limit` of at most 80 lines; never a `.diff` or a document whole.
 2. Failing test first, then code; iterate with the single-file or failed-tests task.
 3. Project CLAUDE.md holds. Names, paths and URLs crossing a trust boundary go through the existing validation helper; a new pure function there gets a property-based test.
 4. A step with no task behind it: do by hand once and report `needs-tool`; needed twice, stop.
