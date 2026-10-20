@@ -1,0 +1,2 @@
+[extend]
+path = "configs/gitleaks.toml"

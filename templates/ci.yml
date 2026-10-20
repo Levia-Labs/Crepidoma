@@ -1,0 +1,18 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    uses: Levia-Labs/Crepidoma/.github/workflows/reusable-validate.yml@main
+    with:
+      python: true
+      node: false
+      types: true
+      coverage: true

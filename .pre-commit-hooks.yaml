@@ -1,0 +1,12 @@
+- id: crepidoma-scrub
+  name: crepidoma scrub (paths, emails, tokens, private names)
+  description: Rejects local paths, emails, tokens and names listed in .scrub-denylist
+  entry: crepidoma-scrub
+  language: python
+  types: [text]
+- id: crepidoma-long-files
+  name: crepidoma long-file ratchet
+  description: Files over 300 lines must be baselined in .ratchet/long-files.baseline and may not grow
+  entry: crepidoma-ratchet long-files --max-lines 300
+  language: python
+  types: [text]

@@ -1,0 +1,72 @@
+version: "3"
+
+# graphify knowledge-graph operations. Never print GRAPH_REPORT.md.
+
+vars:
+  GRAPH_MODEL: '{{.GRAPH_MODEL | default "claude-haiku-5-5"}}'
+
+tasks:
+  _require-graphify:
+    internal: true
+    preconditions:
+      - sh: command -v graphify
+        msg: "`graphify` not on PATH. Install: uv tool install graphifyy"
+
+  query:
+    desc: 'Ask the graph. Usage: task graph:query -- "what does X do"'
+    dir: "{{.USER_WORKING_DIR}}"
+    silent: true
+    deps: [_require-graphify]
+    preconditions:
+      - sh: "{{if .CLI_ARGS}}true{{else}}false{{end}}"
+        msg: 'Usage: task graph:query -- "question"'
+    cmds:
+      - graphify query {{.CLI_ARGS}}
+
+  path:
+    desc: "Connection between two nodes. Usage: task graph:path -- A B"
+    dir: "{{.USER_WORKING_DIR}}"
+    silent: true
+    deps: [_require-graphify]
+    preconditions:
+      - sh: "{{if .CLI_ARGS}}true{{else}}false{{end}}"
+        msg: "Usage: task graph:path -- A B"
+    cmds:
+      - graphify path {{.CLI_ARGS}}
+
+  explain:
+    desc: "Subgraph around one concept. Usage: task graph:explain -- concept"
+    dir: "{{.USER_WORKING_DIR}}"
+    silent: true
+    deps: [_require-graphify]
+    preconditions:
+      - sh: "{{if .CLI_ARGS}}true{{else}}false{{end}}"
+        msg: "Usage: task graph:explain -- concept"
+    cmds:
+      - graphify explain {{.CLI_ARGS}}
+
+  update:
+    desc: "Local AST pass, no LLM. Usage: task graph:update"
+    dir: "{{.USER_WORKING_DIR}}"
+    silent: true
+    deps: [_require-graphify]
+    cmds:
+      - graphify update . --force
+
+  llm:
+    desc: "LLM pass on Haiku. Usage: task graph:llm [GRAPH_MODEL=claude-haiku-5-5]"
+    dir: "{{.USER_WORKING_DIR}}"
+    silent: true
+    deps: [_require-graphify]
+    env:
+      GRAPHIFY_CLAUDE_CLI_MODEL: "{{.GRAPH_MODEL}}"
+    cmds:
+      - graphify extract . --backend claude-cli
+
+  fresh:
+    desc: "AST pass then LLM pass. Usage: task graph:fresh"
+    dir: "{{.USER_WORKING_DIR}}"
+    silent: true
+    cmds:
+      - task: update
+      - task: llm

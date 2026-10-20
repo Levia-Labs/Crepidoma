@@ -1,0 +1,39 @@
+version: "3"
+
+vars:
+  TODO_PY: '{{if eq OS "windows"}}python{{else}}python3{{end}}'
+  TODO_SCRIPTS: "{{.TASKFILE_DIR}}/../../plugins/crepidoma/scripts"
+
+tasks:
+  list:
+    desc: "List entries. Usage: task todo:list -- [--status S] [--class C] [--limit N] [--file F]"
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.TODO_PY}} "{{.TODO_SCRIPTS}}/todo.py" list {{.CLI_ARGS}}
+
+  show:
+    desc: "Show one entry. Usage: task todo:show -- <id> [--file F]"
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.TODO_PY}} "{{.TODO_SCRIPTS}}/todo.py" show {{.CLI_ARGS}}
+
+  add:
+    desc: "Add an open entry. Usage: task todo:add -- --title T --class C [--body B] [--file F]"
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.TODO_PY}} "{{.TODO_SCRIPTS}}/todo.py" add {{.CLI_ARGS}}
+
+  set:
+    desc: "Change entry status. Usage: task todo:set -- <id> --status S [--file F]"
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.TODO_PY}} "{{.TODO_SCRIPTS}}/todo.py" set {{.CLI_ARGS}}
+
+  drop:
+    desc: "Remove an entry. Usage: task todo:drop CONFIRM=yes -- <id> [--file F]"
+    dir: "{{.USER_WORKING_DIR}}"
+    preconditions:
+      - sh: test "{{.CONFIRM}}" = "yes"
+        msg: "drop deletes data; rerun with CONFIRM=yes"
+    cmds:
+      - uv run --no-project {{.TODO_PY}} "{{.TODO_SCRIPTS}}/todo.py" drop {{.CLI_ARGS}}

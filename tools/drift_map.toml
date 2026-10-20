@@ -1,0 +1,82 @@
+# Crepidoma-owned files and the paths where pillar repos used to keep copies.
+# `task drift -- <pillar>` reports each copy as duplicate, drifted or absent.
+
+[[file]]
+crepidoma = "plugins/crepidoma/scripts/raw_read_guard.py"
+pillar = ["Tasks/claude/raw_read_guard.py", "tasks/claude/raw_read_guard.py"]
+
+[[file]]
+crepidoma = "plugins/crepidoma/scripts/hooks.py"
+pillar = ["Tasks/claude/hooks.py", "tasks/claude/hooks.py"]
+
+[[file]]
+crepidoma = "plugins/crepidoma/directives/60-taskfile-shell.md"
+pillar = [".claude/rules/taskfile-shell.md"]
+
+[[file]]
+crepidoma = "taskfiles/claude/Taskfile.yml"
+pillar = ["Tasks/claude/Taskfile.yml", "tasks/claude/Taskfile.yml"]
+
+[[file]]
+crepidoma = "taskfiles/lint/Taskfile.yml"
+pillar = ["Tasks/lint/Taskfile.yml", "tasks/lint/Taskfile.yml"]
+
+[[file]]
+crepidoma = "plugins/crepidoma/agents/toolsmith.md"
+pillar = [".claude/agents/toolsmith.md", ".claude/agents/tool-smith.md", ".claude/agents/tool-builder.md"]
+
+[[file]]
+crepidoma = "plugins/crepidoma/agents/auditor.md"
+pillar = [".claude/agents/auditor.md", ".claude/agents/tooling-auditor.md"]
+
+[[file]]
+crepidoma = "plugins/crepidoma/agents/implementer.md"
+pillar = [".claude/agents/implementer.md", ".claude/agents/app-implementer.md", ".claude/agents/feature-change.md"]
+
+[[file]]
+crepidoma = "plugins/crepidoma/agents/diff-reviewer.md"
+pillar = [".claude/agents/diff-reviewer.md"]
+
+[[file]]
+crepidoma = "plugins/crepidoma/agents/docs-syncer.md"
+pillar = [".claude/agents/docs-syncer.md", ".claude/agents/doc-pass.md"]
+
+[[file]]
+crepidoma = "plugins/crepidoma/agents/rule-smith.md"
+pillar = [".claude/agents/rule-smith.md"]
+
+[[file]]
+crepidoma = "plugins/crepidoma/agents/gate-fixer.md"
+pillar = [".claude/agents/gate-fixer.md"]
+
+[[file]]
+crepidoma = "plugins/crepidoma/agents/todo-triage.md"
+pillar = [".claude/agents/todo-triage.md", ".claude/agents/todo-entry.md"]
+
+[[file]]
+crepidoma = "configs/.editorconfig"
+pillar = [".editorconfig"]
+mirror = true
+
+[[file]]
+crepidoma = "configs/.gitattributes"
+pillar = [".gitattributes"]
+mirror = true
+
+[[file]]
+crepidoma = "configs/.prettierrc"
+pillar = [".prettierrc", ".prettierrc.json"]
+mirror = true
+
+[[file]]
+crepidoma = "configs/.yamllint"
+pillar = [".yamllint", ".yamllint.yml", ".yamllint.yaml"]
+mirror = true
+
+[[file]]
+crepidoma = "configs/ruff.toml"
+pillar = ["ruff.toml"]
+
+[[file]]
+crepidoma = "configs/sgconfig.yml"
+pillar = ["sgconfig.yml"]

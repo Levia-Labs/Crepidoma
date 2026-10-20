@@ -1,0 +1,14 @@
+{
+  "model": "claude-opus-5-5",
+  "extraKnownMarketplaces": {
+    "levia-labs": {
+      "source": {
+        "source": "directory",
+        "path": "."
+      }
+    }
+  },
+  "enabledPlugins": {
+    "crepidoma@levia-labs": true
+  }
+}

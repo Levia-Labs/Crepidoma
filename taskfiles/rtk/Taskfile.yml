@@ -1,0 +1,12 @@
+version: "3"
+
+tasks:
+  gain:
+    desc: "Token savings accumulated by RTK. Usage: task rtk:gain"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    preconditions:
+      - sh: command -v rtk
+        msg: "rtk is not on PATH."
+    cmds:
+      - rtk gain

@@ -1,0 +1,29 @@
+rules:
+  - id: curl-pipe-shell-without-fail
+    languages: [generic]
+    severity: ERROR
+    message: >-
+      curl without -f exits 0 on an HTTP error, so the shell runs the error page as a
+      script. Use curl -fsSL.
+    paths:
+      include: [Taskfile.yml, "tasks/**/*.yml", ".github/workflows/*.yml", "tasks/**/*.py"]
+    pattern-regex: 'curl\s(?![^|\n]*(?<=\s)-(?:-fail\b|[a-zA-Z]*f))[^|\n]*\|\s*(?:sudo(?:\s+-[ug]\s+\S+|\s+-\S+)*\s+)?(?:(?:\S*/)?env\s+)?(?:\S*/)?(?:ba)?sh\b'
+
+  - id: world-writable-chmod
+    languages: [generic]
+    severity: ERROR
+    message: >-
+      World-writable mode, sticky 1777 included - a Taskfile has no reason to create a
+      shared directory. Anything on the machine can rewrite this file.
+    paths:
+      include: [Taskfile.yml, "tasks/**/*.yml"]
+    pattern-regex: 'chmod\s+(-R\s+)?([0-7]?[0-7]{2}[2367]\b|(?:[ugoa]*[+=][rwxXst]*,)*[ugo]*[oa][ugoa]*[+=][rwxXst]*w)'
+
+  - id: predictable-tmp-path
+    languages: [generic]
+    severity: WARNING
+    message: >-
+      A fixed name under /tmp can be pre-created by another user as a symlink. Use mktemp.
+    paths:
+      include: [Taskfile.yml, "tasks/**/*.yml"]
+    pattern-regex: '(>>?|(?<![\w-])(?:tee(\s+-a)?|-o))\s*/tmp/[\w.-]+'
