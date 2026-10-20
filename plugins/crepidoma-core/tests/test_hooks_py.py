@@ -895,3 +895,61 @@ def test_future_dated_usage_cache_is_ignored(tmp_path, monkeypatch):
     monkeypatch.setattr(hooks, "USAGE_CACHE", cache)
     monkeypatch.setattr(hooks, "budget_script", lambda: None)
     assert hooks.usage_reading() == {}
+
+
+# ---- Final review fixes ----------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        'grep -E "a|b" notes.txt',
+        'python -c "a = 1; b = 2"',
+        "bash -c 'echo x; echo y'",
+        "git commit -m \"$(cat <<'EOF'\nsubject; detail\n\nbody | more\nEOF\n)\" -- a.py",
+    ],
+)
+def test_quoted_separators_do_not_split_commands(tmp_path, command):
+    assert hooks.inner_refusal(command, tmp_path, untracked) == ""
+
+
+def test_unquoted_separator_still_splits(tmp_path):
+    assert hooks.inner_refusal('echo "x"; git checkout .', tmp_path, untracked)
+
+
+@pytest.mark.parametrize(
+    "output",
+    ['task: Task "validate" does not exist', "task: No Taskfile found at /repo"],
+)
+def test_missing_task_or_taskfile_is_did_not_run(output):
+    assert hooks.skip_reason(output) is not None
+
+
+def test_state_dir_follows_gitfile_worktrees(tmp_path):
+    real = tmp_path / "real-git-dir"
+    real.mkdir()
+    checkout = tmp_path / "wt"
+    checkout.mkdir()
+    (checkout / ".git").write_text(f"gitdir: {real}\n", encoding="utf-8")
+    assert hooks.state_dir(checkout) == real
+
+
+def test_state_dir_plain_repo_and_no_repo(tmp_path):
+    repo = tmp_path / "repo"
+    (repo / ".git").mkdir(parents=True)
+    assert hooks.state_dir(repo) == repo / ".git"
+    bare = tmp_path / "plain"
+    bare.mkdir()
+    fallback = hooks.state_dir(bare)
+    assert not fallback.is_relative_to(bare)
+
+
+@pytest.mark.no_opt_in
+def test_post_tool_use_writes_nothing_without_opt_in(tmp_path, monkeypatch):
+    monkeypatch.setattr(hooks, "ROOT", tmp_path)
+    marker = tmp_path / "state" / "dirty"
+    gate = hooks.GATES[0]._replace(marker=marker)
+    monkeypatch.setattr(hooks, "GATES", (gate,))
+    event = {"tool_input": {"file_path": str(tmp_path / "a.py")}}
+    assert hooks.post_tool_use(event) == 0
+    assert not marker.exists()

@@ -13,6 +13,22 @@ from collections.abc import Callable
 from pathlib import Path
 
 SLUG = re.compile(r"github\.com[:/]([\w.-]+)/([\w.-]+?)(?:\.git)?/?$")
+MARKERS = (
+    "pyproject.toml",
+    "requirements.txt",
+    "package.json",
+    "Taskfile.yml",
+    "Cargo.toml",
+    "go.mod",
+)
+
+
+def is_project(path: Path) -> bool:
+    """A git repo, or a folder with a project manifest at its root or one level down."""
+    if (path / ".git").exists():
+        return True
+    roots = [path, *(child for child in path.iterdir() if child.is_dir())]
+    return any((root / marker).is_file() for root in roots for marker in MARKERS)
 
 
 def parse_slug(url: str) -> str | None:
@@ -46,7 +62,7 @@ def collect(
     remote = remote or remote_slug
     probe = probe or is_private
     names: set[str] = set()
-    for repo in sorted(path for path in pillars.iterdir() if path.is_dir()):
+    for repo in sorted(path for path in pillars.iterdir() if path.is_dir() and is_project(path)):
         slug = remote(repo)
         if slug is None:
             names.add(repo.name)

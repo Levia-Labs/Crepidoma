@@ -21,3 +21,9 @@ def test_taskfiles_use_taskfile_dir_for_paths():
     for taskfile in (ROOT / "taskfiles").rglob("Taskfile.yml"):
         text = taskfile.read_text(encoding="utf-8")
         assert "../" not in text or "{{.TASKFILE_DIR}}" in text, taskfile
+
+
+def test_hooks_check_sends_a_stop_event():
+    text = (ROOT / "taskfiles" / "claude" / "Taskfile.yml").read_text(encoding="utf-8")
+    assert "hook_event_name" in text
+    assert "echo '{}'" not in text

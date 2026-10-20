@@ -165,4 +165,6 @@ tasks:
     silent: true
     dir: "{{.USER_WORKING_DIR}}"
     cmds:
-      - echo '{}' | uv run python "{{.TASKFILE_DIR}}/../../plugins/crepidoma-core/scripts/hooks.py" stop
+      - >-
+        echo '{"hook_event_name":"Stop"}'
+        | uv run --no-project python "{{.TASKFILE_DIR}}/../../plugins/crepidoma-core/scripts/hooks.py" stop

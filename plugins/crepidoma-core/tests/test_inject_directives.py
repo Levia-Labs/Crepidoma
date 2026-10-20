@@ -38,3 +38,10 @@ def test_oversize_is_truncated_with_notice(tmp_path: Path, monkeypatch, capsys):
     text = context(capsys)
     assert len(text) <= inj.LIMIT
     assert text.endswith(inj.TRUNCATED)
+
+
+def test_undecodable_directive_fails_open(tmp_path: Path, monkeypatch, capsys):
+    (tmp_path / "10-a.md").write_bytes(b"\xff\xfe broken")
+    monkeypatch.setattr(inj, "DIRECTIVES", tmp_path)
+    assert inj.main() == 0
+    assert context(capsys).startswith("Crepidoma directives unavailable")

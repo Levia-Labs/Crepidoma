@@ -26,6 +26,7 @@ internal error exit 0 with no output: the hooks fail open. Standard library only
 
 import argparse
 import contextlib
+import hashlib
 import json
 import os
 import re
@@ -40,6 +41,24 @@ from pathlib import Path
 from typing import NamedTuple
 
 ROOT = Path(os.environ.get("CLAUDE_PROJECT_DIR") or Path.cwd())
+
+
+def state_dir(root: Path) -> Path:
+    """Where hook state lives: the git dir (worktrees and submodules use a `.git` file),
+    else a per-project temp dir so a non-git project never gets a stray `.git/`."""
+    dot = root / ".git"
+    if dot.is_dir():
+        return dot
+    with contextlib.suppress(OSError):
+        text = dot.read_text(encoding="utf-8").strip()
+        if text.startswith("gitdir:"):
+            target = Path(text.removeprefix("gitdir:").strip())
+            return target if target.is_absolute() else (root / target).resolve()
+    key = hashlib.sha256(str(root.resolve()).encode("utf-8")).hexdigest()[:12]
+    return Path(tempfile.gettempdir()) / "crepidoma" / key
+
+
+STATE = state_dir(ROOT)
 PLUGIN_AGENTS = Path(__file__).resolve().parent.parent / "agents"
 
 
@@ -68,7 +87,7 @@ WATCHED_SUFFIXES = (
     ".tsx",
 )
 SKIP = ("graphify-out/", ".claude/skills/")
-GATES = (Gate(ROOT / ".git" / "claude-dirty", "", WATCHED_SUFFIXES, ("validate",), (), SKIP),)
+GATES = (Gate(STATE / "claude-dirty", "", WATCHED_SUFFIXES, ("validate",), (), SKIP),)
 
 PROGRESS = re.compile(r"^[.s]+\s+\[\s*\d+%\]$")
 TAIL_LINES = 40
@@ -86,10 +105,12 @@ DID_NOT_RUN = (
     "Failed to spawn",
     "No module named pytest",
     "No module named 'hypothesis'",
+    "does not exist",  # task: Task "validate" does not exist
+    "No Taskfile found",
 )
 
 CEILING = 95.0
-USAGE_CACHE = ROOT / ".git" / "claude-usage.json"
+USAGE_CACHE = STATE / "claude-usage.json"
 # The usage endpoint answers 429 to a tight poll. One reading serves every check inside this.
 CACHE_SECONDS = 60
 BUDGET_SCRIPTS = ("tasks/claude/budget.py", "Tasks/claude/budget.py")
@@ -103,7 +124,7 @@ MAX_AGENTS = 6
 PENDING_SECONDS = 120
 # A lane that crashed never says finished. Past this age it stops holding a slot.
 RUNNING_SECONDS = 4 * 3600
-LEDGER = ROOT / ".git" / "claude-lanes.json"
+LEDGER = STATE / "claude-lanes.json"
 LOCK_TRIES = 50
 LOCK_STALE_SECONDS = 10
 
@@ -131,7 +152,6 @@ GIT_DENY = (
 GIT_COMPILED = tuple((name, re.compile(rx)) for name, rx in GIT_DENY)
 WRAPPERS = {"rtk", "env", "sudo", "command", "time", "exec", "nohup", "nice"}
 SHELLS = {"sh", "bash", "zsh", "dash"}
-SEPARATORS = re.compile(r"&&|\|\||;|\||\n|&(?!>)")
 GLOBAL_WITH_VALUE = {"-C", "-c", "--git-dir", "--work-tree", "--namespace", "--exec-path"}
 
 
@@ -185,7 +205,7 @@ def in_scope(path: str, gate: Gate | None = None) -> bool:
 
 def post_tool_use(event: dict) -> int:
     path = str(tool_input(event).get("file_path") or "")
-    if not path:
+    if not path or not opted_in():
         return 0
     for gate in GATES:
         if in_scope(path, gate):
@@ -592,8 +612,52 @@ def segment_refusal(tokens: list[str], cwd: Path, tracked: Callable[[str, Path],
     return ""
 
 
+def split_unquoted(command: str) -> list[str]:
+    """Split on ; | & && || and newlines outside quotes and $( ), so quoted text stays whole."""
+    parts: list[str] = []
+    current: list[str] = []
+    quote = ""
+    depth = 0
+    i = 0
+    n = len(command)
+    while i < n:
+        ch = command[i]
+        if quote:
+            current.append(ch)
+            if ch == "\\" and quote == '"' and i + 1 < n:
+                current.append(command[i + 1])
+                i += 2
+                continue
+            if ch == quote:
+                quote = ""
+            i += 1
+            continue
+        if ch in "'\"":
+            quote = ch
+        elif ch == "\\" and i + 1 < n:
+            current.append(command[i : i + 2])
+            i += 2
+            continue
+        elif command.startswith("$(", i):
+            depth += 1
+        elif ch == ")" and depth:
+            depth -= 1
+        elif depth == 0:
+            double = command.startswith(("&&", "||"), i)
+            redirect = ch == "&" and (command[i - 1 : i] == ">" or command[i + 1 : i + 2] == ">")
+            if double or ch in ";|\n" or (ch == "&" and not redirect):
+                parts.append("".join(current))
+                current = []
+                i += 2 if double else 1
+                continue
+        current.append(ch)
+        i += 1
+    parts.append("".join(current))
+    return parts
+
+
 def inner_refusal(command: str, cwd: Path, tracked: Callable[[str, Path], bool]) -> str:
-    for part in SEPARATORS.split(command):
+    for part in split_unquoted(command):
         try:
             tokens = shlex.split(part, posix=True)
         except ValueError:

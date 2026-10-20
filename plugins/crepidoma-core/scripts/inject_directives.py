@@ -28,7 +28,7 @@ def payload(text: str) -> dict:
 def main() -> int:
     try:
         text = build(DIRECTIVES)
-    except OSError as error:
+    except (OSError, ValueError) as error:  # ValueError covers undecodable files
         text = f"Crepidoma directives unavailable: {error}"
     if len(text) > LIMIT:
         text = text[: LIMIT - len(TRUNCATED)] + TRUNCATED

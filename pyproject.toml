@@ -9,7 +9,6 @@ dependencies = []
 [project.scripts]
 crepidoma-scrub = "scrub_check:main"
 crepidoma-ratchet = "ratchet:main"
-crepidoma-drift = "drift_check:main"
 
 [build-system]
 requires = ["hatchling>=1.25"]
