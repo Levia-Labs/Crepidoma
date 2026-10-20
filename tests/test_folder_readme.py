@@ -80,3 +80,8 @@ def test_written_files_use_lf(tmp_path: Path):
     files = setup(tmp_path)
     fr.update(tmp_path, files, {}, excluded=set())
     assert b"\r\n" not in (tmp_path / "tools/README.md").read_bytes()
+
+
+def test_github_folder_never_gets_a_readme():
+    # GitHub shows .github/README.md on the repo home page instead of the root README.
+    assert ".github" in fr.EXCLUDED

@@ -17,8 +17,9 @@ from pathlib import Path
 
 MARK_START = "<!-- contents:start -->"
 MARK_END = "<!-- contents:end -->"
-# Agent loaders read every .md in these folders as an agent definition.
-EXCLUDED = {".claude/agents", "plugins/crepidoma/agents"}
+# Agent loaders read every .md in the agents folders as an agent definition, and GitHub shows
+# .github/README.md on the repository home page in place of the root README.
+EXCLUDED = {".claude/agents", "plugins/crepidoma/agents", ".github"}
 GENERIC = {
     ".json": "JSON data or config.",
     ".yml": "YAML config.",
