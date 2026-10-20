@@ -35,9 +35,9 @@ tasks:
     silent: true
     dir: "{{.USER_WORKING_DIR}}"
     cmds:
-      - "{{.TEST_GATE}} uv run pytest -q --cov --cov-branch {{.CLI_ARGS}}"
+      - "{{.TEST_GATE}} uv run --with pytest-cov pytest -q --cov --cov-branch {{.CLI_ARGS}}"
       - |
-        total=$(uv run coverage report --format=total) || exit 1
+        total=$(uv run --with pytest-cov coverage report --format=total) || exit 1
         echo "coverage total: $total"
         uv run --no-project {{.TEST_PY}} "{{.TEST_TOOLS}}/ratchet.py" metric \
           --baseline .ratchet/coverage.baseline --direction up --value "$total"

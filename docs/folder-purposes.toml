@@ -2,6 +2,9 @@
 
 [folders]
 ".claude" = "Claude Code settings for working on this repo; it opts in to its own plugin."
+".claude/rules" = "Path-scoped Claude rules for this repo."
+".github/instructions" = "Pointers for non-Claude agents."
+".rtk" = "rtk output filters."
 ".claude-plugin" = "Marketplace manifest: this repo is the levia-labs plugin marketplace."
 ".github" = "GitHub automation: CI workflows and Dependabot."
 ".github/workflows" = "CI for this repo and the reusable workflow pillars call."
@@ -53,6 +56,12 @@
 "hooks.json" = "Hook events mapped to scripts."
 "settings.json" = "Claude Code settings."
 "drift_map.toml" = "Crepidoma files and where pillars kept copies."
+"bandit.baseline" = "Bandit finding count."
+"coverage.baseline" = "Branch coverage percent."
+"types.baseline" = "Type checker error count."
+"docs.baseline" = "Accepted docs-gate findings."
+"filters.toml" = "rtk filter rules."
+"copilot-instructions.md" = "Pointer for Copilot."
 "long-files.baseline" = "Files allowed over 300 lines and their current length."
 "dependabot.yml" = "Weekly dependency bumps with a 7-day cooldown."
 "validate.yml" = "CI for this repo: full gate, semgrep, osv-scanner."
