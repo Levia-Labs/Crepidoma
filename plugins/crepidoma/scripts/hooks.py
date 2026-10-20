@@ -8,8 +8,8 @@ One CLI, one subcommand per hook event; each reads the hook's JSON payload on st
   pre-tool-use     before Agent/Task - refuses a catch-all agent type, a model other than
                    sonnet or haiku, a seventh concurrent agent, or any agent while a usage
                    window is at the ceiling
-  pre-bash         before Bash, subagents only - refuses a command that discards or sweeps up
-                   working-tree changes other agents made
+  pre-bash         before Bash, subagents only - refuses a push, or a command that discards
+                   or sweeps up working-tree changes other agents made
   subagent-start   a dispatched agent began - its reservation becomes a running lane
   subagent-stop    an agent finished - its lane is freed
   stop             end of a turn - runs the dirty gates' tasks, blocks on failure
@@ -131,7 +131,7 @@ LOCK_TRIES = 50
 LOCK_STALE_SECONDS = 10
 
 GIT_REASON = (
-    "Refused: `{cmd}` discards or sweeps up working-tree changes. Other agents share this "
+    "Refused: `{cmd}` pushes, discards or sweeps up changes. Other agents share this "
     "checkout. To undo your own edit, re-edit the file; never discard changes you did not "
     "make. Stage and commit only your own paths: `git add <paths>` and "
     "`git commit -- <paths>`, never `git add -u/-A/.` or `git commit -a`."
@@ -150,6 +150,7 @@ GIT_DENY = (
     ("stash", r"^stash\b"),
     ("add-all", r"^add\b.*\s(?:-u|--update|-A|--all|\.)(?:\s|$)"),
     ("commit-all", r"^commit\b.*\s(?:-[a-zA-Z]*a[a-zA-Z]*|--all)(?:\s|$)"),
+    ("push", r"^push\b"),  # main thread only; settings no longer deny it
 )
 GIT_COMPILED = tuple((name, re.compile(rx)) for name, rx in GIT_DENY)
 WRAPPERS = {"rtk", "env", "sudo", "command", "time", "exec", "nohup", "nice"}
@@ -621,10 +622,8 @@ def segment_refusal(tokens: list[str], cwd: Path, tracked: Callable[[str, Path],
         return rm_refusal(tokens, cwd, tracked)
     if head == "task" and "git:commit" in tokens[1:]:
         return "task git:commit (adds, commits and pushes; main thread only)"
-    if head != "git":
-        return ""
-    text = " ".join(git_args(tokens))
-    if any(rx.search(text) for _name, rx in GIT_COMPILED):
+    text = " ".join(git_args(tokens)) if head == "git" else ""
+    if text and any(rx.search(text) for _name, rx in GIT_COMPILED):
         return "git " + text
     return ""
 
