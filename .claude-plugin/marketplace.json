@@ -1,5 +1,5 @@
 {
-  "name": "crepidoma",
+  "name": "levia-labs",
   "owner": { "name": "Levia Labs" },
   "metadata": { "description": "Foundation plugins for Levia Labs pillar projects" },
   "plugins": [

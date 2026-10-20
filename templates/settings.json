@@ -77,7 +77,7 @@
     ]
   },
   "extraKnownMarketplaces": {
-    "crepidoma": {
+    "levia-labs": {
       "source": {
         "source": "github",
         "repo": "Levia-Labs/Crepidoma"
@@ -85,7 +85,7 @@
     }
   },
   "enabledPlugins": {
-    "crepidoma-core@crepidoma": true,
+    "crepidoma-core@levia-labs": true,
     "superpowers@claude-plugins-official": true,
     "code-review@claude-plugins-official": true,
     "feature-dev@claude-plugins-official": true,

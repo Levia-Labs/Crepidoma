@@ -1,6 +1,6 @@
 {
   "extraKnownMarketplaces": {
-    "crepidoma": { "source": { "source": "directory", "path": "." } }
+    "levia-labs": { "source": { "source": "directory", "path": "." } }
   },
-  "enabledPlugins": { "crepidoma-core@crepidoma": true }
+  "enabledPlugins": { "crepidoma-core@levia-labs": true }
 }

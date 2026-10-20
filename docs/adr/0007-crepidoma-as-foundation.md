@@ -12,7 +12,7 @@ cannot import URLs; Claude Code plugins cannot ship CLAUDE.md, permissions or st
 
 ## Decision
 
-1. Claude assets ship as the `crepidoma-core` plugin from the `crepidoma` marketplace in this repo.
+1. Claude assets ship as the `crepidoma-core` plugin from the `levia-labs` marketplace in this repo.
    Directives reach sessions through a SessionStart hook, capped at 10,000 characters.
 2. Taskfiles and configs ship through a `.crepidoma` git submodule.
 3. Commit gates ship as pre-commit hooks from this repo (`.pre-commit-hooks.yaml`).

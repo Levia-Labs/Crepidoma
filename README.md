@@ -24,16 +24,16 @@ configs, Taskfiles and process ADRs. Pillars link Crepidoma; nothing is copied.
    ```json
    {
      "extraKnownMarketplaces": {
-       "crepidoma": { "source": { "source": "github", "repo": "Levia-Labs/Crepidoma" } }
+       "levia-labs": { "source": { "source": "github", "repo": "Levia-Labs/Crepidoma" } }
      },
-     "enabledPlugins": { "crepidoma-core@crepidoma": true }
+     "enabledPlugins": { "crepidoma-core@levia-labs": true }
    }
    ```
 
    Each collaborator installs once, from the CLI:
 
    ```sh
-   claude plugin install crepidoma-core@crepidoma --scope project
+   claude plugin install crepidoma-core@levia-labs --scope project
    ```
 
    or inside Claude Code: `/plugin install crepidoma-core --marketplace Levia-Labs/Crepidoma`.
