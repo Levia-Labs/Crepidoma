@@ -27,4 +27,4 @@ def test_commands_quote_plugin_root_and_scripts_exist():
 
 
 def test_expected_events():
-    assert {"PreToolUse"} <= set(load()["hooks"])
+    assert {"SessionStart", "PreToolUse"} <= set(load()["hooks"])
