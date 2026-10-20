@@ -1,0 +1,118 @@
+name: reusable-validate
+
+on:
+  workflow_call:
+    inputs:
+      python:
+        type: boolean
+        default: true
+      node:
+        type: boolean
+        default: false
+      types:
+        type: boolean
+        default: true
+      coverage:
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          submodules: recursive
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+      - uses: arduino/setup-task@c0bc642852239c2689f73f4ea6459c29405f3c52 # v3.0.0
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - if: ${{ inputs.node }}
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+      - if: ${{ inputs.python }}
+        run: uv sync --locked
+      - if: ${{ inputs.python }}
+        run: uv run pre-commit run --all-files --hook-stage pre-push
+
+  types:
+    if: ${{ inputs.types }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          submodules: recursive
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+      - if: ${{ inputs.python }}
+        run: uv sync --locked
+      - run: |
+          cfg=.crepidoma/configs/pyrightconfig.json
+          if [ -f "$cfg" ]; then
+            uvx basedpyright -p "$cfg"
+          else
+            uvx basedpyright
+          fi
+
+  coverage:
+    if: ${{ inputs.coverage }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          submodules: recursive
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+      - uses: arduino/setup-task@c0bc642852239c2689f73f4ea6459c29405f3c52 # v3.0.0
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - if: ${{ inputs.node }}
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+      - if: ${{ inputs.python }}
+        run: uv sync --locked
+      - run: |
+          if task --list-all 2>/dev/null | grep -q 'test:cov'; then
+            task test:cov
+          else
+            echo "task test:cov not defined; skipping"
+          fi
+
+  advisories:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          submodules: recursive
+      - uses: google/osv-scanner-action/osv-scanner-action@b1d267aea5211fa648d9d442fa64b90dbdcbdd36 # v2.7.0
+        with:
+          scan-args: --recursive ./
+
+  hygiene:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          submodules: recursive
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+      - uses: arduino/setup-task@c0bc642852239c2689f73f4ea6459c29405f3c52 # v3.0.0
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - if: ${{ inputs.python }}
+        run: uv sync --locked
+      - run: |
+          for t in quality:docs quality:taskfiles; do
+            if task --list-all 2>/dev/null | grep -q "$t"; then
+              task "$t"
+            else
+              echo "task $t not defined; skipping"
+            fi
+          done

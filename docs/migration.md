@@ -25,6 +25,17 @@
    `duplicate=0 drifted=0` (root config copies from step 6.5 report as `mirror`).
 10. Open one PR per pillar.
 
+## Optional pillar files
+
+1. `templates/AGENTS.md` to `.github/instructions/AGENTS.md`; `templates/copilot-instructions.md` to
+   `.github/copilot-instructions.md`.
+2. `templates/claude-README.md` to `.claude/README.md`; `templates/rules/taskfile-shell.md` to
+   `.claude/rules/taskfile-shell.md`.
+3. `templates/rtk-filters.toml` to `.rtk/filters.toml`.
+4. `templates/ci.yml` to `.github/workflows/ci.yml` (calls Crepidoma's reusable workflow).
+5. Drop pillar copies of budget, rate, history, tokens, lanes, sessions, outline, section, todo, docs
+   and gate scripts; the shared namespaces replace them.
+
 ## User scope
 
 1. Back up `~/.claude/CLAUDE.md`, `~/.claude/settings.json` and `~/.claude/bin/`.

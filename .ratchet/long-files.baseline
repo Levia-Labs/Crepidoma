@@ -3,3 +3,5 @@ plugins/crepidoma/scripts/hooks.py	755
 plugins/crepidoma/scripts/spend.py	325
 plugins/crepidoma/scripts/taskfile_lint.py	375
 plugins/crepidoma/tests/test_hooks_py.py	996
+taskfiles/claude/Taskfile.yml	319
+taskfiles/lint/Taskfile.yml	309

@@ -51,6 +51,9 @@ configs, Taskfiles and process ADRs. Pillars link Crepidoma; nothing is copied.
    includes:
      claude: .crepidoma/taskfiles/claude
      lint: .crepidoma/taskfiles/lint
+     repo: .crepidoma/taskfiles/repo
+     git: .crepidoma/taskfiles/git
+     quality: .crepidoma/taskfiles/quality
    ```
 
 3. Commit gates, in `.pre-commit-config.yaml`:
@@ -69,15 +72,35 @@ and [templates/](templates/).
 
 ## What the plugin does
 
-1. SessionStart: injects the shared directives (communication style, tool-first loop,
-   conventions, models, skills and plugins, Taskfile shell), capped at 10,000 characters.
-2. PreToolUse: refuses raw whole-file reads in the main thread (`digest` is the bounded reader),
-   refuses forbidden or excess subagents, and stops subagents from discarding working-tree changes.
-3. PostToolUse and Stop: marks edited scopes dirty and runs the project's gate before a turn ends.
-4. Agents on Sonnet: auditor, diff-reviewer, docs-syncer, gate-fixer, implementer, rule-smith,
-   todo-triage, toolsmith; `scout` on Haiku for grep, read and small lookups.
-5. Models: the main thread is pinned to Opus (`claude-opus-5-5`) in committed settings; the
-   PreToolUse hook refuses subagents on Opus or on the inherited main-thread model.
+1. SessionStart (main thread): injects the shared directives (communication style with
+   absolute mode, tool-first loop, conventions, models, skills and plugins, Taskfile shell,
+   shell and safety), kept under 8,500 characters.
+2. SubagentStart: injects a compact harness instead (normal English, never caveman, receipts,
+   bounded reads), so subagents start cheap.
+3. PreToolUse: refuses raw whole-file reads in the main thread (`digest` is the bounded reader),
+   refuses forbidden or excess subagents and subagents on Opus, and stops subagents from
+   discarding working-tree changes.
+4. PostToolUse and Stop: marks edited scopes dirty and runs the project's gate before a turn ends.
+5. Agents on Sonnet: auditor, diff-reviewer, docs-syncer, gate-fixer, implementer, integrator,
+   rule-smith, security-reviewer, todo-triage, toolsmith, translator; `scout` on Haiku for grep,
+   read and small lookups.
+6. Skill `docs-sweep`: refreshes all Markdown against the code, rebuilds the graphify index
+   (local pass, then Haiku) and plans further token savings.
+7. Models: main thread Opus (`claude-opus-5-5`, pinned in committed settings), subagents Sonnet
+   (`CLAUDE_CODE_SUBAGENT_MODEL=sonnet`), lookups and graph indexing Haiku. Usage ceiling 95%.
+
+## Task namespaces
+
+Include any of these from `.crepidoma/taskfiles/<namespace>`; `task --list` shows every task.
+
+1. `claude`: budget, rate, spend, history, lanes, handoff, allowlist check, plugin verify.
+2. `repo`: outline, section, tasks, diff. `todo`: list, show, add, set, drop.
+3. `git`: status, head, log, files, commit (adds, commits, pushes). `graph`: graphify query,
+   path, explain, update, Haiku LLM pass.
+4. `test`: run, failed, file, cov (ratcheted), changed. `quality`: long-files, docs, types,
+   duplication, bandit, taskfiles, encoding, gate, deep.
+5. `security`: secrets, sast, actions, deps, check (all local). `ci`: status, fail, watch.
+6. `lint`, `setup` (tools, env check, hooks), `rtk`.
 
 ## Contents
 

@@ -1,8 +1,10 @@
 version: "3"
 
 vars:
-  CREDENTIALS: "{{.HOME}}/.claude/.credentials.json"
-  USAGE_URL: "https://api.anthropic.com/api/oauth/usage"
+  CLAUDE_CREDENTIALS: "{{.HOME}}/.claude/.credentials.json"
+  CLAUDE_USAGE_URL: "https://api.anthropic.com/api/oauth/usage"
+  CLAUDE_PY: '{{if eq OS "windows"}}python{{else}}python3{{end}}'
+  CLAUDE_SCRIPTS: "{{.TASKFILE_DIR}}/../../plugins/crepidoma/scripts"
 
 tasks:
   install:
@@ -65,7 +67,7 @@ tasks:
         organisation    : \(.orgName)
         subscription    : \(.subscriptionType)"'
 
-        cred="{{.CREDENTIALS}}"
+        cred="{{.CLAUDE_CREDENTIALS}}"
         if [ -f "$cred" ]; then
           echo ""
           echo "== OAuth session =="
@@ -91,7 +93,7 @@ tasks:
     deps: [_require-cli]
     cmds:
       - |
-        cred="{{.CREDENTIALS}}"
+        cred="{{.CLAUDE_CREDENTIALS}}"
         if [ ! -f "$cred" ]; then
           echo "No $cred - run 'claude auth login' first."
           exit 1
@@ -106,7 +108,7 @@ tasks:
 
         # The token goes through a curl config on stdin, never argv (visible in ps).
         resp=$(printf 'header = "Authorization: Bearer %s"\n' "$tok" \
-                 | curl -s -K - -w '\n%{http_code}' "{{.USAGE_URL}}" \
+                 | curl -s -K - -w '\n%{http_code}' "{{.CLAUDE_USAGE_URL}}" \
                      -H "Content-Type: application/json")
         code=$(printf '%s' "$resp" | tail -n 1)
         body=$(printf '%s' "$resp" | sed '$d')
@@ -168,3 +170,150 @@ tasks:
       - >-
         echo '{"hook_event_name":"Stop"}'
         | uv run --no-project python "{{.TASKFILE_DIR}}/../../plugins/crepidoma/scripts/hooks.py" stop
+
+  budget:
+    desc: "Usage windows vs ceiling. Usage: task claude:budget -- [--json]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/budget.py" show {{.CLI_ARGS}}
+
+  budget:check:
+    desc: "Exit 0 under 95%, 3 over, 1 unknown. Usage: task claude:budget:check -- [--json]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/budget.py" check --ceiling 95 {{.CLI_ARGS}}
+
+  budget:wait:
+    desc: "Block until under the ceiling. Usage: task claude:budget:wait -- [--ceiling 95] [--poll 60]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/budget.py" wait {{.CLI_ARGS}}
+
+  resume:
+    desc: "Wait for budget, then print resume. Usage: task claude:resume -- [--ceiling 95] [--poll 60]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - task: budget:wait
+      - echo resume
+
+  rate:
+    desc: "Project time to the ceiling. Usage: task claude:rate -- [--window W] [--ceiling 95]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/usage_rate.py" project {{.CLI_ARGS}}
+
+  rate:record:
+    desc: "Append a usage sample. Usage: task claude:rate:record -- --percent 42 --window five_hour"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/usage_rate.py" record {{.CLI_ARGS}}
+
+  spend:
+    desc: "One line per session. Usage: task claude:spend -- [--last N] [--top N] [--dir D]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/spend.py" sessions {{.CLI_ARGS}}
+
+  spend:tools:
+    desc: "Tool-call spend. Usage: task claude:spend:tools -- [--session ID] [--top N]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/spend.py" tools {{.CLI_ARGS}}
+
+  spend:reads:
+    desc: "File-read spend. Usage: task claude:spend:reads -- [--session ID] [--top N]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/spend.py" reads {{.CLI_ARGS}}
+
+  spend:agents:
+    desc: "Subagent spend. Usage: task claude:spend:agents -- [--session ID] [--top N]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/spend.py" agents {{.CLI_ARGS}}
+
+  spend:cost:
+    desc: "Cost per model. Usage: task claude:spend:cost -- [--session ID] [--top N]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/spend.py" cost {{.CLI_ARGS}}
+
+  history:
+    desc: "Repeated shell commands. Usage: task claude:history -- [--min N] [--top N] [--report F]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/history.py" commands {{.CLI_ARGS}}
+
+  history:inline:
+    desc: "Repeated inline scripts. Usage: task claude:history:inline -- [--min N] [--top N]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/history.py" inline {{.CLI_ARGS}}
+
+  history:prompts:
+    desc: "Repeated prompts. Usage: task claude:history:prompts -- [--min N] [--top N] [--prompts F]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/history.py" prompts {{.CLI_ARGS}}
+
+  lanes:
+    desc: "Running and pending lanes. Usage: task claude:lanes"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/lanes.py" list {{.CLI_ARGS}}
+
+  lanes:reset:
+    desc: "Clear lanes. Usage: task claude:lanes:reset -- [--stale]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/lanes.py" reset {{.CLI_ARGS}}
+
+  handoff:
+    desc: "Write a save-state note. Usage: task claude:handoff -- [--out PATH]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/lanes.py" handoff {{.CLI_ARGS}}
+
+  allow:check:
+    desc: "Check permission rules. Usage: task claude:allow:check -- [--settings PATH]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/allow_tasks.py" check {{.CLI_ARGS}}
+
+  allow:report:
+    desc: "Count permission rules. Usage: task claude:allow:report -- [--settings PATH]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/allow_tasks.py" report {{.CLI_ARGS}}
+
+  plugins:verify:
+    desc: "Fail when crepidoma@levia-labs is not installed. Usage: task claude:plugins:verify"
+    silent: true
+    deps: [_require-cli]
+    cmds:
+      - |
+        if claude plugin list | grep -q 'crepidoma@levia-labs'; then
+          echo "ok - crepidoma@levia-labs installed"
+        else
+          echo "crepidoma@levia-labs missing."
+          exit 1
+        fi

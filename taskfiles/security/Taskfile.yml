@@ -1,0 +1,78 @@
+version: "3"
+
+vars:
+  SECURITY_CONFIGS: "{{.TASKFILE_DIR}}/../../configs"
+
+tasks:
+  secrets:
+    desc: "gitleaks scan of git history, local only. Usage: task security:secrets"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - |
+        command -v gitleaks >/dev/null 2>&1 \
+          || { echo "missing gitleaks: install https://github.com/gitleaks/gitleaks#installing" >&2; exit 1; }
+        gitleaks git --config "{{.SECURITY_CONFIGS}}/gitleaks.toml" --redact --no-banner .
+
+  sast:
+    desc: "semgrep static analysis, metrics off. Usage: task security:sast"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - |
+        command -v uvx >/dev/null 2>&1 || { echo "missing uvx: install uv https://docs.astral.sh/uv/" >&2; exit 1; }
+        uvx semgrep scan --metrics off --error --config p/default \
+          --config "{{.SECURITY_CONFIGS}}/semgrep/rules.yml"
+
+  actions:
+    desc: "zizmor audit of GitHub Actions workflows. Usage: task security:actions"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - |
+        [ -d .github/workflows ] || { echo "actions: no .github/workflows, skipped"; exit 0; }
+        command -v uvx >/dev/null 2>&1 || { echo "missing uvx: install uv https://docs.astral.sh/uv/" >&2; exit 1; }
+        uvx zizmor --offline --config "{{.SECURITY_CONFIGS}}/zizmor.yml" .github/workflows
+
+  deps:
+    desc: "Dependency advisory audit, osv-scanner else pip-audit and npm audit. Usage: task security:deps"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - |
+        if command -v osv-scanner >/dev/null 2>&1; then
+          exec osv-scanner --recursive .
+        fi
+        rc=0
+        ran=0
+        if [ -f uv.lock ] || [ -f requirements.txt ]; then
+          command -v uvx >/dev/null 2>&1 || { echo "missing uvx: install uv https://docs.astral.sh/uv/" >&2; exit 1; }
+          ran=1
+          echo "== python (pip-audit)"
+          if [ -f uv.lock ]; then
+            req=$(mktemp)
+            uv export --frozen --no-hashes --no-emit-project -q > "$req" || rc=1
+            uvx pip-audit --disable-pip --no-deps -r "$req" || rc=1
+            rm -f "$req"
+          else
+            uvx pip-audit -r requirements.txt || rc=1
+          fi
+        fi
+        if [ -f package-lock.json ]; then
+          command -v npm >/dev/null 2>&1 || { echo "missing npm: install Node.js https://nodejs.org" >&2; exit 1; }
+          ran=1
+          echo "== javascript (npm audit)"
+          npm audit --omit=dev || rc=1
+        fi
+        [ "$ran" = 1 ] || echo "deps: no osv-scanner, uv.lock, requirements.txt or package-lock.json; skipped"
+        exit $rc
+
+  check:
+    desc: "secrets, sast, actions and deps, run to completion. Usage: task security:check"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - task: secrets
+      - task: sast
+      - task: actions
+      - task: deps

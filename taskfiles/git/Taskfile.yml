@@ -1,0 +1,54 @@
+version: "3"
+
+# Git operations. Read-only tasks plus `commit`, the only write task.
+
+tasks:
+  status:
+    desc: "Short status with counts. Usage: task git:status"
+    dir: "{{.USER_WORKING_DIR}}"
+    silent: true
+    cmds:
+      - git status --short --branch
+      - |
+        printf 'changed: %s\n' "$(git status --short | wc -l | tr -d ' ')"
+        printf 'untracked: %s\n' "$(git status --short | grep -c '^??' || true)"
+
+  head:
+    desc: "Branch and last commit, one line. Usage: task git:head"
+    dir: "{{.USER_WORKING_DIR}}"
+    silent: true
+    cmds:
+      - printf '%s ' "$(git rev-parse --abbrev-ref HEAD)" && git log -1 --format='%h %s'
+
+  log:
+    desc: "Last N commits, oneline. Usage: task git:log [N=10]"
+    dir: "{{.USER_WORKING_DIR}}"
+    silent: true
+    vars:
+      GIT_LOG_N: '{{.N | default "10"}}'
+    cmds:
+      - git log --oneline -n '{{.GIT_LOG_N}}'
+
+  files:
+    desc: "Changed files. Usage: task git:files"
+    dir: "{{.USER_WORKING_DIR}}"
+    silent: true
+    cmds:
+      - git status --short
+
+  commit:
+    desc: 'Stage all, commit, push. Usage: task git:commit -- "message"'
+    dir: "{{.USER_WORKING_DIR}}"
+    silent: true
+    preconditions:
+      - sh: test -n "{{.CLI_ARGS}}"
+        msg: 'Commit message required. Usage: task git:commit -- "message"'
+    cmds:
+      - git add -A
+      - git commit -m "{{.CLI_ARGS}}"
+      - |
+        if git rev-parse --abbrev-ref '@{u}' >/dev/null 2>&1; then
+          git push
+        else
+          git push -u origin HEAD
+        fi

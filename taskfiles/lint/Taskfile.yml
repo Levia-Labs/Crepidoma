@@ -1,13 +1,15 @@
 version: "3"
 
 vars:
-  CFG: "{{.TASKFILE_DIR}}/../../configs"
-  RUFF: '{{.RUFF | default "uvx ruff"}}'
-  YAMLLINT: '{{.YAMLLINT | default "uvx yamllint"}}'
-  SG: '{{.SG | default "uvx --from ast-grep-cli ast-grep"}}'
-  PRETTIER: '{{.PRETTIER | default "npx --no prettier"}}'
-  ESLINT: '{{.ESLINT | default "npx --no eslint"}}'
-  PRECOMMIT: '{{.PRECOMMIT | default "uvx pre-commit"}}'
+  LINT_CFG: "{{.TASKFILE_DIR}}/../../configs"
+  LINT_RUFF: '{{.LINT_RUFF | default "uvx ruff"}}'
+  LINT_YAMLLINT: '{{.LINT_YAMLLINT | default "uvx yamllint"}}'
+  LINT_SG: '{{.LINT_SG | default "uvx --from ast-grep-cli ast-grep"}}'
+  LINT_PRETTIER: '{{.LINT_PRETTIER | default "npx --no prettier"}}'
+  LINT_ESLINT: '{{.LINT_ESLINT | default "npx --no eslint"}}'
+  LINT_PRECOMMIT: '{{.LINT_PRECOMMIT | default "uvx pre-commit"}}'
+  LINT_PY: '{{if eq OS "windows"}}python{{else}}python3{{end}}'
+  LINT_SCRIPTS: "{{.TASKFILE_DIR}}/../../plugins/crepidoma/scripts"
 
 tasks:
   check:
@@ -54,17 +56,17 @@ tasks:
           esac
         done
         if [ -n "$py" ]; then
-          {{.RUFF}} check --output-format concise --config "{{.CFG}}/ruff.toml" $py \
-            && {{.RUFF}} format --check --config "{{.CFG}}/ruff.toml" $py || rc=1
+          {{.LINT_RUFF}} check --output-format concise --config "{{.LINT_CFG}}/ruff.toml" $py \
+            && {{.LINT_RUFF}} format --check --config "{{.LINT_CFG}}/ruff.toml" $py || rc=1
         fi
         if [ -n "$sh" ]; then shellcheck $sh && shfmt -d -i 2 -ci $sh || rc=1; fi
         if [ -n "$pr" ]; then
-          {{.PRETTIER}} --check --ignore-unknown --log-level warn --config "{{.CFG}}/.prettierrc" $pr || rc=1
+          {{.LINT_PRETTIER}} --check --ignore-unknown --log-level warn --config "{{.LINT_CFG}}/.prettierrc" $pr || rc=1
         fi
         if [ -n "$es" ]; then
-          {{.ESLINT}} --max-warnings 0 --config "{{.CFG}}/eslint.config.js" $es || rc=1
+          {{.LINT_ESLINT}} --max-warnings 0 --config "{{.LINT_CFG}}/eslint.config.js" $es || rc=1
         fi
-        if [ -n "$yml" ]; then {{.YAMLLINT}} --strict -c "{{.CFG}}/.yamllint" $yml || rc=1; fi
+        if [ -n "$yml" ]; then {{.LINT_YAMLLINT}} --strict -c "{{.LINT_CFG}}/.yamllint" $yml || rc=1; fi
         [ -n "$py$sh$pr$es$yml" ] || echo "nothing lintable in the given files"
         exit $rc
 
@@ -91,17 +93,17 @@ tasks:
           esac
         done
         if [ -n "$py" ]; then
-          {{.RUFF}} format --config "{{.CFG}}/ruff.toml" $py \
-            && {{.RUFF}} check --fix --config "{{.CFG}}/ruff.toml" $py || rc=1
+          {{.LINT_RUFF}} format --config "{{.LINT_CFG}}/ruff.toml" $py \
+            && {{.LINT_RUFF}} check --fix --config "{{.LINT_CFG}}/ruff.toml" $py || rc=1
         fi
         if [ -n "$sh" ]; then shfmt -w -i 2 -ci $sh && shellcheck $sh || rc=1; fi
         if [ -n "$pr" ]; then
-          {{.PRETTIER}} --write --ignore-unknown --log-level warn --config "{{.CFG}}/.prettierrc" $pr || rc=1
+          {{.LINT_PRETTIER}} --write --ignore-unknown --log-level warn --config "{{.LINT_CFG}}/.prettierrc" $pr || rc=1
         fi
         if [ -n "$es" ]; then
-          {{.ESLINT}} --fix --max-warnings 0 --config "{{.CFG}}/eslint.config.js" $es || rc=1
+          {{.LINT_ESLINT}} --fix --max-warnings 0 --config "{{.LINT_CFG}}/eslint.config.js" $es || rc=1
         fi
-        if [ -n "$yml" ]; then {{.YAMLLINT}} --strict -c "{{.CFG}}/.yamllint" $yml || rc=1; fi
+        if [ -n "$yml" ]; then {{.LINT_YAMLLINT}} --strict -c "{{.LINT_CFG}}/.yamllint" $yml || rc=1; fi
         [ -n "$py$sh$pr$es$yml" ] || echo "nothing lintable in the given files"
         exit $rc
 
@@ -110,16 +112,16 @@ tasks:
     silent: true
     dir: "{{.USER_WORKING_DIR}}"
     cmds:
-      - '{{.RUFF}} check --output-format concise --config "{{.CFG}}/ruff.toml" .'
-      - '{{.RUFF}} format --check --config "{{.CFG}}/ruff.toml" .'
+      - '{{.LINT_RUFF}} check --output-format concise --config "{{.LINT_CFG}}/ruff.toml" .'
+      - '{{.LINT_RUFF}} format --check --config "{{.LINT_CFG}}/ruff.toml" .'
 
   python:run:
     desc: ruff format and autofix over the Python
     silent: true
     dir: "{{.USER_WORKING_DIR}}"
     cmds:
-      - '{{.RUFF}} format --config "{{.CFG}}/ruff.toml" .'
-      - '{{.RUFF}} check --fix --config "{{.CFG}}/ruff.toml" .'
+      - '{{.LINT_RUFF}} format --config "{{.LINT_CFG}}/ruff.toml" .'
+      - '{{.LINT_RUFF}} check --fix --config "{{.LINT_CFG}}/ruff.toml" .'
 
   yaml:check:
     desc: yamllint --strict over the tracked YAML
@@ -128,7 +130,7 @@ tasks:
       - task: _each
         vars:
           GLOBS: "'*.yml' '*.yaml'"
-          CMD: '{{.YAMLLINT}} --strict -c "{{.CFG}}/.yamllint"'
+          CMD: '{{.LINT_YAMLLINT}} --strict -c "{{.LINT_CFG}}/.yamllint"'
 
   shell:check:
     desc: shellcheck and shfmt diff over the tracked shell scripts
@@ -153,7 +155,7 @@ tasks:
       - task: _each
         vars:
           GLOBS: "'*Dockerfile*'"
-          CMD: 'hadolint --config "{{.CFG}}/.hadolint.yaml"'
+          CMD: 'hadolint --config "{{.LINT_CFG}}/.hadolint.yaml"'
 
   _each:
     desc: Run CMD on each tracked file matching GLOBS; stop at the first failure
@@ -172,30 +174,32 @@ tasks:
     silent: true
     dir: "{{.USER_WORKING_DIR}}"
     cmds:
-      - '{{.PRETTIER}} --check --ignore-unknown --log-level warn --config "{{.CFG}}/.prettierrc" .'
-      - '{{.ESLINT}} --max-warnings 0 --no-error-on-unmatched-pattern --config "{{.CFG}}/eslint.config.js" .'
+      - '{{.LINT_PRETTIER}} --check --ignore-unknown --log-level warn --config "{{.LINT_CFG}}/.prettierrc" .'
+      - '{{.LINT_ESLINT}} --max-warnings 0 --no-error-on-unmatched-pattern --config "{{.LINT_CFG}}/eslint.config.js" .'
 
   web:run:
     desc: prettier write and eslint autofix in place
     silent: true
     dir: "{{.USER_WORKING_DIR}}"
     cmds:
-      - '{{.PRETTIER}} --write --ignore-unknown --log-level warn --config "{{.CFG}}/.prettierrc" .'
-      - '{{.ESLINT}} --fix --max-warnings 0 --no-error-on-unmatched-pattern --config "{{.CFG}}/eslint.config.js" .'
+      - '{{.LINT_PRETTIER}} --write --ignore-unknown --log-level warn --config "{{.LINT_CFG}}/.prettierrc" .'
+      - >-
+        {{.LINT_ESLINT}} --fix --max-warnings 0 --no-error-on-unmatched-pattern
+        --config "{{.LINT_CFG}}/eslint.config.js" .
 
   secrets:
     desc: gitleaks over the git history
     silent: true
     dir: "{{.USER_WORKING_DIR}}"
     cmds:
-      - 'gitleaks git --config "{{.CFG}}/gitleaks.toml" --redact --no-banner .'
+      - 'gitleaks git --config "{{.LINT_CFG}}/gitleaks.toml" --redact --no-banner .'
 
   sg:
     desc: ast-grep shared rules over the working directory
     silent: true
     dir: "{{.USER_WORKING_DIR}}"
     cmds:
-      - '{{.SG}} scan --config "{{.CFG}}/sgconfig.yml" --report-style short .'
+      - '{{.LINT_SG}} scan --config "{{.LINT_CFG}}/sgconfig.yml" --report-style short .'
 
   sg:file:
     desc: "ast-grep rules on one file. Usage: task lint:sg:file F=path/x.py [R=rule-id]"
@@ -205,7 +209,7 @@ tasks:
       vars: [F]
     cmds:
       - >-
-        {{.SG}} scan --config "{{.CFG}}/sgconfig.yml" --report-style short
+        {{.LINT_SG}} scan --config "{{.LINT_CFG}}/sgconfig.yml" --report-style short
         {{if .R}}--filter '{{.R}}'{{end}} "{{.F}}"
 
   sg:test:
@@ -214,7 +218,7 @@ tasks:
     dir: "{{.USER_WORKING_DIR}}"
     cmds:
       - |
-        if out=$({{.SG}} test --config "{{.CFG}}/sgconfig.yml" --skip-snapshot-tests 2>&1); then
+        if out=$({{.LINT_SG}} test --config "{{.LINT_CFG}}/sgconfig.yml" --skip-snapshot-tests 2>&1); then
           printf '%s\n' "$out" | tail -n 1
         else
           printf '%s\n' "$out"
@@ -228,18 +232,78 @@ tasks:
     requires:
       vars: [P]
     cmds:
-      - '{{.SG}} run --lang {{.L | default "python"}} --pattern ''{{.P}}'' {{.IN | default "."}}'
+      - '{{.LINT_SG}} run --lang {{.L | default "python"}} --pattern ''{{.P}}'' {{.IN | default "."}}'
 
   precommit:
     desc: Run every pre-commit hook over every file, not only the staged ones
     silent: true
     dir: "{{.USER_WORKING_DIR}}"
     cmds:
-      - "{{.PRECOMMIT}} run --all-files"
+      - "{{.LINT_PRECOMMIT}} run --all-files"
 
   precommit:staged:
     desc: Run the pre-commit hooks over the staged files only
     silent: true
     dir: "{{.USER_WORKING_DIR}}"
     cmds:
-      - "{{.PRECOMMIT}} run"
+      - "{{.LINT_PRECOMMIT}} run"
+
+  precommit:setup:
+    desc: Install the pre-commit and pre-push git hooks. Usage task lint:precommit:setup
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    preconditions:
+      - sh: command -v uv
+        msg: "`uv` not on PATH. Install: https://docs.astral.sh/uv/getting-started/installation/"
+    cmds:
+      - "{{.LINT_PRECOMMIT}} install --hook-type pre-commit --hook-type pre-push"
+
+  precommit:autoupdate:
+    desc: Bump the pre-commit hook revisions. Usage task lint:precommit:autoupdate
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    preconditions:
+      - sh: command -v uv
+        msg: "`uv` not on PATH. Install: https://docs.astral.sh/uv/getting-started/installation/"
+    cmds:
+      - "{{.LINT_PRECOMMIT}} autoupdate"
+
+  precommit:where:
+    desc: Print the installed git hook paths. Usage task lint:precommit:where
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - |
+        for h in pre-commit pre-push; do
+          p=$(git rev-parse --git-path "hooks/$h")
+          if [ -f "$p" ] && grep -q pre-commit "$p"; then echo "$h: $p"; else echo "$h: not installed"; fi
+        done
+
+  fmt:staged:
+    desc: Format only the staged files with ruff and prettier, then re-add them. Usage task lint:fmt:staged
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - |
+        files=$(git diff --cached --name-only --diff-filter=ACM)
+        [ -n "$files" ] || { echo "nothing staged"; exit 0; }
+        py="" pr=""
+        for f in $files; do
+          case "$f" in
+            *.py) py="$py $f" ;;
+            *.js|*.jsx|*.mjs|*.cjs|*.ts|*.tsx|*.json|*.css|*.scss|*.md|*.html|*.yml|*.yaml) pr="$pr $f" ;;
+          esac
+        done
+        if [ -n "$py" ]; then {{.LINT_RUFF}} format --config "{{.LINT_CFG}}/ruff.toml" $py || exit 1; fi
+        if [ -n "$pr" ]; then
+          {{.LINT_PRETTIER}} --write --ignore-unknown --log-level warn \
+            --config "{{.LINT_CFG}}/.prettierrc" $pr || exit 1
+        fi
+        [ -z "$py$pr" ] || git add -- $py $pr
+
+  taskfiles:
+    desc: Lint every Taskfile against the repository conventions. Usage task lint:taskfiles
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.LINT_PY}} "{{.LINT_SCRIPTS}}/taskfile_lint.py" all
