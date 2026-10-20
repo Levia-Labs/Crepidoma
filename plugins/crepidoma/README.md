@@ -14,5 +14,6 @@
 - [`scripts/`](scripts/README.md) - Stdlib tools behind hooks and task namespaces; contract in docs/contributing-tools.md.
 - [`skills/`](skills/README.md) - Skills the plugin ships.
 - [`tests/`](tests/README.md) - Pytest suite for the plugin scripts and manifests.
+- [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) - Third-party notices
 
 <!-- contents:end -->

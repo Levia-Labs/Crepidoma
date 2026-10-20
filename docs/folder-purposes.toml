@@ -30,6 +30,8 @@
 "plugins/crepidoma/skills" = "Skills the plugin ships."
 "plugins/crepidoma/skills/docs-sweep" = "Refresh docs against code, rebuild the graph index, plan token savings."
 "plugins/crepidoma/skills/migrate-pillar" = "Move a pillar repo onto Crepidoma, one lane per repo."
+"plugins/crepidoma/skills/python-patterns" = "Python 3.12+ idioms, types, errors, concurrency, uv tooling."
+"plugins/crepidoma/skills/python-testing" = "pytest fixtures, parametrization, mocking, async, configuration."
 "plugins/crepidoma/tests" = "Pytest suite for the plugin scripts and manifests."
 "taskfiles" = "Shared Taskfile namespaces pillars include from .crepidoma/taskfiles."
 "taskfiles/ci" = "GitHub Actions status, failure excerpts and watch."

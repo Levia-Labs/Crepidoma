@@ -14,3 +14,4 @@ New records copy [template.md](template.md) and take the next number.
 | [0007-crepidoma-as-foundation.md](0007-crepidoma-as-foundation.md)             | Crepidoma as the foundation for pillar projects                       | Accepted |
 | [0008-security-scans-stay-local.md](0008-security-scans-stay-local.md)         | Security scans stay local                                             | Accepted |
 | [0009-model-tiers-shell-and-harness.md](0009-model-tiers-shell-and-harness.md) | Model tiers, shell policy and subagent harness                        | Accepted |
+| [0010-vendor-selected-files.md](0010-vendor-selected-files.md)                 | Vendor selected third-party files, do not enable whole marketplaces   | Accepted |
