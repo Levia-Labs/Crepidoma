@@ -12,8 +12,8 @@ Usage:
   python spend.py calls [--session ID]    # largest single tool results: tool, input, bytes
   python spend.py agents [--session ID]   # subagent runs: type, model, tokens
   # ID = session prefix, SESSION/AGENT (as `agents` prints it) or agent id suffix: that agent only
-  python spend.py cost [--session ID]     # totals per model
-  python spend.py cost --dir PATH/TO/TRANSCRIPTS
+  python spend.py cost [--session ID]     # totals per model (--dir PATH: other folder)
+  python spend.py startup [--session ID]  # per subagent: first-turn tokens, attachment chars
 """
 
 import argparse
@@ -26,6 +26,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from spend_parse import bash_read_files, scan  # noqa: F401  (bash_read_files re-exported)
+from spend_startup import cmd_startup
 
 MAX_LINES = 20
 DEFAULT_TOP = 10
@@ -130,10 +131,6 @@ def load(folder: Path, session: str, with_agents: bool = True) -> tuple[list[Run
     return sessions, agents
 
 
-def merged(sessions: list[Run], agents: list[Run]) -> list[Run]:
-    return sessions + agents
-
-
 def clip(lines: list[str]) -> list[str]:
     if len(lines) > MAX_LINES:
         lines = [*lines[: MAX_LINES - 1], f"... {len(lines) - MAX_LINES + 1} more"]
@@ -172,7 +169,7 @@ def cmd_tools(folder: Path, args: argparse.Namespace) -> list[str]:
     sessions, agents = load(folder, args.session or "")
     calls: Counter = Counter()
     size: Counter = Counter()
-    for run in merged(sessions, agents):
+    for run in sessions + agents:
         calls.update(run.tool_calls)
         size.update(run.tool_bytes)
     ranked = sorted(set(calls) | set(size), key=lambda t: size[t], reverse=True)
@@ -183,7 +180,7 @@ def cmd_tools(folder: Path, args: argparse.Namespace) -> list[str]:
 def cmd_reads(folder: Path, args: argparse.Namespace) -> list[str]:
     sessions, agents = load(folder, args.session or "")
     size: Counter = Counter()
-    for run in merged(sessions, agents):
+    for run in sessions + agents:
         size.update(run.read_bytes)
     rows = [f"{b:>10,} B {f[-90:]}" for f, b in size.most_common()]
     return table("files read by bytes", rows, f"total {sum(size.values()):,} B", args.top)
@@ -191,7 +188,7 @@ def cmd_reads(folder: Path, args: argparse.Namespace) -> list[str]:
 
 def cmd_calls(folder: Path, args: argparse.Namespace) -> list[str]:
     sessions, agents = load(folder, args.session or "")
-    calls = [c for run in merged(sessions, agents) for c in run.calls]
+    calls = [c for run in (sessions + agents) for c in run.calls]
     calls.sort(key=lambda c: c[2], reverse=True)
     rows = [f"{b:>10,} B {t:<10} {s}" for t, s, b in calls]
     return table("largest tool results", rows, f"calls {len(calls)}", args.top)
@@ -211,7 +208,7 @@ def cmd_agents(folder: Path, args: argparse.Namespace) -> list[str]:
 def cmd_cost(folder: Path, args: argparse.Namespace) -> list[str]:
     sessions, agents = load(folder, args.session or "")
     totals: dict[str, Counter] = {}
-    for run in merged(sessions, agents):
+    for run in sessions + agents:
         for model, bucket in run.usage.items():
             totals.setdefault(model, Counter()).update(bucket)
     ranked = sorted(totals, key=lambda m: model_cost(m, totals[m]), reverse=True)
@@ -238,7 +235,7 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
     one = sub.add_parser("sessions", parents=[common], help="one line per session")
     one.add_argument("--last", type=int, default=0, help="only the last N sessions")
-    for name in ("tools", "reads", "calls", "agents", "cost"):
+    for name in ("tools", "reads", "calls", "agents", "cost", "startup"):
         p = sub.add_parser(name, parents=[common])
         p.add_argument("--session", help="session prefix, SESSION/AGENT, or agent id suffix")
     return parser
@@ -251,6 +248,7 @@ COMMANDS = {
     "calls": cmd_calls,
     "agents": cmd_agents,
     "cost": cmd_cost,
+    "startup": cmd_startup,
 }
 
 

@@ -22,6 +22,7 @@
 - [`rtk_route.py`](rtk_route.py) - PreToolUse hook: route a command through `rtk` when a project filter matches it (stdlib only).
 - [`spend.py`](spend.py) - Audit where Claude Code session transcripts spent tokens and money (stdlib only).
 - [`spend_parse.py`](spend_parse.py) - Transcript parsing for spend.py (stdlib only): tool calls, result sizes, usage per run.
+- [`spend_startup.py`](spend_startup.py) - `spend.py startup`: per-subagent startup cost (stdlib only). Not a command by itself.
 - [`taskfile_lint.py`](taskfile_lint.py) - Lint Taskfiles against the taskfile-shell directive without a YAML library.
 - [`todo.py`](todo.py) - List, show, add, update and drop entries of a repo-root TODO.md.
 - [`usage_rate.py`](usage_rate.py) - Project allowance burn rate from recorded usage samples.

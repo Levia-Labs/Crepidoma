@@ -27,6 +27,7 @@
 - [`test_skills.py`](test_skills.py) - Tests for `skills`.
 - [`test_spend.py`](test_spend.py) - Tests for `spend`.
 - [`test_spend_calls.py`](test_spend_calls.py) - Tests for `spend_calls`.
+- [`test_spend_startup.py`](test_spend_startup.py) - Tests for `spend_startup`.
 - [`test_taskfile_lint.py`](test_taskfile_lint.py) - Tests for `taskfile_lint`.
 - [`test_todo.py`](test_todo.py) - Tests for todo.py: list, show, add, set and drop over a TODO.md in tmp_path.
 - [`test_usage_rate.py`](test_usage_rate.py) - Tests for `usage_rate`.
