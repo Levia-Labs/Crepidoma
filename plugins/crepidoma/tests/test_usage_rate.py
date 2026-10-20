@@ -1,3 +1,4 @@
+import json
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -5,6 +6,7 @@ import pytest
 import usage_rate
 
 START = datetime(2030, 1, 1, 12, 0, tzinfo=UTC)
+RESET = (START + timedelta(hours=4)).isoformat()
 
 
 @pytest.fixture
@@ -71,3 +73,70 @@ def test_old_samples_and_other_windows_ignored(clock):
 
 def test_bad_resets_at(clock):
     assert usage_rate.main(["record", "--percent", "1", "--window", "w", "--resets-at", "x"]) == 2
+
+
+def live_row(left=4 * 3600, used=30.0, resets_at=RESET):
+    return {
+        "window": "five_hour",
+        "label": "Session (5 hour)",
+        "utilization": used,
+        "resets_at": resets_at,
+        "seconds_until_reset": left,
+    }
+
+
+def test_average_rate_over_elapsed_window():
+    assert usage_rate.average_rate(live_row()) == 0.5  # 60 minutes in, 30 percent used
+
+
+def test_average_rate_unknown_at_window_start():
+    assert usage_rate.average_rate(live_row(left=5 * 3600)) is None
+    assert usage_rate.average_rate(live_row(left=None)) is None
+
+
+def test_verdict_judges_by_the_tightest_window():
+    roomy, tight = {"minutes_to_ceiling": 30}, {"minutes_to_ceiling": 5}
+    assert usage_rate.verdict([], 10) == (None, None)
+    assert usage_rate.verdict([roomy, tight], 10) == (tight, False)
+    assert usage_rate.verdict([roomy], 30) == (roomy, True)
+    assert usage_rate.verdict([roomy], 0) == (roomy, None)
+
+
+def stub_live(monkeypatch, rows):
+    payload = {row["window"]: {"utilization": row["utilization"]} for row in rows}
+    monkeypatch.setattr(usage_rate.budget, "fetch", lambda: (payload, ""))
+    monkeypatch.setattr(usage_rate.budget, "readings", lambda data, now=None, only=None: rows)
+
+
+def test_live_sample_records_then_reports(clock, monkeypatch, tmp_path, capsys):
+    stub_live(monkeypatch, [live_row()])
+    assert usage_rate.main(["live", "--sample"]) == 0
+    line = json.loads((tmp_path / usage_rate.LOG_NAME).read_text(encoding="utf-8"))
+    assert (line["window"], line["percent"], line["resets_at"]) == ("five_hour", 30.0, RESET)
+    assert "Session (5 hour)" in capsys.readouterr().out
+
+
+def test_live_prefers_the_recent_rate(clock, monkeypatch, capsys):
+    stub_live(monkeypatch, [live_row(used=20.0)])
+    sample(clock, 0, 10, RESET)
+    sample(clock, 10, 20, RESET)
+    capsys.readouterr()
+    assert usage_rate.main(["live", "--json"]) == 0
+    row = json.loads(capsys.readouterr().out)["windows"][0]
+    assert row["rate_source"] == "recent"
+    assert row["recent_per_minute"] == 1.0
+    assert row["samples"] == 2
+
+
+def test_live_task_that_does_not_fit_exits_three(clock, monkeypatch, capsys):
+    stub_live(monkeypatch, [live_row(used=90.0)])
+    assert usage_rate.main(["live", "--task-minutes", "60", "--json"]) == 3
+    data = json.loads(capsys.readouterr().out)
+    assert data["fits"] is False
+    assert data["tightest"] == "five_hour"
+
+
+def test_live_unknown_allowance_is_one(clock, monkeypatch, capsys):
+    monkeypatch.setattr(usage_rate.budget, "fetch", lambda: (None, "down"))
+    assert usage_rate.main(["live", "--json"]) == 1
+    assert json.loads(capsys.readouterr().out)["ok"] is False

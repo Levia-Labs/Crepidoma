@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Claude usage windows against a ceiling: show, gate, wait.
 
-Usage: budget.py {show [--json] | check [--ceiling N] | wait [--ceiling N] [--poll S]}
+Usage: budget.py {show [--json] | check [--ceiling N] | wait [--ceiling N] [--poll S] [--timeout S]}
        budget.py --json --ceiling N   (hook contract: ok, over_ceiling, wait_seconds, windows)
+Every mode takes --window NAME (repeatable) to judge only those windows; `wait --window five_hour
+--ceiling 20` blocks until a fresh session, where the weekly figure would hold the wait for days.
 
 Exit codes: 0 under ceiling, 1 unknown, 2 usage error, 3 at or over ceiling.
 Reads the undocumented OAuth usage endpoint with the token from the Claude credentials file.
@@ -26,6 +28,14 @@ WINDOWS = (
     ("seven_day_opus", "Weekly Opus"),
     ("seven_day_sonnet", "Weekly Sonnet"),
 )
+
+# Each window's length: with its reset time, how far into itself a window already is.
+WINDOW_MINUTES = {
+    "five_hour": 5 * 60,
+    "seven_day": 7 * 24 * 60,
+    "seven_day_opus": 7 * 24 * 60,
+    "seven_day_sonnet": 7 * 24 * 60,
+}
 
 DEFAULT_CEILING = 95.0
 DEFAULT_POLL = 300
@@ -84,11 +94,15 @@ def parse_reset(raw: object) -> datetime | None:
     return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
 
 
-def readings(payload: dict, now: datetime | None = None) -> list[dict]:
-    """One row per window the payload reports; an absent window is skipped, not zero."""
+def readings(
+    payload: dict, now: datetime | None = None, only: list[str] | None = None
+) -> list[dict]:
+    """One row per window the payload reports (or only those named); absent is skipped, not zero."""
     now = now or datetime.now(UTC)
     rows = []
     for key, label in WINDOWS:
+        if only and key not in only:
+            continue
         window = payload.get(key)
         if not isinstance(window, dict):
             continue
@@ -131,18 +145,18 @@ def soonest_reset(rows: list[dict]) -> int:
     return min(waits) if waits else DEFAULT_POLL
 
 
-def load() -> tuple[list[dict] | None, str]:
+def load(only: list[str] | None = None) -> tuple[list[dict] | None, str]:
     payload, reason = fetch()
     if payload is None:
         return None, reason
-    rows = readings(payload)
+    rows = readings(payload, only=only)
     if not rows:
         return None, "The usage endpoint reported no windows."
     return rows, ""
 
 
 def show(args: argparse.Namespace) -> int:
-    rows, reason = load()
+    rows, reason = load(args.window)
     if rows is None:
         if args.json:
             print(json.dumps({"ok": False, "reason": reason}))
@@ -161,7 +175,7 @@ def show(args: argparse.Namespace) -> int:
 
 
 def check(args: argparse.Namespace) -> int:
-    rows, reason = load()
+    rows, reason = load(args.window)
     if rows is None:
         if args.json:
             print(json.dumps({"ok": False, "reason": reason}))
@@ -192,8 +206,9 @@ def check(args: argparse.Namespace) -> int:
 
 def wait(args: argparse.Namespace) -> int:
     poll = max(MIN_POLL, args.poll)
+    deadline = time.monotonic() + args.timeout if args.timeout else None
     while True:
-        rows, reason = load()
+        rows, reason = load(args.window)
         if rows is None:
             # A failed read is not an exhausted allowance: report and keep waiting.
             print(f"waiting: {reason}", file=sys.stderr, flush=True)
@@ -206,6 +221,15 @@ def wait(args: argparse.Namespace) -> int:
             nap = max(MIN_POLL, min(poll, soonest_reset(over) + 30))
             names = ", ".join(row["window"] for row in over)
             print(f"over {args.ceiling:g}%: {names}; next check in {span(nap)}", flush=True)
+        if deadline is not None:
+            left = deadline - time.monotonic()
+            # Too little time to poll again is the deadline arriving; never poll under the floor.
+            if left <= MIN_POLL:
+                if left > 0:
+                    time.sleep(left)
+                print("timed out still over the ceiling", file=sys.stderr)
+                return OVER
+            nap = min(nap, int(left))
         time.sleep(nap)
 
 
@@ -213,19 +237,28 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Claude usage windows against a ceiling.")
     parser.add_argument("--json", action="store_true", help="machine-readable output")
     parser.add_argument("--ceiling", type=float, default=DEFAULT_CEILING, help="percent (95)")
+    parser.add_argument(
+        "--window", action="append", choices=[key for key, _ in WINDOWS], help="judge only this one"
+    )
     commands = parser.add_subparsers(dest="command")
 
     # SUPPRESS keeps a subcommand from overwriting a flag given before it.
     sub_show = commands.add_parser("show", help="one line per window")
     sub_show.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+    sub_show.add_argument("--window", action="append", default=argparse.SUPPRESS)
 
     sub_check = commands.add_parser("check", help="exit 0 under, 3 over, 1 unknown")
     sub_check.add_argument("--ceiling", type=float, default=argparse.SUPPRESS)
     sub_check.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+    sub_check.add_argument("--window", action="append", default=argparse.SUPPRESS)
 
     sub_wait = commands.add_parser("wait", help="block until under the ceiling")
     sub_wait.add_argument("--ceiling", type=float, default=argparse.SUPPRESS)
+    sub_wait.add_argument("--window", action="append", default=argparse.SUPPRESS)
     sub_wait.add_argument("--poll", type=int, default=DEFAULT_POLL, help="seconds between reads")
+    sub_wait.add_argument(
+        "--timeout", type=int, default=0, help="give up after S seconds (0 = never)"
+    )
     return parser
 
 

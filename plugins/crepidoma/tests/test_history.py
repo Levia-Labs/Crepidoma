@@ -105,3 +105,23 @@ def test_usage_error_exits_2():
         history.main([])
     except SystemExit as exit_:
         assert exit_.code == 2
+
+
+def test_sessions_lists_transcript_sizes(tmp_path, capsys):
+    write_transcript(tmp_path / "a.jsonl", ["ls"])
+    write_transcript(tmp_path / "sub" / "b.jsonl", ["ls"])
+    assert history.main(["sessions", "--dir", str(tmp_path)]) == 0
+    out = capsys.readouterr().out.splitlines()
+    assert [line.split()[-1] for line in out] == ["a.jsonl", "b.jsonl"]
+
+
+def test_untasked_skips_commands_with_a_task(tmp_path, capsys):
+    folder = tmp_path / "taskfiles" / "demo"
+    folder.mkdir(parents=True)
+    (folder / "Taskfile.yml").write_text("tasks:\n  build:\n    desc: x\n", encoding="utf-8")
+    write_transcript(tmp_path / "t" / "a.jsonl", ["make all"] * 3 + ["x build"] * 3 + ["ls"] * 3)
+    assert history.main(["untasked", "--dir", str(tmp_path / "t"), "--root", str(tmp_path)]) == 0
+    out = capsys.readouterr().out
+    assert "make all" in out
+    assert "x build" not in out
+    assert "ls" not in out
