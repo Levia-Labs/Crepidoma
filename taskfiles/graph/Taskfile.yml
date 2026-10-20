@@ -18,10 +18,10 @@ tasks:
     silent: true
     deps: [_require-graphify]
     preconditions:
-      - sh: test -n "{{.CLI_ARGS}}"
+      - sh: "{{if .CLI_ARGS}}true{{else}}false{{end}}"
         msg: 'Usage: task graph:query -- "question"'
     cmds:
-      - graphify query "{{.CLI_ARGS}}"
+      - graphify query {{.CLI_ARGS}}
 
   path:
     desc: "Connection between two nodes. Usage: task graph:path -- A B"
@@ -29,7 +29,7 @@ tasks:
     silent: true
     deps: [_require-graphify]
     preconditions:
-      - sh: test -n "{{.CLI_ARGS}}"
+      - sh: "{{if .CLI_ARGS}}true{{else}}false{{end}}"
         msg: "Usage: task graph:path -- A B"
     cmds:
       - graphify path {{.CLI_ARGS}}
@@ -40,10 +40,10 @@ tasks:
     silent: true
     deps: [_require-graphify]
     preconditions:
-      - sh: test -n "{{.CLI_ARGS}}"
+      - sh: "{{if .CLI_ARGS}}true{{else}}false{{end}}"
         msg: "Usage: task graph:explain -- concept"
     cmds:
-      - graphify explain "{{.CLI_ARGS}}"
+      - graphify explain {{.CLI_ARGS}}
 
   update:
     desc: "Local AST pass, no LLM. Usage: task graph:update"

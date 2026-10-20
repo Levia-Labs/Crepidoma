@@ -54,3 +54,9 @@ def test_report(tmp_path, capsys):
 
 def test_missing_settings(tmp_path, capsys):
     assert allow_tasks.main(["report", "--settings", str(tmp_path / "none.json")]) == 2
+
+
+def test_namespace_segment_alone_is_not_a_bypass():
+    names = {"git:commit", "git:status", "lint:python:check"}
+    assert allow_tasks.bypassed_task("git status --short", names) is None
+    assert allow_tasks.bypassed_task("ruff check .", names) == "lint:python:check"

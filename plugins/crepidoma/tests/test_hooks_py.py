@@ -994,3 +994,15 @@ def test_budget_script_is_the_plugin_copy():
     assert script is not None
     assert script.name == "budget.py"
     assert script.parent == Path(hooks.__file__).resolve().parent
+
+
+@pytest.mark.parametrize(
+    ("command", "refused"),
+    [
+        ("task git:commit -- 'msg'", True),
+        ("task git:status", False),
+        ("task repo:outline x", False),
+    ],
+)
+def test_subagents_cannot_publish_through_git_commit_task(tmp_path, command, refused):
+    assert bool(hooks.inner_refusal(command, tmp_path, untracked)) is refused

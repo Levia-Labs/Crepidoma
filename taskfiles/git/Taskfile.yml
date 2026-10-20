@@ -41,11 +41,11 @@ tasks:
     dir: "{{.USER_WORKING_DIR}}"
     silent: true
     preconditions:
-      - sh: test -n "{{.CLI_ARGS}}"
+      - sh: "{{if .CLI_ARGS}}true{{else}}false{{end}}"
         msg: 'Commit message required. Usage: task git:commit -- "message"'
     cmds:
       - git add -A
-      - git commit -m "{{.CLI_ARGS}}"
+      - git commit -m {{.CLI_ARGS}}
       - |
         if git rev-parse --abbrev-ref '@{u}' >/dev/null 2>&1; then
           git push

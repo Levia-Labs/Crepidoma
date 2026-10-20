@@ -619,6 +619,8 @@ def segment_refusal(tokens: list[str], cwd: Path, tracked: Callable[[str, Path],
             return inner_refusal(" ".join(tokens[flag + 1 :]), cwd, tracked)
     if head == "rm":
         return rm_refusal(tokens, cwd, tracked)
+    if head == "task" and "git:commit" in tokens[1:]:
+        return "task git:commit (adds, commits and pushes; main thread only)"
     if head != "git":
         return ""
     text = " ".join(git_args(tokens))

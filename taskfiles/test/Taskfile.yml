@@ -28,7 +28,7 @@ tasks:
     requires:
       vars: [F]
     cmds:
-      - '{{.TEST_GATE}} uv run pytest -q "{{.F}}" {{.CLI_ARGS}}'
+      - "{{.TEST_GATE}} uv run pytest -q {{shellQuote .F}} {{.CLI_ARGS}}"
 
   cov:
     desc: "Branch coverage, then ratchet the total upward. Usage: task test:cov -- [pytest args]"

@@ -63,3 +63,10 @@ def test_template_is_bash_only_and_subagents_default_to_sonnet():
     assert data["env"]["CLAUDE_CODE_SUBAGENT_MODEL"] == "sonnet"
     assert "Bash(rm -rf *)" in perms["deny"]
     assert data["enabledPlugins"]["caveman@caveman"] is True
+
+
+def test_template_has_no_wrapper_allows():
+    data = json.loads((TEMPLATES / "settings.json").read_text(encoding="utf-8"))
+    wrappers = ("uv run", "xargs", "find ", "python", "bash -c", "sh -c", "env ")
+    for rule in data["permissions"]["allow"]:
+        assert not any(w in rule for w in wrappers), rule

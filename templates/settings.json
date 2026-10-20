@@ -35,8 +35,7 @@
       "Bash(tr *)",
       "Bash(jq *)",
       "Bash(command -v *)",
-      "Bash(which *)",
-      "Bash(uv run --locked *)"
+      "Bash(which *)"
     ],
     "deny": [
       "Bash(rm -rf *)",

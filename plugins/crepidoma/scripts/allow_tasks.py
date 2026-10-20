@@ -57,7 +57,9 @@ def bypassed_task(command: str, names: set[str]) -> str | None:
         return None
     wanted = {words[0], *TOOL_SEGMENTS.get(words[0], ())}
     for name in sorted(names):
-        if wanted & set(name.split(":")):
+        segments = name.split(":")
+        # The tool's own name matching only the namespace (git -> git:commit) is not a bypass.
+        if (wanted - {words[0]}) & set(segments) or words[0] in segments[1:]:
             return name
     return None
 

@@ -210,7 +210,7 @@ tasks:
     cmds:
       - >-
         {{.LINT_SG}} scan --config "{{.LINT_CFG}}/sgconfig.yml" --report-style short
-        {{if .R}}--filter '{{.R}}'{{end}} "{{.F}}"
+        {{if .R}}--filter {{shellQuote .R}}{{end}} {{shellQuote .F}}
 
   sg:test:
     desc: Each ast-grep rule against its own valid and invalid examples
