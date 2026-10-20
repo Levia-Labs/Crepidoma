@@ -18,7 +18,8 @@ TRUNCATED = "\n[crepidoma: directives truncated at 10000 characters]"
 def build(directory: Path) -> str:
     if not directory.is_dir():
         raise FileNotFoundError(directory)
-    parts = [path.read_text(encoding="utf-8").strip() for path in sorted(directory.glob("*.md"))]
+    paths = [p for p in sorted(directory.glob("*.md")) if p.name != "README.md"]
+    parts = [path.read_text(encoding="utf-8").strip() for path in paths]
     return "\n\n".join(parts)
 
 
