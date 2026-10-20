@@ -3,13 +3,11 @@
 
 One CLI, one subcommand per hook event; each reads the hook's JSON payload on stdin.
 
-  post-tool-use    after Edit/Write/MultiEdit - marks a gate dirty when the edited file is in
-                   its scope
+  post-tool-use    after Edit/Write/MultiEdit - marks a gate dirty when the file is in scope
   pre-tool-use     before Agent/Task - refuses a catch-all agent type, a model other than
                    sonnet or haiku, a seventh concurrent agent, or any agent while a usage
                    window is at the ceiling
-  pre-bash         before Bash, subagents only - refuses a push, or a command that discards
-                   or sweeps up working-tree changes other agents made
+  pre-bash         before Bash, subagents only - refuses a push or a working-tree discard
   subagent-start   a dispatched agent began - its reservation becomes a running lane
   subagent-stop    an agent finished - its lane is freed
   stop             end of a turn - runs the dirty gates' tasks, blocks on failure
@@ -39,6 +37,8 @@ import time
 from collections.abc import Callable, Iterator
 from pathlib import Path
 from typing import NamedTuple
+
+import rtk_route
 
 ROOT = Path(os.environ.get("CLAUDE_PROJECT_DIR") or Path.cwd())
 
@@ -91,7 +91,7 @@ WATCHED_SUFFIXES = (
 SKIP = ("graphify-out/", ".claude/skills/")
 GATES = (Gate(STATE / "claude-dirty", "", WATCHED_SUFFIXES, ("validate",), (), SKIP),)
 
-PROGRESS = re.compile(r"^[.s]+\s+\[\s*\d+%\]$")
+PROGRESS = rtk_route.NOISE
 TAIL_LINES = 40
 HINT_LINES = 10
 # Only the last lines of a failed run decide whether the gate could not run at all: a real
@@ -218,7 +218,7 @@ def post_tool_use(event: dict) -> int:
 
 
 def run(*command: str) -> subprocess.CompletedProcess:
-    # shutil.which resolves PATHEXT on Windows, so no shell is needed to find `task`.
+    command = rtk_route.wrap(command, ROOT)  # rtk filters project gates; which() needs no shell
     executable = shutil.which(command[0])
     missing = subprocess.CompletedProcess(
         command, 127, "", f"{command[0]}: executable file not found"

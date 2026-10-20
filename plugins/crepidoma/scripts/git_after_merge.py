@@ -77,11 +77,21 @@ def run(path: str, named: str | None) -> str:
         verbose = step(path, "branch", ["branch", "-vv"])
         current = step(path, "branch", ["branch", "--show-current"]).strip()
         doomed = branches_to_delete(merged, verbose, default, current)
+    deleted: list[str] = []
+    gone: list[str] = []
     for name in doomed:
-        step(path, "branch -D", ["branch", "-D", name])
+        rc, out = git(path, ["branch", "-D", name])
+        if rc == 0:
+            deleted.append(name)
+        elif "not found" in out:
+            gone.append(name)
+        else:
+            first = next((ln for ln in out.splitlines() if ln.strip()), "")
+            raise RuntimeError(f"after-merge: branch -D failed: {first[:160]}")
     head = step(path, "log", ["log", "-1", "--format=%h %s"]).strip()
     dirty = dirty_count(step(path, "status", ["status", "--short"]))
-    return f"{default} {head} | dirty {dirty} | deleted {','.join(doomed) or 'none'}"
+    line = f"{default} {head} | dirty {dirty} | deleted {','.join(deleted) or 'none'}"
+    return line + "".join(f" | branch {name} already gone" for name in gone)
 
 
 def main(argv: list[str] | None = None) -> int:

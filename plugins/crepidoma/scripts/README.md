@@ -19,6 +19,7 @@
 - [`lanes.py`](lanes.py) - List and reset subagent lanes, and write a save-state note for a later session.
 - [`raw_read_guard.py`](raw_read_guard.py) - PreToolUse hook: keep raw file content out of the main Claude thread (stdlib only).
 - [`repo_nav.py`](repo_nav.py) - Locate code without reading whole files: outline, section, tasks, diff.
+- [`rtk_route.py`](rtk_route.py) - PreToolUse hook: route a command through `rtk` when a project filter matches it (stdlib only).
 - [`spend.py`](spend.py) - Audit where Claude Code session transcripts spent tokens and money (stdlib only).
 - [`spend_parse.py`](spend_parse.py) - Transcript parsing for spend.py (stdlib only): tool calls, result sizes, usage per run.
 - [`taskfile_lint.py`](taskfile_lint.py) - Lint Taskfiles against the taskfile-shell directive without a YAML library.
