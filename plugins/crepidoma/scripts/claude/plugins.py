@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -25,6 +26,22 @@ from pathlib import Path
 ROOT = Path(os.environ.get("CLAUDE_PROJECT_DIR") or Path.cwd())
 SETTINGS = ROOT / ".claude" / "settings.json"
 INSTALLED = Path.home() / ".claude" / "plugins" / "installed_plugins.json"
+
+
+# Values come from settings JSON and reach `claude`, which on Windows may be a .cmd shim run
+# through cmd.exe: anything outside these shapes is refused, never passed on.
+REPO = re.compile(r"^(?:[A-Za-z0-9_][A-Za-z0-9_.-]*/[A-Za-z0-9_][A-Za-z0-9_.-]*)$")
+_UNSAFE = "\\s&|<>^%\"'`\\\\;$()"
+URL = re.compile(f"^https://[^{_UNSAFE}-][^{_UNSAFE}]*$")
+PLUGIN_ID = re.compile(r"^[a-z0-9][a-z0-9_.-]*@[a-z0-9][a-z0-9_.-]*$")
+
+
+def valid_repo(value: object) -> bool:
+    return isinstance(value, str) and bool(REPO.fullmatch(value) or URL.fullmatch(value))
+
+
+def valid_plugin_id(value: object) -> bool:
+    return isinstance(value, str) and bool(PLUGIN_ID.fullmatch(value))
 
 
 def load(path: Path) -> dict:
@@ -60,9 +77,18 @@ def install() -> int:
     # what decides success.
     for market in load(SETTINGS).get("extraKnownMarketplaces", {}).values():
         repo = (market.get("source") or {}).get("repo")
-        if repo:
+        if not repo:
+            continue
+        if valid_repo(repo):
             claude("plugin", "marketplace", "add", repo)
+        else:
+            print(f"invalid marketplace repo skipped: {repo!r}", file=sys.stderr)
+            failed += 1
     for plugin in missing():
+        if not valid_plugin_id(plugin):
+            print(f"invalid plugin id skipped: {plugin!r}", file=sys.stderr)
+            failed += 1
+            continue
         # `-y` accepts the install prompt: task runs with no TTY attached.
         if claude("plugin", "install", plugin, "-y") != 0:
             print(f"install failed: {plugin}")
