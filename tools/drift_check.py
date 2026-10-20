@@ -1,8 +1,10 @@
 """Compare a pillar checkout with Crepidoma-owned files.
 
 Usage: drift_check.py PILLAR [--map FILE] [--root DIR] [--report FILE]
-States: duplicate (identical copy, delete it), drifted (local divergence), absent (linked, good).
-Exit 0 when every entry is absent, 1 on duplicate or drifted, 2 when PILLAR is not a directory.
+States: duplicate (identical copy, delete it), drifted (local divergence), absent (linked, good),
+mirror (identical copy a tool needs at the repo root; entries marked `mirror = true`).
+Exit 0 when every entry is absent or mirror, 1 on duplicate or drifted, 2 when PILLAR is not a
+directory.
 """
 
 from __future__ import annotations
@@ -17,7 +19,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_MAP = ROOT / "tools" / "drift_map.toml"
 MAX_SHOWN = 15
-STATES = ("duplicate", "drifted", "absent")
+STATES = ("duplicate", "drifted", "mirror", "absent")
+CLEAN = ("absent", "mirror")
 
 
 def load_map(path: Path) -> list[dict]:
@@ -36,7 +39,11 @@ def check(pillar: Path, entries: list[dict], root: Path) -> list[tuple[str, str,
         if copy is None:
             rows.append(("absent", entry["crepidoma"], "-"))
             continue
-        state = "duplicate" if fingerprint(copy) == fingerprint(source) else "drifted"
+        same = fingerprint(copy) == fingerprint(source)
+        if entry.get("mirror"):
+            state = "mirror" if same else "drifted"
+        else:
+            state = "duplicate" if same else "drifted"
         rows.append((state, entry["crepidoma"], copy.relative_to(pillar).as_posix()))
     return rows
 
@@ -56,7 +63,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.report:
         args.report.parent.mkdir(parents=True, exist_ok=True)
         args.report.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
-    flagged = [line for line in lines if not line.startswith("absent")]
+    flagged = [line for line in lines if not line.startswith(CLEAN)]
     for line in flagged[:MAX_SHOWN]:
         print(line)
     if len(flagged) > MAX_SHOWN:

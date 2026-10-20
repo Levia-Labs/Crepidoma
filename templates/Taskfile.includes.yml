@@ -1,0 +1,4 @@
+# Merge into the pillar's root Taskfile.yml
+includes:
+  claude: .crepidoma/taskfiles/claude
+  lint: .crepidoma/taskfiles/lint

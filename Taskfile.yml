@@ -55,7 +55,7 @@ tasks:
   ratchet:update:
     desc: Rewrite the long-file baseline from all tracked files
     cmds:
-      - uv run python tools/ratchet.py long-files --max-lines 400 --update --git
+      - uv run python tools/ratchet.py long-files --max-lines 300 --update --git
 
   hooks:pre-commit:
     desc: Run the pre-commit stage on all files

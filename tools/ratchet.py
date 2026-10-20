@@ -83,7 +83,7 @@ def main(argv: list[str] | None = None) -> int:
     sub = parser.add_subparsers(dest="command", required=True)
     files_parser = sub.add_parser("long-files")
     files_parser.add_argument("--baseline", type=Path, default=Path(".ratchet/long-files.baseline"))
-    files_parser.add_argument("--max-lines", type=int, default=400)
+    files_parser.add_argument("--max-lines", type=int, default=300)
     files_parser.add_argument("--update", action="store_true")
     files_parser.add_argument("--git", action="store_true", help="check every tracked file")
     files_parser.add_argument("files", nargs="*")

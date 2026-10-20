@@ -1,0 +1,83 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(task *)",
+      "Bash(rtk *)",
+      "Bash(git *)",
+      "Bash(git.exe *)",
+      "Bash(python3 *)",
+      "Bash(graphify *)",
+      "Bash(ruff *)",
+      "Bash(yamllint *)",
+      "Bash(pre-commit *)",
+      "Bash(claude --version)",
+      "Bash(cat *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(wc *)",
+      "Bash(ls *)",
+      "Bash(sort *)",
+      "Bash(uniq *)",
+      "Bash(diff *)",
+      "Bash(dirname *)",
+      "Bash(basename *)",
+      "Bash(echo *)",
+      "Bash(test *)",
+      "Bash(timeout *)",
+      "Bash(awk *)",
+      "Bash(sed -n *)",
+      "Bash(grep *)",
+      "Bash(find *)",
+      "Bash(tr *)",
+      "Bash(xargs *)",
+      "Bash(jq *)",
+      "Bash(command -v *)",
+      "Bash(which *)",
+      "Bash(for *)",
+      "PowerShell(task *)",
+      "PowerShell(rtk *)",
+      "PowerShell(git *)",
+      "PowerShell(graphify *)",
+      "PowerShell(Get-Content *)",
+      "PowerShell(Get-ChildItem *)",
+      "PowerShell(Test-Path *)"
+    ],
+    "deny": [
+      "ShareOnboardingGuide",
+      "ListAgents",
+      "Bash(sudo *)",
+      "Bash(git push)",
+      "Bash(git push *)",
+      "Bash(rtk git push *)",
+      "Bash(git reset --hard *)",
+      "Bash(git clean *)",
+      "PowerShell(git push)",
+      "PowerShell(git push *)",
+      "PowerShell(rtk git push *)",
+      "PowerShell(git reset --hard *)",
+      "PowerShell(git clean *)"
+    ]
+  },
+  "extraKnownMarketplaces": {
+    "crepidoma": {
+      "source": {
+        "source": "github",
+        "repo": "Levia-Labs/Crepidoma"
+      }
+    },
+    "caveman": {
+      "source": {
+        "source": "github",
+        "repo": "JuliusBrussee/caveman"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "crepidoma-core@crepidoma": true,
+    "caveman@caveman": true,
+    "superpowers@claude-plugins-official": true,
+    "code-review@claude-plugins-official": true,
+    "feature-dev@claude-plugins-official": true,
+    "security-guidance@claude-plugins-official": true
+  }
+}

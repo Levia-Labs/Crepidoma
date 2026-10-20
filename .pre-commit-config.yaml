@@ -59,7 +59,7 @@ repos:
         types: [text]
       - id: crepidoma-long-files
         name: crepidoma long-file ratchet
-        entry: uv run --no-project --quiet python tools/ratchet.py long-files --max-lines 400
+        entry: uv run --no-project --quiet python tools/ratchet.py long-files --max-lines 300
         language: system
         types: [text]
       - id: pytest

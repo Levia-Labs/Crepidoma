@@ -6,7 +6,7 @@
   types: [text]
 - id: crepidoma-long-files
   name: crepidoma long-file ratchet
-  description: Files over 400 lines must be baselined in .ratchet/long-files.baseline and may not grow
-  entry: crepidoma-ratchet long-files --max-lines 400
+  description: Files over 300 lines must be baselined in .ratchet/long-files.baseline and may not grow
+  entry: crepidoma-ratchet long-files --max-lines 300
   language: python
   types: [text]

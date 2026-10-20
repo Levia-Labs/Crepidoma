@@ -56,31 +56,27 @@ pillar = [".claude/agents/todo-triage.md", ".claude/agents/todo-entry.md"]
 [[file]]
 crepidoma = "configs/.editorconfig"
 pillar = [".editorconfig"]
+mirror = true
 
 [[file]]
 crepidoma = "configs/.gitattributes"
 pillar = [".gitattributes"]
+mirror = true
 
 [[file]]
 crepidoma = "configs/.prettierrc"
 pillar = [".prettierrc", ".prettierrc.json"]
+mirror = true
 
 [[file]]
 crepidoma = "configs/.yamllint"
 pillar = [".yamllint", ".yamllint.yml", ".yamllint.yaml"]
+mirror = true
 
 [[file]]
 crepidoma = "configs/ruff.toml"
 pillar = ["ruff.toml"]
 
 [[file]]
-crepidoma = "configs/gitleaks.toml"
-pillar = [".gitleaks.toml"]
-
-[[file]]
 crepidoma = "configs/sgconfig.yml"
 pillar = ["sgconfig.yml"]
-
-[[file]]
-crepidoma = "configs/eslint.config.js"
-pillar = ["eslint.config.js"]

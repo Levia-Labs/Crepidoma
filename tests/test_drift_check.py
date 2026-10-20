@@ -49,3 +49,19 @@ def test_repo_map_sources_exist():
     assert entries
     for entry in entries:
         assert (drift_check.ROOT / entry["crepidoma"]).is_file(), entry["crepidoma"]
+
+
+def test_mirror_entries_expect_identical_copies(tmp_path: Path):
+    root, pillar = tmp_path / "crep", tmp_path / "pillar"
+    make(root / "configs/.editorconfig", b"root = true\n")
+    make(pillar / ".editorconfig", b"root = true\n")
+    make(root / "configs/.yamllint", b"a\n")
+    make(pillar / ".yamllint", b"b\n")
+    entries = [
+        {"crepidoma": "configs/.editorconfig", "pillar": [".editorconfig"], "mirror": True},
+        {"crepidoma": "configs/.yamllint", "pillar": [".yamllint"], "mirror": True},
+    ]
+    assert drift_check.check(pillar, entries, root) == [
+        ("mirror", "configs/.editorconfig", ".editorconfig"),
+        ("drifted", "configs/.yamllint", ".yamllint"),
+    ]
