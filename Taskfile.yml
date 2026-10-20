@@ -37,6 +37,11 @@ tasks:
     cmds:
       - uv run python tools/denylist.py "{{.PILLARS}}" --out .scrub-denylist
 
+  drift:
+    desc: "Compare a pillar with Crepidoma: task drift -- <pillar path>"
+    cmds:
+      - uv run python tools/drift_check.py {{.CLI_ARGS}} --report .local/drift-report.tsv
+
   test:
     desc: Run pytest
     cmds:
