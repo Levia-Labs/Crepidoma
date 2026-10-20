@@ -1,0 +1,166 @@
+version: "3"
+
+vars:
+  CREDENTIALS: "{{.HOME}}/.claude/.credentials.json"
+  USAGE_URL: "https://api.anthropic.com/api/oauth/usage"
+
+tasks:
+  install:
+    desc: Install or update the Claude Code CLI (npm global)
+    silent: true
+    cmds:
+      - |
+        if ! command -v npm > /dev/null 2>&1; then
+          echo "npm is not installed, and the Claude Code CLI is an npm global."
+          echo "Install Node.js and npm, then re-run."
+          exit 1
+        fi
+      - |
+        if [ -w "$(npm prefix -g)" ]; then
+          npm install -g @anthropic-ai/claude-code
+        else
+          sudo npm install -g @anthropic-ai/claude-code
+        fi || {
+          echo ""
+          echo "npm install failed. Check that registry.npmjs.org is reachable."
+          exit 1
+        }
+        echo ""
+        echo "installed: $(claude --version 2>/dev/null || echo 'open a new shell to pick it up')"
+      - |
+        echo ""
+        echo 'Not logged in yet? Run: claude   then follow the browser prompt.'
+
+  _require-cli:
+    desc: Fail unless the claude CLI is on PATH
+    internal: true
+    preconditions:
+      - sh: "command -v claude"
+        msg: |
+          The `claude` CLI is not on PATH.
+          Install it (https://claude.com/claude-code) or add its directory to PATH.
+
+  status:
+    desc: "Auth status: account, subscription tier, org (JSON from the CLI)"
+    silent: true
+    deps: [_require-cli]
+    cmds:
+      - claude auth status --text
+      - echo ""
+      - claude auth status --json
+
+  quota:
+    desc: Everything the CLI exposes about plan limits, and what it cannot report
+    silent: true
+    deps: [_require-cli]
+    cmds:
+      - |
+        set -e
+        echo "== Account =="
+        claude auth status --json | jq -r '
+          "logged in       : \(.loggedIn)
+        auth method     : \(.authMethod)
+        api provider    : \(.apiProvider)
+        account         : \(.email)
+        organisation    : \(.orgName)
+        subscription    : \(.subscriptionType)"'
+
+        cred="{{.CREDENTIALS}}"
+        if [ -f "$cred" ]; then
+          echo ""
+          echo "== OAuth session =="
+          tier=$(jq -r '.claudeAiOauth.rateLimitTier // "unknown"' "$cred")
+          exp_ms=$(jq -r '.claudeAiOauth.expiresAt // 0' "$cred")
+          echo "rate limit tier : $tier"
+          if [ "$exp_ms" -gt 0 ]; then
+            exp_s=$((exp_ms / 1000))
+            now_s=$(date +%s)
+            left=$(( (exp_s - now_s) / 60 ))
+            echo "token expires   : $(date -d @"$exp_s" '+%Y-%m-%d %H:%M:%S %Z') (in ${left} min)"
+            echo "                  ^ access-token refresh, NOT a usage-window reset"
+          fi
+        fi
+
+        echo ""
+        echo "== Usage windows =="
+      - task: usage
+
+  usage:
+    desc: Live 5-hour and weekly allowance with reset times (same data as /usage)
+    silent: true
+    deps: [_require-cli]
+    cmds:
+      - |
+        cred="{{.CREDENTIALS}}"
+        if [ ! -f "$cred" ]; then
+          echo "No $cred - run 'claude auth login' first."
+          exit 1
+        fi
+
+        tok=$(jq -r '.claudeAiOauth.accessToken // empty' "$cred")
+        if [ -z "$tok" ]; then
+          echo "No OAuth access token in the credentials file (API-key auth?)."
+          echo "Usage windows are a subscription concept and are not reported for API keys."
+          exit 0
+        fi
+
+        resp=$(curl -s -w '\n%{http_code}' "{{.USAGE_URL}}" \
+                 -H "Authorization: Bearer $tok" -H "Content-Type: application/json")
+        code=$(printf '%s' "$resp" | tail -n 1)
+        body=$(printf '%s' "$resp" | sed '$d')
+
+        if [ "$code" = "401" ]; then
+          echo "401 - the stored access token has expired."
+          echo "Run any 'claude' command once to refresh it, then retry."
+          exit 1
+        fi
+        if [ "$code" != "200" ]; then
+          echo "HTTP $code from the usage endpoint. It is undocumented and may have moved;"
+          echo "fall back to an interactive session: claude, then /usage"
+          printf '%s\n' "$body" | head -c 300; echo
+          exit 1
+        fi
+
+        printf '%s' "$body" | jq -r '
+          [ {label: "Session (5 hour)", w: .five_hour},
+            {label: "Weekly (7 day)",   w: .seven_day},
+            {label: "Weekly Opus",      w: .seven_day_opus},
+            {label: "Weekly Sonnet",    w: .seven_day_sonnet} ]
+          | .[] | select(.w != null)
+          | ((.w.resets_at | split(".")[0]) + "Z" | fromdateiso8601) as $r
+          | "\(.label)\t\(.w.utilization)\t\(($r - now) | floor)\t\($r | strflocaltime("%Y-%m-%d %H:%M"))"
+        ' | while IFS=$(printf '\t') read -r label pct secs local_time; do
+          d=$((secs / 86400))
+          h=$(((secs % 86400) / 3600))
+          m=$(((secs % 3600) / 60))
+          if [ "$d" -gt 0 ]; then left="${d}d ${h}h"; else left="${h}h ${m}m"; fi
+          filled=$(awk -v p="$pct" 'BEGIN { printf "%d", p / 5 }')
+          bar=""
+          i=0
+          while [ "$i" -lt 20 ]; do
+            if [ "$i" -lt "$filled" ]; then bar="${bar}#"; else bar="${bar}."; fi
+            i=$((i + 1))
+          done
+          printf '%-18s [%s] %5s%%   resets in %-8s (%s)\n' "$label" "$bar" "$pct" "$left" "$local_time"
+        done
+
+  doctor:
+    desc: Health check of the Claude Code installation
+    silent: true
+    deps: [_require-cli]
+    cmds:
+      - claude doctor
+
+  version:
+    desc: Installed Claude Code version
+    silent: true
+    deps: [_require-cli]
+    cmds:
+      - claude --version
+
+  hooks:check:
+    desc: Run the Stop hook by hand - validates if an edit marked the tree dirty
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - echo '{}' | uv run python "{{.TASKFILE_DIR}}/../../plugins/crepidoma-core/scripts/hooks.py" stop

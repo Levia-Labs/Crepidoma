@@ -1,0 +1,245 @@
+version: "3"
+
+vars:
+  CFG: "{{.TASKFILE_DIR}}/../../configs"
+  RUFF: '{{.RUFF | default "uvx ruff"}}'
+  YAMLLINT: '{{.YAMLLINT | default "uvx yamllint"}}'
+  SG: '{{.SG | default "uvx --from ast-grep-cli ast-grep"}}'
+  PRETTIER: '{{.PRETTIER | default "npx --no prettier"}}'
+  ESLINT: '{{.ESLINT | default "npx --no eslint"}}'
+  PRECOMMIT: '{{.PRECOMMIT | default "uvx pre-commit"}}'
+
+tasks:
+  check:
+    desc: Verify formatting and lint rules. Changes nothing; the form pre-commit and CI run.
+    silent: true
+    cmds:
+      - task: python:check
+      - task: yaml:check
+      - task: shell:check
+      - task: docker:check
+      - task: web:check
+      - task: sg
+      - task: secrets
+
+  run:
+    desc: Format everything in place, then lint what has no formatter
+    silent: true
+    cmds:
+      - task: python:run
+      - task: shell:run
+      - task: web:run
+      - task: yaml:check
+
+  check:files:
+    desc: 'Lint a path list, rewriting nothing. Usage: task lint:check:files FILES="a.py b.sh" (or -- a.py b.sh)'
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    vars:
+      LIST: "{{.FILES | default .CLI_ARGS}}"
+    preconditions:
+      - sh: '[ -n "{{.LIST}}" ]'
+        msg: 'No files. Pass FILES="a.py b.sh" or -- a.py b.sh'
+    cmds:
+      - |
+        rc=0
+        py="" sh="" yml="" pr="" es=""
+        for f in {{.LIST}}; do
+          case "$f" in
+            *.py) py="$py $f" ;;
+            *.sh|*.bash) sh="$sh $f" ;;
+            *.yml|*.yaml) yml="$yml $f"; pr="$pr $f" ;;
+            *.js|*.jsx|*.mjs|*.cjs|*.ts|*.tsx) es="$es $f"; pr="$pr $f" ;;
+            *.json|*.css|*.scss|*.md|*.html) pr="$pr $f" ;;
+          esac
+        done
+        if [ -n "$py" ]; then
+          {{.RUFF}} check --output-format concise --config "{{.CFG}}/ruff.toml" $py \
+            && {{.RUFF}} format --check --config "{{.CFG}}/ruff.toml" $py || rc=1
+        fi
+        if [ -n "$sh" ]; then shellcheck $sh && shfmt -d -i 2 -ci $sh || rc=1; fi
+        if [ -n "$pr" ]; then
+          {{.PRETTIER}} --check --ignore-unknown --log-level warn --config "{{.CFG}}/.prettierrc" $pr || rc=1
+        fi
+        if [ -n "$es" ]; then
+          {{.ESLINT}} --max-warnings 0 --config "{{.CFG}}/eslint.config.js" $es || rc=1
+        fi
+        if [ -n "$yml" ]; then {{.YAMLLINT}} --strict -c "{{.CFG}}/.yamllint" $yml || rc=1; fi
+        [ -n "$py$sh$pr$es$yml" ] || echo "nothing lintable in the given files"
+        exit $rc
+
+  files:
+    desc: 'Format and fix a path list. Usage: task lint:files FILES="a.py b.sh" (or -- a.py b.sh)'
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    vars:
+      LIST: "{{.FILES | default .CLI_ARGS}}"
+    preconditions:
+      - sh: '[ -n "{{.LIST}}" ]'
+        msg: 'No files. Pass FILES="a.py b.sh" or -- a.py b.sh'
+    cmds:
+      - |
+        rc=0
+        py="" sh="" yml="" pr="" es=""
+        for f in {{.LIST}}; do
+          case "$f" in
+            *.py) py="$py $f" ;;
+            *.sh|*.bash) sh="$sh $f" ;;
+            *.yml|*.yaml) yml="$yml $f"; pr="$pr $f" ;;
+            *.js|*.jsx|*.mjs|*.cjs|*.ts|*.tsx) es="$es $f"; pr="$pr $f" ;;
+            *.json|*.css|*.scss|*.md|*.html) pr="$pr $f" ;;
+          esac
+        done
+        if [ -n "$py" ]; then
+          {{.RUFF}} format --config "{{.CFG}}/ruff.toml" $py \
+            && {{.RUFF}} check --fix --config "{{.CFG}}/ruff.toml" $py || rc=1
+        fi
+        if [ -n "$sh" ]; then shfmt -w -i 2 -ci $sh && shellcheck $sh || rc=1; fi
+        if [ -n "$pr" ]; then
+          {{.PRETTIER}} --write --ignore-unknown --log-level warn --config "{{.CFG}}/.prettierrc" $pr || rc=1
+        fi
+        if [ -n "$es" ]; then
+          {{.ESLINT}} --fix --max-warnings 0 --config "{{.CFG}}/eslint.config.js" $es || rc=1
+        fi
+        if [ -n "$yml" ]; then {{.YAMLLINT}} --strict -c "{{.CFG}}/.yamllint" $yml || rc=1; fi
+        [ -n "$py$sh$pr$es$yml" ] || echo "nothing lintable in the given files"
+        exit $rc
+
+  python:check:
+    desc: ruff lint and format check over the Python
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - '{{.RUFF}} check --output-format concise --config "{{.CFG}}/ruff.toml" .'
+      - '{{.RUFF}} format --check --config "{{.CFG}}/ruff.toml" .'
+
+  python:run:
+    desc: ruff format and autofix over the Python
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - '{{.RUFF}} format --config "{{.CFG}}/ruff.toml" .'
+      - '{{.RUFF}} check --fix --config "{{.CFG}}/ruff.toml" .'
+
+  yaml:check:
+    desc: yamllint --strict over the tracked YAML
+    silent: true
+    cmds:
+      - task: _each
+        vars:
+          GLOBS: "'*.yml' '*.yaml'"
+          CMD: '{{.YAMLLINT}} --strict -c "{{.CFG}}/.yamllint"'
+
+  shell:check:
+    desc: shellcheck and shfmt diff over the tracked shell scripts
+    silent: true
+    cmds:
+      - task: _each
+        vars: { GLOBS: "'*.sh' '*.bash'", CMD: "shellcheck" }
+      - task: _each
+        vars: { GLOBS: "'*.sh' '*.bash'", CMD: "shfmt -d -i 2 -ci" }
+
+  shell:run:
+    desc: shfmt in place over the tracked shell scripts
+    silent: true
+    cmds:
+      - task: _each
+        vars: { GLOBS: "'*.sh' '*.bash'", CMD: "shfmt -w -i 2 -ci" }
+
+  docker:check:
+    desc: hadolint over the tracked Dockerfiles
+    silent: true
+    cmds:
+      - task: _each
+        vars:
+          GLOBS: "'*Dockerfile*'"
+          CMD: 'hadolint --config "{{.CFG}}/.hadolint.yaml"'
+
+  _each:
+    desc: Run CMD on each tracked file matching GLOBS; stop at the first failure
+    internal: true
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - |
+        for f in $(git ls-files -- {{.GLOBS}}); do
+          [ -f "$f" ] || continue
+          {{.CMD}} "$f" || exit 1
+        done
+
+  web:check:
+    desc: prettier check and eslint with zero warnings, rewriting nothing
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - '{{.PRETTIER}} --check --ignore-unknown --log-level warn --config "{{.CFG}}/.prettierrc" .'
+      - '{{.ESLINT}} --max-warnings 0 --no-error-on-unmatched-pattern --config "{{.CFG}}/eslint.config.js" .'
+
+  web:run:
+    desc: prettier write and eslint autofix in place
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - '{{.PRETTIER}} --write --ignore-unknown --log-level warn --config "{{.CFG}}/.prettierrc" .'
+      - '{{.ESLINT}} --fix --max-warnings 0 --no-error-on-unmatched-pattern --config "{{.CFG}}/eslint.config.js" .'
+
+  secrets:
+    desc: gitleaks over the git history
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - 'gitleaks git --config "{{.CFG}}/gitleaks.toml" --redact --no-banner .'
+
+  sg:
+    desc: ast-grep shared rules over the working directory
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - '{{.SG}} scan --config "{{.CFG}}/sgconfig.yml" --report-style short .'
+
+  sg:file:
+    desc: "ast-grep rules on one file. Usage: task lint:sg:file F=path/x.py [R=rule-id]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    requires:
+      vars: [F]
+    cmds:
+      - >-
+        {{.SG}} scan --config "{{.CFG}}/sgconfig.yml" --report-style short
+        {{if .R}}--filter '{{.R}}'{{end}} "{{.F}}"
+
+  sg:test:
+    desc: Each ast-grep rule against its own valid and invalid examples
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - |
+        if out=$({{.SG}} test --config "{{.CFG}}/sgconfig.yml" --skip-snapshot-tests 2>&1); then
+          printf '%s\n' "$out" | tail -n 1
+        else
+          printf '%s\n' "$out"
+          exit 1
+        fi
+
+  sg:find:
+    desc: 'Structural search. Usage: task lint:sg:find P="subprocess.run($$$A)" [L=python] [IN="src tests"]'
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    requires:
+      vars: [P]
+    cmds:
+      - '{{.SG}} run --lang {{.L | default "python"}} --pattern ''{{.P}}'' {{.IN | default "."}}'
+
+  precommit:
+    desc: Run every pre-commit hook over every file, not only the staged ones
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - "{{.PRECOMMIT}} run --all-files"
+
+  precommit:staged:
+    desc: Run the pre-commit hooks over the staged files only
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - "{{.PRECOMMIT}} run"
