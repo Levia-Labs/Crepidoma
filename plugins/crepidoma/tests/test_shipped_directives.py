@@ -12,7 +12,7 @@ EXPECTED = {
 
 
 def test_shipped_directives_present_and_fit():
-    names = {path.name for path in inj.DIRECTIVES.glob("*.md")}
+    names = {p.name for p in inj.DIRECTIVES.glob("*.md") if p.name != "README.md"}
     assert names == EXPECTED
     text = inj.build(inj.DIRECTIVES)
     assert 0 < len(text) <= inj.LIMIT

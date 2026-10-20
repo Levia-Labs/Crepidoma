@@ -60,3 +60,9 @@ def test_subagent_event_reads_subagent_directory(tmp_path: Path, monkeypatch, ca
             "additionalContext": "compact rules",
         }
     }
+
+
+def test_folder_readme_is_not_a_directive(tmp_path: Path):
+    (tmp_path / "10-a.md").write_text("A\n", encoding="utf-8")
+    (tmp_path / "README.md").write_text("# Directives\n", encoding="utf-8")
+    assert inj.build(tmp_path) == "A"
