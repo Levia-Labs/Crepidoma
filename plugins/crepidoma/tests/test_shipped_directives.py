@@ -26,3 +26,15 @@ def test_models_directive_names_all_three_tiers():
     text = (inj.DIRECTIVES / "40-models.md").read_text(encoding="utf-8")
     for needle in ("claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5", "scout"):
         assert needle in text, needle
+
+
+def test_absolute_mode_and_style_fallback_present():
+    text = (inj.DIRECTIVES / "10-communication-style.md").read_text(encoding="utf-8")
+    for needle in ('"one"', "call-to-action", "mirror"):
+        assert needle in text, needle
+
+
+def test_tool_first_covers_skills_lanes_and_history():
+    text = (inj.DIRECTIVES / "20-tool-first-loop.md").read_text(encoding="utf-8")
+    for needle in ("skill", "retire", "session history"):
+        assert needle in text, needle
