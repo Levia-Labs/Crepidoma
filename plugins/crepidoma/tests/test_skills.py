@@ -13,3 +13,10 @@ def test_docs_sweep_skill_declares_name_and_description():
     assert "description:" in match.group(1)
     for needle in ("graphify", "haiku", "token", "scout"):
         assert needle in text.lower(), needle
+
+
+def test_migrate_pillar_skill_uses_the_migrator_agent():
+    text = (SKILLS / "migrate-pillar" / "SKILL.md").read_text(encoding="utf-8")
+    assert FRONTMATTER.match(text)
+    assert "pillar-migrator" in text
+    assert (SKILLS.parent / "agents" / "pillar-migrator.md").is_file()
