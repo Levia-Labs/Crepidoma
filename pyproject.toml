@@ -23,6 +23,7 @@ dev = ["pytest>=8", "ruff>=0.6", "pre-commit>=4"]
 
 [tool.uv]
 package = false  # uv does not build the project locally; pre-commit try-repo and pillars do
+exclude-newer = "7 days"  # dependency cooldown: never resolve versions younger than a week
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "plugins/crepidoma-core/tests"]
