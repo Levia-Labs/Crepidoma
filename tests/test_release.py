@@ -32,3 +32,11 @@ def test_main_dry_run_touches_nothing(tmp_path: Path, monkeypatch):
     monkeypatch.setattr(release, "ROOT", tmp_path)
     assert release.main(["0.3.0", "--dry-run"]) == 0
     assert json.loads(manifest.read_text(encoding="utf-8"))["version"] == "0.1.0"
+
+
+def test_bump_on_empty_changelog_ends_with_one_newline(tmp_path: Path):
+    setup_repo(tmp_path)
+    (tmp_path / "CHANGELOG.md").write_text("# Changelog\n", encoding="utf-8")
+    release.bump(tmp_path, "0.1.0", "2026-10-20")
+    text = (tmp_path / "CHANGELOG.md").read_text(encoding="utf-8")
+    assert text == "# Changelog\n\n## v0.1.0 - 2026-10-20\n"

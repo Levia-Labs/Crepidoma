@@ -26,7 +26,7 @@ def bump(root: Path, version: str, today: str) -> list[Path]:
     manifest.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8", newline="\n")
     changelog = root / "CHANGELOG.md"
     body = changelog.read_text(encoding="utf-8").removeprefix(HEADER).lstrip("\n")
-    entry = f"{HEADER}\n## v{version} - {today}\n\n{body}"
+    entry = f"{HEADER}\n## v{version} - {today}\n" + (f"\n{body}" if body else "")
     changelog.write_text(entry, encoding="utf-8", newline="\n")
     return [manifest, changelog]
 
