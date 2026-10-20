@@ -10,7 +10,6 @@
       "Bash(git rev-parse *)",
       "Bash(git ls-files *)",
       "Bash(git blame *)",
-      "Bash(git grep *)",
       "Bash(git add *)",
       "Bash(git commit *)",
       "PowerShell(git status *)",
@@ -21,7 +20,6 @@
       "PowerShell(git rev-parse *)",
       "PowerShell(git ls-files *)",
       "PowerShell(git blame *)",
-      "PowerShell(git grep *)",
       "PowerShell(git add *)",
       "PowerShell(git commit *)",
       "Bash(graphify *)",
@@ -65,7 +63,19 @@
       "PowerShell(git push *)",
       "PowerShell(rtk git push *)",
       "PowerShell(git reset --hard *)",
-      "PowerShell(git clean *)"
+      "PowerShell(git clean *)",
+      "Bash(git diff *--output*)",
+      "Bash(git diff *--ext-diff*)",
+      "Bash(git log *--output*)",
+      "Bash(git log *--ext-diff*)",
+      "Bash(git show *--output*)",
+      "Bash(git show *--ext-diff*)",
+      "PowerShell(git diff *--output*)",
+      "PowerShell(git diff *--ext-diff*)",
+      "PowerShell(git log *--output*)",
+      "PowerShell(git log *--ext-diff*)",
+      "PowerShell(git show *--output*)",
+      "PowerShell(git show *--ext-diff*)"
     ]
   },
   "extraKnownMarketplaces": {
