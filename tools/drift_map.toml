@@ -2,15 +2,15 @@
 # `task drift -- <pillar>` reports each copy as duplicate, drifted or absent.
 
 [[file]]
-crepidoma = "plugins/crepidoma-core/scripts/raw_read_guard.py"
+crepidoma = "plugins/crepidoma/scripts/raw_read_guard.py"
 pillar = ["Tasks/claude/raw_read_guard.py", "tasks/claude/raw_read_guard.py"]
 
 [[file]]
-crepidoma = "plugins/crepidoma-core/scripts/hooks.py"
+crepidoma = "plugins/crepidoma/scripts/hooks.py"
 pillar = ["Tasks/claude/hooks.py", "tasks/claude/hooks.py"]
 
 [[file]]
-crepidoma = "plugins/crepidoma-core/directives/60-taskfile-shell.md"
+crepidoma = "plugins/crepidoma/directives/60-taskfile-shell.md"
 pillar = [".claude/rules/taskfile-shell.md"]
 
 [[file]]
@@ -22,35 +22,35 @@ crepidoma = "taskfiles/lint/Taskfile.yml"
 pillar = ["Tasks/lint/Taskfile.yml", "tasks/lint/Taskfile.yml"]
 
 [[file]]
-crepidoma = "plugins/crepidoma-core/agents/toolsmith.md"
+crepidoma = "plugins/crepidoma/agents/toolsmith.md"
 pillar = [".claude/agents/toolsmith.md", ".claude/agents/tool-smith.md", ".claude/agents/tool-builder.md"]
 
 [[file]]
-crepidoma = "plugins/crepidoma-core/agents/auditor.md"
+crepidoma = "plugins/crepidoma/agents/auditor.md"
 pillar = [".claude/agents/auditor.md", ".claude/agents/tooling-auditor.md"]
 
 [[file]]
-crepidoma = "plugins/crepidoma-core/agents/implementer.md"
+crepidoma = "plugins/crepidoma/agents/implementer.md"
 pillar = [".claude/agents/implementer.md", ".claude/agents/app-implementer.md", ".claude/agents/feature-change.md"]
 
 [[file]]
-crepidoma = "plugins/crepidoma-core/agents/diff-reviewer.md"
+crepidoma = "plugins/crepidoma/agents/diff-reviewer.md"
 pillar = [".claude/agents/diff-reviewer.md"]
 
 [[file]]
-crepidoma = "plugins/crepidoma-core/agents/docs-syncer.md"
+crepidoma = "plugins/crepidoma/agents/docs-syncer.md"
 pillar = [".claude/agents/docs-syncer.md", ".claude/agents/doc-pass.md"]
 
 [[file]]
-crepidoma = "plugins/crepidoma-core/agents/rule-smith.md"
+crepidoma = "plugins/crepidoma/agents/rule-smith.md"
 pillar = [".claude/agents/rule-smith.md"]
 
 [[file]]
-crepidoma = "plugins/crepidoma-core/agents/gate-fixer.md"
+crepidoma = "plugins/crepidoma/agents/gate-fixer.md"
 pillar = [".claude/agents/gate-fixer.md"]
 
 [[file]]
-crepidoma = "plugins/crepidoma-core/agents/todo-triage.md"
+crepidoma = "plugins/crepidoma/agents/todo-triage.md"
 pillar = [".claude/agents/todo-triage.md", ".claude/agents/todo-entry.md"]
 
 [[file]]

@@ -4,8 +4,8 @@
   "metadata": { "description": "Foundation plugins for Levia Labs pillar projects" },
   "plugins": [
     {
-      "name": "crepidoma-core",
-      "source": "./plugins/crepidoma-core",
+      "name": "crepidoma",
+      "source": "./plugins/crepidoma",
       "description": "Shared directives, agents, guard hooks and output tools"
     }
   ]

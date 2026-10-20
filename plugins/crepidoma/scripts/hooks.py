@@ -261,7 +261,7 @@ def failure(task: str, result: subprocess.CompletedProcess, hints: tuple[str, ..
 
 
 def opted_in() -> bool:
-    """True when the project's committed settings enable crepidoma-core.
+    """True when the project's committed settings enable crepidoma.
 
     Hooks run project code (task gates, graphify, a budget script) only after this
     opt-in, so a user-scope install never executes code from an untrusted checkout.
@@ -271,9 +271,7 @@ def opted_in() -> bool:
         plugins = settings.get("enabledPlugins") or {}
     except (OSError, ValueError, AttributeError):
         return False
-    return any(
-        key.startswith("crepidoma-core@") and value is True for key, value in plugins.items()
-    )
+    return any(key.startswith("crepidoma@") and value is True for key, value in plugins.items())
 
 
 def stop(event: dict, tasks: tuple[str, ...] = ()) -> int:

@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-MANIFEST = Path("plugins/crepidoma-core/.claude-plugin/plugin.json")
+MANIFEST = Path("plugins/crepidoma/.claude-plugin/plugin.json")
 SEMVER = re.compile(r"^\d+\.\d+\.\d+$")
 HEADER = "# Changelog\n"
 

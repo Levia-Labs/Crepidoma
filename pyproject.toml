@@ -26,8 +26,8 @@ package = false  # uv does not build the project locally; pre-commit try-repo an
 exclude-newer = "7 days"  # dependency cooldown: never resolve versions younger than a week
 
 [tool.pytest.ini_options]
-testpaths = ["tests", "plugins/crepidoma-core/tests"]
-pythonpath = ["tools", "plugins/crepidoma-core/scripts"]
+testpaths = ["tests", "plugins/crepidoma/tests"]
+pythonpath = ["tools", "plugins/crepidoma/scripts"]
 addopts = "--import-mode=importlib -q"
 markers = ["no_opt_in: run without the autouse crepidoma opt-in stub"]
 

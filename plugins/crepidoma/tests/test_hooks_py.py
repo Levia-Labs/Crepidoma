@@ -27,9 +27,9 @@ def write_settings(root, plugins):
 def test_opt_in_requires_project_enabled_plugin(tmp_path, monkeypatch):
     monkeypatch.setattr(hooks, "ROOT", tmp_path)
     assert hooks.opted_in() is False
-    write_settings(tmp_path, {"crepidoma-core@levia-labs": False})
+    write_settings(tmp_path, {"crepidoma@levia-labs": False})
     assert hooks.opted_in() is False
-    write_settings(tmp_path, {"crepidoma-core@levia-labs": True})
+    write_settings(tmp_path, {"crepidoma@levia-labs": True})
     assert hooks.opted_in() is True
 
 

@@ -5,11 +5,9 @@ import release
 
 
 def setup_repo(root: Path) -> Path:
-    manifest = root / "plugins/crepidoma-core/.claude-plugin/plugin.json"
+    manifest = root / "plugins/crepidoma/.claude-plugin/plugin.json"
     manifest.parent.mkdir(parents=True)
-    manifest.write_text(
-        json.dumps({"name": "crepidoma-core", "version": "0.1.0"}), encoding="utf-8"
-    )
+    manifest.write_text(json.dumps({"name": "crepidoma", "version": "0.1.0"}), encoding="utf-8")
     (root / "CHANGELOG.md").write_text("# Changelog\n\n## v0.1.0 - 2026-10-20\n", encoding="utf-8")
     return manifest
 

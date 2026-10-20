@@ -1,6 +1,6 @@
 # Project name
 
-Shared directives, agents and hooks come from the crepidoma-core plugin (github.com/Levia-Labs/Crepidoma).
+Shared directives, agents and hooks come from the crepidoma plugin (github.com/Levia-Labs/Crepidoma).
 This file holds only what is specific to this repo.
 
 ## Project

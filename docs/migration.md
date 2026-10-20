@@ -8,7 +8,7 @@
 3. Merge `templates/settings.json` into `.claude/settings.json`; delete the pillar hooks block that
    ran `hooks.py` or `raw_read_guard.py`. The committed `enabledPlugins` entry is also the opt-in
    that lets the plugin's hooks run the pillar's task gates.
-4. Each collaborator runs once: `claude plugin install crepidoma-core@levia-labs --scope project`.
+4. Each collaborator runs once: `claude plugin install crepidoma@levia-labs --scope project`.
 5. Replace `.pre-commit-config.yaml` with `templates/.pre-commit-config.yaml`, keep pillar-only
    hooks, then run `pre-commit install && pre-commit autoupdate`.
 6. Point root configs at `.crepidoma/configs/`:
@@ -29,7 +29,7 @@
 
 1. Back up `~/.claude/CLAUDE.md`, `~/.claude/settings.json` and `~/.claude/bin/`.
 2. Run `claude plugin marketplace add Levia-Labs/Crepidoma`, then
-   `claude plugin install crepidoma-core@levia-labs --scope user`.
+   `claude plugin install crepidoma@levia-labs --scope user`.
 3. Remove the PreToolUse `raw_read_guard.py` hook from `~/.claude/settings.json`.
 4. Reduce `~/.claude/CLAUDE.md` to personal content; delete `~/.claude/bin/digest.py` and
    `~/.claude/bin/raw_read_guard.py`.

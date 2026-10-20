@@ -26,17 +26,17 @@ configs, Taskfiles and process ADRs. Pillars link Crepidoma; nothing is copied.
      "extraKnownMarketplaces": {
        "levia-labs": { "source": { "source": "github", "repo": "Levia-Labs/Crepidoma" } }
      },
-     "enabledPlugins": { "crepidoma-core@levia-labs": true }
+     "enabledPlugins": { "crepidoma@levia-labs": true }
    }
    ```
 
    Each collaborator installs once, from the CLI:
 
    ```sh
-   claude plugin install crepidoma-core@levia-labs --scope project
+   claude plugin install crepidoma@levia-labs --scope project
    ```
 
-   or inside Claude Code: `/plugin install crepidoma-core --marketplace Levia-Labs/Crepidoma`.
+   or inside Claude Code: `/plugin install crepidoma --marketplace Levia-Labs/Crepidoma`.
 
    The committed `enabledPlugins` entry is also the opt-in that lets the plugin's hooks run the
    pillar's own task gates.
@@ -79,17 +79,17 @@ and [templates/](templates/).
 
 ## Contents
 
-| Path                                 | What                                                                                                                   |
-| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
-| `plugins/crepidoma-core/directives/` | Always-on rules, injected at session start                                                                             |
-| `plugins/crepidoma-core/agents/`     | Shared subagents                                                                                                       |
-| `plugins/crepidoma-core/hooks/`      | Hook wiring for the scripts below                                                                                      |
-| `plugins/crepidoma-core/scripts/`    | `inject_directives.py`, `raw_read_guard.py`, `hooks.py`, `digest.py`                                                   |
-| `configs/`                           | editorconfig, gitattributes, prettier, eslint, ruff, yamllint, ast-grep, gitleaks, semgrep, zizmor, hadolint, tsconfig |
-| `taskfiles/`                         | Shared `claude:` and `lint:` Taskfile namespaces                                                                       |
-| `tools/`                             | scrub, ratchet (300-line long-file threshold), drift check, denylist, release                                          |
-| `docs/adr/`                          | Process decisions shared by all pillars                                                                                |
-| `templates/`                         | Files a pillar copies once                                                                                             |
+| Path                            | What                                                                                                                   |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `plugins/crepidoma/directives/` | Always-on rules, injected at session start                                                                             |
+| `plugins/crepidoma/agents/`     | Shared subagents                                                                                                       |
+| `plugins/crepidoma/hooks/`      | Hook wiring for the scripts below                                                                                      |
+| `plugins/crepidoma/scripts/`    | `inject_directives.py`, `raw_read_guard.py`, `hooks.py`, `digest.py`                                                   |
+| `configs/`                      | editorconfig, gitattributes, prettier, eslint, ruff, yamllint, ast-grep, gitleaks, semgrep, zizmor, hadolint, tsconfig |
+| `taskfiles/`                    | Shared `claude:` and `lint:` Taskfile namespaces                                                                       |
+| `tools/`                        | scrub, ratchet (300-line long-file threshold), drift check, denylist, release                                          |
+| `docs/adr/`                     | Process decisions shared by all pillars                                                                                |
+| `templates/`                    | Files a pillar copies once                                                                                             |
 
 ## Working on Crepidoma
 
