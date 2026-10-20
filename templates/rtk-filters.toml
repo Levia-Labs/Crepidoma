@@ -9,6 +9,7 @@ schema_version = 1
 # Adjust the task names in match_command to the pillar's Taskfile.
 [filters.task-validate]
 description = "Collapse a clean task validate"
+strip_ansi = true
 match_command = "^task\\s+(check|validate|lint:check|quality:check|quality:types|types:check|test|test:run|security:\\S+)\\b"
 strip_lines_matching = [
   "^All checks passed!$",
@@ -24,6 +25,9 @@ strip_lines_matching = [
   "^coverage: \\d+ file\\(s\\), none dropped(, \\d+ rose)?$",
   "^Running \\d+ tests$",
   "^test result: ok\\. \\d+ passed; 0 failed;$",
+  # pre-commit rows and prettier rows that changed nothing.
+  "\\.{3,}(\\(no files to check\\))?\\s*(Passed|Skipped)\\s*$",
+  "\\(unchanged\\)\\s*$",
   "^$",
 ]
 # A skipped scanner ("<name>: skipped - scanner not available here") is deliberately not
@@ -40,3 +44,50 @@ strip_lines_matching = [
   "^\\s+_scs\\($",
   "^Tip: set GEMINI_API_KEY",
 ]
+
+# pre-commit prints one row per hook. Passed and Skipped rows carry no decision; Failed rows,
+# "- hook id:", "- exit code:", file:line errors and the final ref or sha lines never match.
+[filters.hook-noise]
+description = "Drop pre-commit Passed/Skipped rows and prettier (unchanged) rows"
+match_command = "^(git\\s+(push|commit)|pre-commit\\s+run|task\\s+hooks:\\S+)\\b"
+strip_ansi = true
+strip_lines_matching = [
+  "\\.{3,}(\\(no files to check\\))?\\s*(Passed|Skipped)\\s*$",
+  "\\(unchanged\\)\\s*$",
+  "^$",
+]
+
+[[tests.hook-noise]]
+name = "drops Passed and Skipped rows, keeps failure and sha lines"
+input = """
+trim trailing whitespace.................................................Passed
+ruff format..........................................(no files to check)Skipped
+gitleaks.................................................................Failed
+- hook id: gitleaks
+- exit code: 1
+src/a.py:12: leaked secret
+[feat/x abc1234] feat: thing
+ 1 file changed, 2 insertions(+)
+"""
+expected = """
+gitleaks.................................................................Failed
+- hook id: gitleaks
+- exit code: 1
+src/a.py:12: leaked secret
+[feat/x abc1234] feat: thing
+ 1 file changed, 2 insertions(+)
+"""
+
+[[tests.task-validate]]
+name = "drops hook rows and prettier unchanged rows, keeps failures"
+input = """
+ruff.....................................................................Passed
+prettier.............................................(no files to check)Skipped
+docs/a.md 12ms (unchanged)
+docs/b.md 9ms
+src/a.py:3: error
+"""
+expected = """
+docs/b.md 9ms
+src/a.py:3: error
+"""

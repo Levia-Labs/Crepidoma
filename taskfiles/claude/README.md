@@ -6,6 +6,6 @@
 
 <!-- contents:start -->
 
-- [`Taskfile.yml`](Taskfile.yml) - Task namespace with 28 tasks.
+- [`Taskfile.yml`](Taskfile.yml) - Task namespace with 25 tasks.
 
 <!-- contents:end -->

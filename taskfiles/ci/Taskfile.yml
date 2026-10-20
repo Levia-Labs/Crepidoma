@@ -2,7 +2,7 @@ version: "3"
 
 vars:
   CI_PY: '{{if eq OS "windows"}}python{{else}}python3{{end}}'
-  CI_DIGEST: "{{.TASKFILE_DIR}}/../../plugins/crepidoma/scripts/digest.py"
+  CI_RUNS: "{{.TASKFILE_DIR}}/../../plugins/crepidoma/scripts/ci_runs.py"
 
 tasks:
   status:
@@ -16,25 +16,27 @@ tasks:
           --jq '.[] | "\(.databaseId) \(.status)/\(.conclusion) \(.workflowName) \(.headBranch)"'
 
   fail:
-    desc: "Failed-step log of the latest failed run, digested. Usage: task ci:fail"
+    desc: >-
+      Failing jobs of a run: name, URL, up to LINES error lines (exit 1 failures, 3 no run).
+      Usage: task ci:fail [REPO=owner/name] [SHA=<commit> | RUN=<id>] [LINES=20]
     silent: true
     dir: "{{.USER_WORKING_DIR}}"
     cmds:
       - |
         command -v gh >/dev/null 2>&1 || { echo "missing gh: install https://cli.github.com" >&2; exit 1; }
         command -v uv >/dev/null 2>&1 || { echo "missing uv: install https://docs.astral.sh/uv/" >&2; exit 1; }
-        id=$(gh run list --status failure --limit 1 --json databaseId --jq '.[0].databaseId')
-        [ -n "$id" ] || { echo "ci: no failed run"; exit 0; }
-        echo "run $id"
-        gh run view "$id" --log-failed 2>&1 | uv run --no-project {{.CI_PY}} "{{.CI_DIGEST}}"
+        uv run --no-project {{.CI_PY}} "{{.CI_RUNS}}" fail --lines '{{.LINES | default "20"}}' \
+          {{if .REPO}}--repo '{{.REPO}}'{{end}} {{if .SHA}}--sha '{{.SHA}}'{{end}} {{if .RUN}}--run '{{.RUN}}'{{end}}
 
   watch:
-    desc: "Wait on the latest run, exit non-zero on failure. Usage: task ci:watch"
+    desc: >-
+      Wait for a run to appear, watch it, one line per run (exit 0 success, 1 failed, 3 none in TIMEOUT s).
+      Usage: task ci:watch [REPO=owner/name] [SHA=<commit> | RUN=<id>] [TIMEOUT=300]
     silent: true
     dir: "{{.USER_WORKING_DIR}}"
     cmds:
       - |
         command -v gh >/dev/null 2>&1 || { echo "missing gh: install https://cli.github.com" >&2; exit 1; }
-        id=$(gh run list --limit 1 --json databaseId --jq '.[0].databaseId')
-        [ -n "$id" ] || { echo "ci: no runs"; exit 0; }
-        gh run watch "$id" --exit-status >/dev/null && echo "run $id: success"
+        command -v uv >/dev/null 2>&1 || { echo "missing uv: install https://docs.astral.sh/uv/" >&2; exit 1; }
+        uv run --no-project {{.CI_PY}} "{{.CI_RUNS}}" watch --timeout '{{.TIMEOUT | default "300"}}' \
+          {{if .REPO}}--repo '{{.REPO}}'{{end}} {{if .SHA}}--sha '{{.SHA}}'{{end}} {{if .RUN}}--run '{{.RUN}}'{{end}}

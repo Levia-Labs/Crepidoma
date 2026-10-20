@@ -17,8 +17,53 @@ def bash(command):
     return {"tool_name": "Bash", "tool_input": {"command": command}}
 
 
-def test_subagent_always_allowed():
-    assert guard.decide(read(agent="a1")) is None
+def sub_bash(command, cwd=""):
+    data = bash(command)
+    data["agent_id"] = "a1"
+    data["cwd"] = str(cwd)
+    return data
+
+
+def test_subagent_read_cap_is_80():
+    assert guard.decide(read(agent="a1")) is not None
+    assert guard.decide(read(limit=81, agent="a1")) is not None
+    assert guard.decide(read(limit=80, agent="a1")) is None
+    assert guard.decide(read(limit=40)) is not None
+
+
+def test_subagent_refusal_names_cap_and_alternatives():
+    text = guard.decide(read(limit=500, agent="a1"))
+    assert "80" in text and "4096" in text
+    for name in ("digest", "offset", "repo:outline", "repo:section"):
+        assert name in text
+
+
+def test_subagent_sed_head_tail_caps():
+    assert guard.decide(sub_bash("sed -n 60,240p CLAUDE.md")) is not None
+    assert guard.decide(sub_bash("sed -n 60,139p CLAUDE.md")) is None
+    assert guard.decide(sub_bash("head -n 81 a.md")) is not None
+    assert guard.decide(sub_bash("tail -n 80 a.md")) is None
+    assert guard.decide(sub_bash("head -c 5000 a.md")) is not None
+    assert guard.decide(sub_bash("head -c 4096 a.md")) is None
+
+
+def test_subagent_cat_by_file_size(tmp_path):
+    (tmp_path / "big.yml").write_text("x" * 5000, encoding="utf-8")
+    (tmp_path / "small.yml").write_text("a: 1\n", encoding="utf-8")
+    (tmp_path / "long.txt").write_text("l\n" * 100, encoding="utf-8")
+    assert guard.decide(sub_bash("cat big.yml", tmp_path)) is not None
+    assert guard.decide(sub_bash("cat small.yml", tmp_path)) is None
+    assert guard.decide(sub_bash("cat big.yml | digest", tmp_path)) is None
+    assert guard.decide(sub_bash("cat long.txt", tmp_path)) is not None
+
+
+def test_subagent_task_output_by_size(tmp_path):
+    out = tmp_path / "tasks" / "b1.output"
+    out.parent.mkdir()
+    out.write_text("y" * 5000, encoding="utf-8")
+    assert guard.decide(sub_bash(f"cat {out.as_posix()}")) is not None
+    out.write_text("ok\n", encoding="utf-8")
+    assert guard.decide(sub_bash(f"cat {out.as_posix()}")) is None
 
 
 def test_read_needs_small_limit():
