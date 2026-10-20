@@ -965,3 +965,16 @@ def test_state_fallback_is_per_user_not_shared_temp(tmp_path, monkeypatch):
     fallback = hooks.state_dir(bare)
     assert fallback.is_relative_to(tmp_path / "state")
     assert not fallback.is_relative_to(Path(tempfile.gettempdir()) / "crepidoma")
+
+
+# ---- Model policy: Opus main thread, Sonnet subagents, Haiku for reads -----------------
+
+
+@pytest.mark.parametrize("model", ["sonnet", "haiku", "claude-sonnet-5-5", "claude-haiku-5-5"])
+def test_subagent_models_allowed(model):
+    assert hooks.agent_refusal({"subagent_type": "toolsmith", "model": model}) is None
+
+
+@pytest.mark.parametrize("model", ["opus", "claude-opus-5-5", "fable", "inherit"])
+def test_subagent_heavy_models_refused(model):
+    assert hooks.agent_refusal({"subagent_type": "toolsmith", "model": model})

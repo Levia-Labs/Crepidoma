@@ -74,8 +74,10 @@ and [templates/](templates/).
 2. PreToolUse: refuses raw whole-file reads in the main thread (`digest` is the bounded reader),
    refuses forbidden or excess subagents, and stops subagents from discarding working-tree changes.
 3. PostToolUse and Stop: marks edited scopes dirty and runs the project's gate before a turn ends.
-4. Agents: auditor, diff-reviewer, docs-syncer, gate-fixer, implementer, rule-smith,
-   todo-triage, toolsmith.
+4. Agents on Sonnet: auditor, diff-reviewer, docs-syncer, gate-fixer, implementer, rule-smith,
+   todo-triage, toolsmith; `scout` on Haiku for grep, read and small lookups.
+5. Models: the main thread is pinned to Opus (`claude-opus-5-5`) in committed settings; the
+   PreToolUse hook refuses subagents on Opus or on the inherited main-thread model.
 
 ## Contents
 

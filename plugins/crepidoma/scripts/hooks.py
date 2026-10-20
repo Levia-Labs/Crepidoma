@@ -414,10 +414,11 @@ def agent_refusal(arguments: dict) -> str | None:
             "fits, write one first."
         )
     model = str(arguments.get("model") or defined_model(kind)).strip()
-    if model not in MODELS:
+    if not (model in MODELS or re.fullmatch(r"claude-(?:sonnet|haiku)-[\w.-]+", model)):
         return (
-            f"Agent '{kind}' would run on '{model or 'the orchestrator model'}'. Pass model "
-            "'sonnet' (work) or 'haiku' (indexing), or declare one in the agent definition."
+            f"Agent '{kind}' would run on '{model or 'the orchestrator model'}'. Only the main "
+            "thread runs on Opus. Pass model 'sonnet' (work) or 'haiku' (grep, read, small "
+            "lookups), or declare one in the agent definition."
         )
     return None
 

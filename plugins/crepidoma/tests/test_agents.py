@@ -26,3 +26,16 @@ def test_agents_have_required_fields_and_unique_names():
         assert fields.get("tools"), "agents carry only the tools they use"
         names.append(fields["name"])
     assert len(names) == len(set(names))
+
+
+def test_haiku_scout_is_read_only():
+    fields = frontmatter(AGENTS / "scout.md")
+    assert fields["model"] == "haiku"
+    tools = {tool.strip() for tool in fields["tools"].split(",")}
+    assert tools <= {"Read", "Grep", "Glob"}
+
+
+def test_work_agents_run_on_sonnet():
+    for path in AGENTS.glob("*.md"):
+        if path.stem != "scout":
+            assert frontmatter(path)["model"] == "sonnet", path.name

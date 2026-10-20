@@ -20,3 +20,9 @@ def test_shipped_directives_present_and_fit():
 def test_no_user_scope_paths():
     text = inj.build(inj.DIRECTIVES)
     assert "~/.claude/bin" not in text
+
+
+def test_models_directive_names_all_three_tiers():
+    text = (inj.DIRECTIVES / "40-models.md").read_text(encoding="utf-8")
+    for needle in ("claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5", "scout"):
+        assert needle in text, needle

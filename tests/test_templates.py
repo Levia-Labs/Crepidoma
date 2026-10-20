@@ -46,3 +46,10 @@ def test_plugin_is_named_crepidoma():
     readme = (root / "README.md").read_text(encoding="utf-8")
     assert "claude plugin install crepidoma@levia-labs" in readme
     assert "crepidoma-core" not in readme
+
+
+def test_templates_pin_opus_main_thread():
+    for settings in (TEMPLATES / "settings.json", TEMPLATES.parent / ".claude" / "settings.json"):
+        data = json.loads(settings.read_text(encoding="utf-8"))
+        assert data["model"] == "claude-opus-5-5", settings
+        assert "CLAUDE_CODE_SUBAGENT_MODEL" not in data.get("env", {})
