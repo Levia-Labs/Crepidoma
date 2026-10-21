@@ -83,3 +83,19 @@ def test_templates_track_main():
     assert "reusable-validate.yml@main" in (TEMPLATES / "ci.yml").read_text(encoding="utf-8")
     assert "-b main" in (TEMPLATES / "gitmodules.txt").read_text(encoding="utf-8")
     assert "rev: v0" not in (root / "README.md").read_text(encoding="utf-8")
+
+
+def test_ci_template_pins_tools_and_checks_out_full_history():
+    text = (TEMPLATES / "ci.yml").read_text(encoding="utf-8")
+    for pin in ("0.11.0", "3.14.1", "8.30.1", "hadolint"):
+        assert pin in text
+    assert "submodules: true" in text
+    assert "fetch-depth: 0" in text
+    assert "task lint:check" in text
+    assert "task security:check" in text
+
+
+def test_migration_documents_ci_tools():
+    text = (TEMPLATES.parent / "docs" / "migration.md").read_text(encoding="utf-8")
+    assert "fetch-depth: 0" in text
+    assert "8.30.1" in text
