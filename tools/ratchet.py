@@ -1,6 +1,7 @@
 """Ratchet quality metrics so they never get worse.
 
 long-files: files over --max-lines must be in the baseline and may not grow.
+Lockfiles and binary files are skipped.
 metric: one number compared with a baseline value; --direction says which way is better.
 A missing metric baseline is created from the first value.
 """
@@ -10,6 +11,31 @@ from __future__ import annotations
 import argparse
 import subprocess
 from pathlib import Path
+
+LOCKFILES = frozenset(
+    {
+        "uv.lock",
+        "package-lock.json",
+        "pnpm-lock.yaml",
+        "yarn.lock",
+        "Cargo.lock",
+        "poetry.lock",
+        "Gemfile.lock",
+        "composer.lock",
+        "go.sum",
+    }
+)
+
+
+def is_binary(path: Path) -> bool:
+    data = path.read_bytes()
+    if b"\0" in data[:8192]:
+        return True
+    try:
+        data.decode("utf-8")
+    except UnicodeDecodeError:
+        return True
+    return False
 
 
 def count_lines(path: Path) -> int:
@@ -39,7 +65,7 @@ def long_files(files: list[str], baseline: Path, max_lines: int, update: bool) -
     current: dict[str, int] = {}
     for name in files:
         path = Path(name)
-        if path.is_file():
+        if path.is_file() and path.name not in LOCKFILES and not is_binary(path):
             lines = count_lines(path)
             if lines > max_lines:
                 current[path.as_posix()] = lines

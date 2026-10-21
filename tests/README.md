@@ -13,6 +13,7 @@
 - [`test_folder_readme.py`](test_folder_readme.py) - Tests for `folder_readme`.
 - [`test_precommit_hooks.py`](test_precommit_hooks.py) - Tests for `precommit_hooks`.
 - [`test_ratchet.py`](test_ratchet.py) - Tests for `ratchet`.
+- [`test_ratchet_skip.py`](test_ratchet_skip.py) - Tests for `ratchet_skip`.
 - [`test_release.py`](test_release.py) - Tests for `release`.
 - [`test_scrub_check.py`](test_scrub_check.py) - Tests for `scrub_check`.
 - [`test_taskfiles.py`](test_taskfiles.py) - Tests for `taskfiles`.
