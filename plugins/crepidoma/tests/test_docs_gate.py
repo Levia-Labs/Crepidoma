@@ -1,3 +1,5 @@
+import subprocess
+
 import docs_gate
 import pytest
 
@@ -78,3 +80,25 @@ def test_output_capped_at_20_lines(repo, capsys):
     out = capsys.readouterr().out.splitlines()
     assert len(out) == 20
     assert out[-1].startswith("40 new")
+
+
+def git_repo(root, tracked):
+    for args in (["init", "-q"], ["add", *tracked]):
+        subprocess.run(["git", *args], cwd=root, check=True)
+
+
+def test_untracked_link_target_is_reported(repo, capsys):
+    write(repo, "a.md", "[t](b.md) [u](local.md) [g](out/x.md) `out/x.md`\n")
+    write(repo, "b.md")
+    write(repo, "local.md")
+    write(repo, "out/x.md")
+    write(repo, "tools/README.md", "- `one.py` x\n")
+    write(repo, "tools/one.py")
+    write(repo, "tools/stray.py")
+    git_repo(repo, ["a.md", "b.md", "tools/README.md", "tools/one.py"])
+    assert docs_gate.main(["all"]) == 1
+    out = capsys.readouterr().out.splitlines()
+    assert "a.md:1: untracked-link local.md" in out
+    assert "a.md:1: untracked-link out/x.md" in out
+    assert not any("b.md" in line for line in out)
+    assert not any("stray.py" in line for line in out)

@@ -3,6 +3,8 @@
 
 Usage: docs_gate.py links|readme|all [paths...] [--update] [--baseline FILE]
 
+Targets resolve against tracked files (`git ls-files`); a link to an untracked or ignored
+path is `untracked-link`: use a code span instead. Without git, the working tree is used.
 `links`: relative Markdown links and backticked repo paths that do not exist (case-exact).
 `readme`: a folder README that lists files must match the folder's files (missing, extra).
 Findings are `path:line: rule`. Those in `.ratchet/docs.baseline` are allowed; a new one exits 1.
@@ -48,7 +50,26 @@ def documents(paths: list[str]) -> list[str]:
     return sorted(n for n in names if not n.startswith(SKIP) and (ROOT / n).is_file())
 
 
+TRACKED: set[str] | None = None
+
+
+def load_tracked() -> None:
+    """Index tracked files and their parent dirs; None (no git) falls back to the working tree."""
+    global TRACKED
+    names = [n.replace("\\", "/") for n in run("git", "ls-files").splitlines() if n.strip()]
+    TRACKED = set(names)
+    for name in names:
+        TRACKED.update(p.as_posix() for p in Path(name).parents if p.as_posix() != ".")
+    TRACKED = TRACKED or None
+
+
 def exists_exact(relative: str) -> bool:
+    if TRACKED is not None:
+        return os.path.normpath(relative).replace("\\", "/").strip("/") in TRACKED
+    return exists_on_disk(relative)
+
+
+def exists_on_disk(relative: str) -> bool:
     """Walk components against real directory listings; Path.exists() ignores case on Windows."""
     current = ROOT
     for part in os.path.normpath(relative).replace("\\", "/").split("/"):
@@ -64,14 +85,20 @@ def exists_exact(relative: str) -> bool:
     return True
 
 
-def resolves(target: str, document: str) -> bool:
+def resolves(target: str, document: str) -> str:
+    """Return "" when tracked, "untracked" when only on disk, "missing" otherwise."""
     target = target.split("#")[0].split("?")[0]
     if not target:
-        return True
+        return ""
     if target.startswith("/"):
-        return exists_exact(target.lstrip("/"))
-    here = (Path(document).parent / target).as_posix()
-    return exists_exact(here) or exists_exact(target)
+        options = [target.lstrip("/")]
+    else:
+        options = [(Path(document).parent / target).as_posix(), target]
+    if any(exists_exact(o) for o in options):
+        return ""
+    if TRACKED is not None and any(exists_on_disk(o) for o in options):
+        return "untracked"
+    return "missing"
 
 
 def is_path_claim(token: str) -> bool:
@@ -100,7 +127,10 @@ def check_links(document: str) -> list[str]:
         for target in targets + spans:
             if NOT_PATH.search(target) or target.startswith(GENERATED):
                 continue
-            if not resolves(target, document):
+            state = resolves(target, document)
+            if state == "untracked":
+                found.append(f"{document}:{number}: untracked-link {target}")
+            elif state:
                 found.append(f"{document}:{number}: links {target}")
     return found
 
@@ -116,7 +146,12 @@ def check_readme(document: str) -> list[str]:
     if not listed:
         return []
     folder = (ROOT / document).parent
-    actual = {p.name for p in folder.iterdir() if p.is_file() and p.name not in UNLISTED_OK}
+    if TRACKED is not None:
+        here = Path(document).parent.as_posix()
+        names = {Path(t).name for t in TRACKED if Path(t).parent.as_posix() == here}
+        actual = {n for n in names if (folder / n).is_file() and n not in UNLISTED_OK}
+    else:
+        actual = {p.name for p in folder.iterdir() if p.is_file() and p.name not in UNLISTED_OK}
     found = [
         f"{document}:{n}: readme extra {name}" for name, n in listed.items() if name not in actual
     ]
@@ -145,6 +180,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     kinds = ("links", "readme") if args.check == "all" else (args.check,)
+    load_tracked()
     docs = documents(args.paths)
     findings: list[str] = []
     for document in docs:
