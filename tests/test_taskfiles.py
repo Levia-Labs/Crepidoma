@@ -2,6 +2,8 @@ import os
 import subprocess
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -113,3 +115,48 @@ def test_shared_gitleaks_prefers_root_config():
     for name in ("lint", "security"):
         text = (ROOT / "taskfiles" / name / "Taskfile.yml").read_text(encoding="utf-8")
         assert "[ -f .gitleaks.toml ]" in text, name
+
+
+def _run_secrets(tmp_path, task, fake_body):
+    (tmp_path / "Taskfile.yml").write_text(
+        f'version: "3"\nincludes:\n  sec:\n    taskfile: {ROOT.as_posix()}/taskfiles/{task}\n',
+        encoding="utf-8",
+    )
+    fake = tmp_path / "bin"
+    fake.mkdir()
+    if os.name == "nt":
+        (fake / "gitleaks.bat").write_text(fake_body[1], encoding="utf-8")
+    else:
+        (fake / "gitleaks").write_text(fake_body[0], encoding="utf-8")
+        (fake / "gitleaks").chmod(0o755)
+    env = {**os.environ, "PATH": f"{fake}{os.pathsep}{os.environ['PATH']}"}
+    result = subprocess.run(
+        ["task", "sec:secrets"], cwd=tmp_path, capture_output=True, text=True, env=env
+    )
+    return result.returncode, result.stdout + result.stderr
+
+
+OLD_GITLEAKS = (
+    "#!/bin/sh\n"
+    'if [ "$1" = git ]; then echo "unknown command git" >&2; exit 1; fi\n'
+    'echo "ARGS $*"\n',
+    "@echo off\r\n"
+    'if "%1"=="git" (\r\n  echo unknown command git 1>&2\r\n  exit /b 1\r\n)\r\n'
+    "echo ARGS %*\r\n",
+)
+NEW_GITLEAKS = ('#!/bin/sh\necho "ARGS $*"\n', "@echo off\r\necho ARGS %*\r\n")
+
+
+@pytest.mark.parametrize("task", ["lint", "security"])
+def test_gitleaks_falls_back_to_detect(tmp_path, task):
+    code, out = _run_secrets(tmp_path, task, OLD_GITLEAKS)
+    assert code == 0, out
+    assert "ARGS detect --source . --config" in out
+    assert "--redact --no-banner" in out
+
+
+@pytest.mark.parametrize("task", ["lint", "security"])
+def test_gitleaks_uses_git_when_supported(tmp_path, task):
+    code, out = _run_secrets(tmp_path, task, NEW_GITLEAKS)
+    assert code == 0, out
+    assert "ARGS git --config" in out
