@@ -65,6 +65,8 @@ def long_files(files: list[str], baseline: Path, max_lines: int, update: bool) -
     current: dict[str, int] = {}
     for name in files:
         path = Path(name)
+        if ".ratchet" in path.parts:
+            continue
         if path.is_file() and path.name not in LOCKFILES and not is_binary(path):
             lines = count_lines(path)
             if lines > max_lines:
