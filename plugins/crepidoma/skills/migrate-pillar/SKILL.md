@@ -12,5 +12,6 @@ The main thread orchestrates; `pillar-migrator` (Sonnet) does the edits. At most
 3. **Before.** From the Crepidoma checkout: `task drift -- <pillar>`; keep the final counts line.
 4. **Dispatch.** One `pillar-migrator` per pillar with the pillar path, the branch name and the Crepidoma checkout path. Wait for every receipt.
 5. **After.** `task drift -- <pillar>` again; expect `duplicate=0 drifted=0`. A pillar that still drifts gets one more lane with the drift report path, then is reported.
-6. **Publish.** For each finished pillar: `git -C <pillar> push -u origin crepidoma-migration`, then `gh pr create` in that repo with the receipt as the body. Never merge.
+6. **Publish.** For each finished pillar: `git -C <pillar> push -u origin crepidoma-migration`, then `gh pr create` in that repo with the receipt as the body. Never merge. A pillar whose branch has no commits (`git -C <pillar> log --oneline main..crepidoma-migration` empty) gets no PR: run `task git:after-merge -- <pillar> crepidoma-migration` to return it to its default branch.
 7. **Report.** One line per pillar: PR URL, drift before and after, gate result.
+8. **After merge.** Once a pillar PR merges, run `task git:after-merge -- <pillar> crepidoma-migration` so the checkout leaves the migration branch.
