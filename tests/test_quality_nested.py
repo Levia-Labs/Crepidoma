@@ -47,3 +47,20 @@ def test_top_level_namespace_still_works():
     )
     assert result.returncode == 0, result.stderr
     assert '"quality:$m"' in result.stdout + result.stderr
+
+
+def test_lint_web_check_skips_the_crepidoma_submodule():
+    taskfile = ROOT / "taskfiles" / "lint" / "Taskfile.yml"
+    result = subprocess.run(
+        ["task", "--dry", "--verbose", "--taskfile", str(taskfile), "web:check"],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+    )
+    assert result.returncode == 0, result.stderr
+    assert "!.crepidoma/**" in result.stdout + result.stderr
+
+
+def test_prettierignore_template_names_the_submodule():
+    text = (ROOT / "templates" / ".prettierignore").read_text(encoding="utf-8")
+    assert ".crepidoma/" in text.splitlines()
