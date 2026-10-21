@@ -53,11 +53,11 @@ tasks:
         exit $rc
 
   hooks:
-    desc: "Install the pre-commit and pre-push git hooks. Usage: task setup:hooks"
+    desc: "Install the pre-commit, pre-push and commit-msg git hooks. Usage: task setup:hooks"
     silent: true
     dir: "{{.USER_WORKING_DIR}}"
     preconditions:
       - sh: command -v uv
         msg: "`uv` not on PATH. Install: https://docs.astral.sh/uv/getting-started/installation/"
     cmds:
-      - uvx pre-commit install --hook-type pre-commit --hook-type pre-push
+      - uvx pre-commit install --hook-type pre-commit --hook-type pre-push --hook-type commit-msg
