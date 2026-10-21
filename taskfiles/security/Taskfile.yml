@@ -15,7 +15,8 @@ tasks:
           || { echo "missing gitleaks: install https://github.com/gitleaks/gitleaks#installing" >&2; exit 1; }
         cfg="{{.SECURITY_CONFIGS}}/gitleaks.toml"
         if [ -f .gitleaks.toml ]; then cfg=.gitleaks.toml; fi
-        gitleaks git --config "$cfg" --redact --no-banner .
+        if gitleaks git --help >/dev/null 2>&1; then set -- git; else set -- detect --source .; fi
+        gitleaks "$@" --config "$cfg" --redact --no-banner
 
   sast:
     desc: "semgrep static analysis, metrics off. Usage: task security:sast"

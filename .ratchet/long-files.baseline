@@ -1,5 +1,4 @@
 docs/superpowers/plans/2026-10-20-crepidoma-foundation.md	2634
-plugins/crepidoma/scripts/hooks.py	757
 plugins/crepidoma/scripts/spend.py	325
 plugins/crepidoma/scripts/taskfile_lint.py	375
 plugins/crepidoma/tests/test_hooks_py.py	1008

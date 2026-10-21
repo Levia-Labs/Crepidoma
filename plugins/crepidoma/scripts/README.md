@@ -19,6 +19,11 @@
 - [`git_after_merge.py`](git_after_merge.py) - Reset a repo to its default branch after a PR merge and print one receipt line.
 - [`history.py`](history.py) - Find repeated ad-hoc work in Claude Code history that should become a tool (stdlib only).
 - [`hooks.py`](hooks.py) - Claude Code hooks: quality gates at the end of a turn and the agent dispatch policy.
+- [`hooks_bash.py`](hooks_bash.py) - The git guard: refuses a subagent's push, working-tree discard or sweeping stage.
+- [`hooks_budget.py`](hooks_budget.py) - The usage allowance: a cached reading and the refusal when a window is at the ceiling.
+- [`hooks_common.py`](hooks_common.py) - Shared by every hook module: the project root, hook state, the payload and a refusal.
+- [`hooks_pre_tool.py`](hooks_pre_tool.py) - Agent dispatch policy and the lane ledger: PreToolUse, SubagentStart, SubagentStop.
+- [`hooks_stop.py`](hooks_stop.py) - Quality gates: PostToolUse marks a gate dirty, Stop runs the dirty gates' tasks.
 - [`inject_directives.py`](inject_directives.py) - SessionStart and SubagentStart hook: emit Crepidoma directives as additional context.
 - [`lanes.py`](lanes.py) - List and reset subagent lanes, and write a save-state note for a later session.
 - [`raw_read_guard.py`](raw_read_guard.py) - PreToolUse hook: keep raw file content out of the main Claude thread (stdlib only).

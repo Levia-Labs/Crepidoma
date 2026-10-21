@@ -197,7 +197,8 @@ tasks:
       - |
         cfg="{{.LINT_CFG}}/gitleaks.toml"
         if [ -f .gitleaks.toml ]; then cfg=.gitleaks.toml; fi
-        gitleaks git --config "$cfg" --redact --no-banner .
+        if gitleaks git --help >/dev/null 2>&1; then set -- git; else set -- detect --source .; fi
+        gitleaks "$@" --config "$cfg" --redact --no-banner
 
   sg:
     desc: ast-grep shared rules over the working directory
