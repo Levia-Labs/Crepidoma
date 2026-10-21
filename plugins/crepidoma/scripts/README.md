@@ -11,6 +11,7 @@
 - [`agent_pool.py`](agent_pool.py) - Subagent pool: list finished agents of the current session and steer dispatch to reuse them.
 - [`allow_tasks.py`](allow_tasks.py) - Keep .claude/settings.json permissions consistent with the Taskfile interface.
 - [`budget.py`](budget.py) - Claude usage windows against a ceiling: show, gate, wait.
+- [`budget_view.py`](budget_view.py) - Rendering for budget.py: spans, labels, the usage bar and tab-separated rows.
 - [`ci_runs.py`](ci_runs.py) - Watch a CI run and read its failing-job errors, for this or another GitHub repo.
 - [`digest.py`](digest.py) - Qualify long text before it reaches the main thread (stdlib only).
 - [`docs_gate.py`](docs_gate.py) - Docs consistency gate: broken links and README file lists, with a ratchet baseline.
