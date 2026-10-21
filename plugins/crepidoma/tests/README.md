@@ -20,6 +20,7 @@
 - [`test_gate_runner.py`](test_gate_runner.py) - Tests for `gate_runner`.
 - [`test_git_after_merge.py`](test_git_after_merge.py) - Tests for `git_after_merge`.
 - [`test_history.py`](test_history.py) - Tests for `history`.
+- [`test_hook_shebang.py`](test_hook_shebang.py) - Tests for `hook_shebang`.
 - [`test_hooks_json.py`](test_hooks_json.py) - Tests for `hooks_json`.
 - [`test_hooks_py.py`](test_hooks_py.py) - hooks.py: gates, the agent dispatch policy, the git guard and the CLI contract.
 - [`test_inject_directives.py`](test_inject_directives.py) - Tests for `inject_directives`.

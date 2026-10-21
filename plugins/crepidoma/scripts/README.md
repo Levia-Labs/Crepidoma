@@ -18,6 +18,7 @@
 - [`gate_runner.py`](gate_runner.py) - Run gates quietly: one line per task, failure excerpt only on failure.
 - [`git_after_merge.py`](git_after_merge.py) - Reset a repo to its default branch after a PR merge and print one receipt line.
 - [`history.py`](history.py) - Find repeated ad-hoc work in Claude Code history that should become a tool (stdlib only).
+- [`hook_shebang.py`](hook_shebang.py) - Rewrite `#!/bin/sh` to `#!/usr/bin/env sh` in .git/hooks/*.legacy.
 - [`hooks.py`](hooks.py) - Claude Code hooks: quality gates at the end of a turn and the agent dispatch policy.
 - [`hooks_bash.py`](hooks_bash.py) - The git guard: refuses a subagent's push, working-tree discard or sweeping stage.
 - [`hooks_budget.py`](hooks_budget.py) - The usage allowance: a cached reading and the refusal when a window is at the ceiling.
