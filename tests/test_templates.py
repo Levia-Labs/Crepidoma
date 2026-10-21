@@ -95,6 +95,14 @@ def test_ci_template_pins_tools_and_checks_out_full_history():
     assert "task security:check" in text
 
 
+def test_ci_template_verifies_downloads_against_pinned_sha256():
+    text = (TEMPLATES / "ci.yml").read_text(encoding="utf-8")
+    assert "sha256sum -c -" in text
+    assert len(re.findall(r"^\s+[0-9a-f]{64} \w", text, re.M)) == 4
+    assert not re.search(r"curl[^\n]*\|", text)
+    assert not re.search(r"curl[^\n]*\\\n\s*\|", text)
+
+
 def test_migration_documents_ci_tools():
     text = (TEMPLATES.parent / "docs" / "migration.md").read_text(encoding="utf-8")
     assert "fetch-depth: 0" in text
