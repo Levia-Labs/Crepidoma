@@ -102,3 +102,11 @@ def test_untracked_link_target_is_reported(repo, capsys):
     assert "a.md:1: untracked-link out/x.md" in out
     assert not any("b.md" in line for line in out)
     assert not any("stray.py" in line for line in out)
+
+
+def test_generated_paths_are_not_reported_when_untracked(repo, capsys):
+    write(repo, "a.md", "See `graphify-out/GRAPH_REPORT.md` and `dist/app.js`.\n")
+    write(repo, "graphify-out/GRAPH_REPORT.md")
+    git_repo(repo, ["a.md"])
+    assert docs_gate.main(["all"]) == 0
+    assert capsys.readouterr().out.count("untracked-link") == 0

@@ -22,7 +22,8 @@ ROOT = Path(os.environ.get("CLAUDE_PROJECT_DIR") or Path.cwd())
 BASELINE = ".ratchet/docs.baseline"
 MAX_LINES = 20
 SKIP = ("node_modules/", "graphify-out/", ".claude/marketplace/", "docs/superpowers/", ".venv/")
-GENERATED = ("build/", "dist/", "reports/", ".ratchet/")
+# graphify-out/ is the shared graph tasks' output; pillars name its files in prose.
+GENERATED = ("build/", "dist/", "reports/", ".ratchet/", "graphify-out/")
 SUFFIXES = (
     ".py", ".md", ".yml", ".yaml", ".json", ".toml", ".sh", ".txt", ".cfg",
     ".ts", ".tsx", ".js", ".css", ".html", ".baseline",
