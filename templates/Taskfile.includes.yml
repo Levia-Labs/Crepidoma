@@ -12,10 +12,11 @@ includes:
   ci: .crepidoma/taskfiles/ci
   rtk: .crepidoma/taskfiles/rtk
   setup: .crepidoma/taskfiles/setup
-  go: .crepidoma/taskfiles/go # Go pillars: pass vars { GO_DIR: <module dir> }
+  go: .crepidoma/taskfiles/go
 
 # Override a shared config dir per include, e.g. use the pillar's root configs:
 #   lint:
 #     taskfile: .crepidoma/taskfiles/lint
 #     vars: { LINT_CFG: "{{.ROOT_DIR}}" }
+# Go pillars: include go with vars { GO_DIR: <module dir> }.
 # Same for SECURITY_CONFIGS and QUALITY_CONFIGS. gitleaks prefers a root .gitleaks.toml when present.
