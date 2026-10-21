@@ -37,3 +37,11 @@ def test_stale_baseline_entries_do_not_fail_and_are_dropped(repo: Path):
     assert ratchet.main(args) == 0
     assert ratchet.main([*args, "--update"]) == 0
     assert base.read_text(encoding="utf-8") == "big.py\t50\n"
+
+
+def test_ratchet_dir_files_are_skipped(repo: Path, capsys: pytest.CaptureFixture[str]):
+    (repo / ".ratchet").mkdir()
+    (repo / ".ratchet" / "docs.baseline").write_text("x\n" * 50, encoding="utf-8")
+    git(repo, "add", ".")
+    assert ratchet.main(["long-files", "--git", "--max-lines", "3", "--baseline", "b"]) == 1
+    assert ".ratchet" not in capsys.readouterr().out

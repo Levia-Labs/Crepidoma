@@ -2,6 +2,7 @@
 
 import contextlib
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -124,6 +125,9 @@ def failure(task: str, result: subprocess.CompletedProcess, hints: tuple[str, ..
 def stop(event: dict, tasks: tuple[str, ...] = ()) -> int:
     # A blocked stop re-enters this hook once the agent replies. Without this the pair loops.
     if event.get("stop_hook_active") or not opted_in():
+        return 0
+    # A pillar with its own compile gate switches this one off via .claude/settings.json env.
+    if os.environ.get("CREPIDOMA_STOP_GATE") == "off":
         return 0
     dirty = [gate._replace(tasks=tasks or gate.tasks) for gate in GATES if gate.marker.exists()]
     if not dirty:

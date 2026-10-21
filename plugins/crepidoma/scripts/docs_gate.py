@@ -153,8 +153,11 @@ def check_readme(document: str) -> list[str]:
         actual = {n for n in names if (folder / n).is_file() and n not in UNLISTED_OK}
     else:
         actual = {p.name for p in folder.iterdir() if p.is_file() and p.name not in UNLISTED_OK}
+    actual = {n for n in actual if not n.endswith(".meta")}
     found = [
-        f"{document}:{n}: readme extra {name}" for name, n in listed.items() if name not in actual
+        f"{document}:{n}: readme extra {name}"
+        for name, n in listed.items()
+        if name not in actual and not name.endswith(".meta")
     ]
     found += [f"{document}:1: readme missing {name}" for name in actual - set(listed)]
     return found

@@ -47,10 +47,10 @@ tasks:
     cmds:
       - |
         command -v npx >/dev/null 2>&1 || { echo "missing npx: install Node.js https://nodejs.org" >&2; exit 1; }
-        npx --no jscpd --version >/dev/null 2>&1 \
+        npx --no-install jscpd --version >/dev/null 2>&1 \
           || { echo "missing jscpd: run npm install -D jscpd" >&2; exit 1; }
         rc=0
-        out=$(npx --no jscpd --silent --reporters console --threshold {{.QUALITY_DUP_THRESHOLD}} . 2>&1) || rc=1
+        out=$(npx --no-install jscpd --silent --reporters console --threshold {{.QUALITY_DUP_THRESHOLD}} . 2>&1) || rc=1
         pct=$(printf '%s\n' "$out" | grep 'Total' | grep -o '[0-9.]*%' | head -n 1 | tr -d '%')
         if [ -z "$pct" ]; then
           echo "jscpd did not run; install it with: npm install -D jscpd" >&2

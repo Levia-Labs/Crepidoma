@@ -9,8 +9,8 @@ vars:
   LINT_RUFF: '{{.LINT_RUFF | default "uvx ruff"}}'
   LINT_YAMLLINT: '{{.LINT_YAMLLINT | default "uvx yamllint"}}'
   LINT_SG: '{{.LINT_SG | default "uvx --from ast-grep-cli ast-grep"}}'
-  LINT_PRETTIER: '{{.LINT_PRETTIER | default "npx --no prettier"}}'
-  LINT_ESLINT: '{{.LINT_ESLINT | default "npx --no eslint"}}'
+  LINT_PRETTIER: '{{.LINT_PRETTIER | default "npx --no-install prettier"}}' # not --no: breaks on Windows
+  LINT_ESLINT: '{{.LINT_ESLINT | default "npx --no-install eslint"}}'
   LINT_PRECOMMIT: '{{.LINT_PRECOMMIT | default "uvx pre-commit"}}'
 
 tasks:
@@ -263,6 +263,7 @@ tasks:
         msg: "`uv` not on PATH. Install: https://docs.astral.sh/uv/getting-started/installation/"
     cmds:
       - "{{.LINT_PRECOMMIT}} install --hook-type pre-commit --hook-type pre-push --hook-type commit-msg"
+      - uv run --no-project python "{{.TASKFILE_DIR}}/../../plugins/crepidoma/scripts/hook_shebang.py"
 
   precommit:autoupdate:
     desc: Bump the pre-commit hook revisions. Usage task lint:precommit:autoupdate

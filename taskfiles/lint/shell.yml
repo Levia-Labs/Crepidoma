@@ -24,17 +24,21 @@ tasks:
       - uv run --no-project {{.SHELL_PY}} "{{.SHELL_SCRIPTS}}/taskfile_lint.py" all
 
   setup:
-    desc: Install the shell linters (shellcheck, shfmt) with the system package manager
+    desc: Install the shell and Dockerfile linters (shellcheck, shfmt, hadolint) with the system package manager
     silent: true
     cmds:
       - |
         if command -v apt-get >/dev/null 2>&1; then
           sudo apt-get install -y shellcheck shfmt
+          # Ubuntu ships no hadolint package; lint:docker:check needs it only where Dockerfiles exist.
+          command -v hadolint >/dev/null 2>&1 \
+            || echo "hadolint: install from https://github.com/hadolint/hadolint/releases" >&2
         elif command -v brew >/dev/null 2>&1; then
-          brew install shellcheck shfmt
+          brew install shellcheck shfmt hadolint
         elif command -v winget >/dev/null 2>&1; then
           winget install --id koalaman.shellcheck -e
           winget install --id mvdan.shfmt -e
+          winget install --id hadolint.hadolint -e
         else
           echo "No supported package manager. Install shellcheck and shfmt by hand." >&2
           exit 1
