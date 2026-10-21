@@ -1,0 +1,33 @@
+version: "3"
+
+vars:
+  SESSIONS_PY: '{{if eq OS "windows"}}python{{else}}python3{{end}}'
+  SESSIONS_SCRIPTS: "{{.TASKFILE_DIR}}/../../plugins/crepidoma/scripts/claude"
+
+tasks:
+  agents:
+    desc: "Subagent cost by type and agent. Usage: task claude:agents [TOP=10] [SESSION=<id prefix>]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - >-
+        uv run --no-project {{.SESSIONS_PY}} "{{.SESSIONS_SCRIPTS}}/agents.py" --top {{.TOP | default 10}}
+        {{if .SESSION}}--session {{.SESSION}}{{end}}
+
+  agents:reads:
+    desc: "Files subagents read most. Usage: task claude:agents:reads [TOP=25] [SESSION=<id prefix>]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - >-
+        uv run --no-project {{.SESSIONS_PY}} "{{.SESSIONS_SCRIPTS}}/agents.py" --reads --top {{.TOP |
+        default 25}} {{if .SESSION}}--session {{.SESSION}}{{end}}
+
+  agents:sessions:
+    desc: "Main-loop versus subagent context per session. Usage: task claude:agents:sessions [SESSION=<id prefix>]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - >-
+        uv run --no-project {{.SESSIONS_PY}} "{{.SESSIONS_SCRIPTS}}/agents.py" --sessions {{if
+        .SESSION}}--session {{.SESSION}}{{end}}

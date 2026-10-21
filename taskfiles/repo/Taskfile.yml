@@ -1,0 +1,39 @@
+version: "3"
+
+vars:
+  REPO_PY: '{{if eq OS "windows"}}python{{else}}python3{{end}}'
+  REPO_SCRIPTS: "{{.TASKFILE_DIR}}/../../plugins/crepidoma/scripts"
+
+tasks:
+  outline:
+    desc: "Outline headings of a file. Usage: task repo:outline -- <path> [--depth N]"
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.REPO_PY}} "{{.REPO_SCRIPTS}}/repo_nav.py" outline {{.CLI_ARGS}}
+
+  section:
+    desc: "Print one section of a file. Usage: task repo:section -- <path> <name>"
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.REPO_PY}} "{{.REPO_SCRIPTS}}/repo_nav.py" section {{.CLI_ARGS}}
+
+  tasks:
+    desc: "List Taskfile tasks. Usage: task repo:tasks -- [--grep PATTERN]"
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.REPO_PY}} "{{.REPO_SCRIPTS}}/repo_nav.py" tasks {{.CLI_ARGS}}
+
+  diff:
+    desc: "Summarize changes against a base. Usage: task repo:diff -- [--base REF]"
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.REPO_PY}} "{{.REPO_SCRIPTS}}/repo_nav.py" diff {{.CLI_ARGS}}
+
+  scrub:text:
+    desc: "Scrub a text file (PR draft) for private names. Usage: task repo:scrub:text -- <file>"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    requires:
+      vars: [CLI_ARGS]
+    cmds:
+      - uv run --no-project {{.REPO_PY}} "{{.TASKFILE_DIR}}/../../tools/scrub_check.py" --strict {{.CLI_ARGS}}

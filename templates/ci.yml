@@ -1,0 +1,60 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    uses: Levia-Labs/Crepidoma/.github/workflows/reusable-validate.yml@main
+    with:
+      python: true
+      node: false
+      types: true
+      coverage: true
+
+  # Runs the shared lint and security gates; they call the tools installed below.
+  shared-gates:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: true
+          fetch-depth: 0 # history secret scans with .gitleaksignore fingerprints break on shallow clones
+          persist-credentials: false
+      - name: Install pinned gate tools
+        run: |
+          set -eu
+          bin="$HOME/.local/bin"
+          mkdir -p "$bin"
+          tmp=$(mktemp -d)
+          gh=https://github.com
+          # SHA-256 sources: gitleaks, gitleaks_8.30.1_checksums.txt; hadolint, the
+          # published hadolint-Linux-x86_64.sha256 asset; shellcheck and shfmt publish
+          # no checksum, so those two were computed from the downloaded release asset.
+          fetch() { # url sha256 file
+            curl -fsSL -o "$tmp/$3" "$1"
+            echo "$2  $tmp/$3" | sha256sum -c -
+          }
+          fetch "$gh/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.linux.x86_64.tar.xz" \
+            8c3be12b05d5c177a04c29e3c78ce89ac86f1595681cab149b65b97c4e227198 shellcheck.tar.xz
+          tar -xJf "$tmp/shellcheck.tar.xz" --strip-components=1 -C "$bin" shellcheck-v0.11.0/shellcheck
+          fetch "$gh/mvdan/sh/releases/download/v3.14.1/shfmt_v3.14.1_linux_amd64" \
+            76e77641faa025814b77f153b29796b8e6fa2fca03e0c76a691608b86c7ea7bf shfmt
+          fetch "$gh/hadolint/hadolint/releases/download/v2.12.0/hadolint-Linux-x86_64" \
+            56de6d5e5ec427e17b74fa48d51271c7fc0d61244bf5c90e828aab8362d55010 hadolint
+          fetch "$gh/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz" \
+            551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb gitleaks.tar.gz
+          tar -xzf "$tmp/gitleaks.tar.gz" -C "$bin" gitleaks
+          install -m 755 "$tmp/shfmt" "$tmp/hadolint" "$bin"
+          rm -rf "$tmp"
+          echo "$bin" >> "$GITHUB_PATH"
+      - uses: arduino/setup-task@c0bc642852239c2689f73f4ea6459c29405f3c52 # v3.0.0
+      - run: task lint:check
+      - run: task security:check

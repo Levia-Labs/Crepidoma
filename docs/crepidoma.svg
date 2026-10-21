@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="181.37199mm"
+   height="89.278999mm"
+   viewBox="60.457 0 181.372 89.279"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.3.2 (091e20e, 2023-11-25)"
+   sodipodi:docname="crepidoma-stereobate-stylobate.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <!-- Adapted from "Crepidoma-stereobate-stylobate.svg" by Gleb713, Wikimedia Commons, CC BY-SA 4.0: cropped, side labels removed, pillar bracket and white background added. -->
+  <rect x="60.457" y="0" width="181.372" height="89.279" fill="#ffffff" />
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     showgrid="true"
+     inkscape:zoom="0.78374771"
+     inkscape:cx="417.2261"
+     inkscape:cy="165.8697"
+     inkscape:window-width="1440"
+     inkscape:window-height="847"
+     inkscape:window-x="0"
+     inkscape:window-y="25"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1">
+    <inkscape:grid
+       id="grid2"
+       units="mm"
+       originx="-10.61925"
+       originy="-100.12916"
+       spacingx="1"
+       spacingy="1"
+       empcolor="#000ce5"
+       empopacity="0.30196078"
+       color="#00e5ba"
+       opacity="0.14901961"
+       empspacing="5"
+       dotted="true"
+       gridanglex="30"
+       gridanglez="30"
+       visible="true" />
+  </sodipodi:namedview>
+  <defs
+     id="defs1">
+    <linearGradient
+       id="linearGradient9"
+       inkscape:collect="always">
+      <stop
+         style="stop-color:#000000;stop-opacity:1;"
+         offset="0"
+         id="stop9" />
+      <stop
+         style="stop-color:#000000;stop-opacity:0;"
+         offset="0.77195948"
+         id="stop10" />
+    </linearGradient>
+    <inkscape:path-effect
+       effect="fillet_chamfer"
+       id="path-effect8"
+       is_visible="true"
+       lpeversion="1"
+       nodesatellites_param="F,0,0,1,0,2.38125,0,1 @ F,0,0,1,0,2.38125,0,1 @ F,0,0,1,0,2.38125,0,1 @ F,0,0,1,0,2.38125,0,1"
+       radius="9"
+       unit="px"
+       method="auto"
+       mode="F"
+       chamfer_steps="1"
+       flexible="false"
+       use_knot_distance="true"
+       apply_no_radius="true"
+       apply_with_radius="true"
+       only_selected="false"
+       hide_knots="false" />
+    <linearGradient
+       id="linearGradient6"
+       inkscape:collect="always">
+      <stop
+         style="stop-color:#000000;stop-opacity:1;"
+         offset="0"
+         id="stop6" />
+      <stop
+         style="stop-color:#000000;stop-opacity:0;"
+         offset="0.85973805"
+         id="stop7" />
+    </linearGradient>
+    <linearGradient
+       id="linearGradient4"
+       inkscape:collect="always">
+      <stop
+         style="stop-color:#000000;stop-opacity:1;"
+         offset="0"
+         id="stop4" />
+      <stop
+         style="stop-color:#000000;stop-opacity:0;"
+         offset="0.62920815"
+         id="stop5" />
+    </linearGradient>
+    <linearGradient
+       id="linearGradient2"
+       inkscape:collect="always">
+      <stop
+         style="stop-color:#000000;stop-opacity:1;"
+         offset="0"
+         id="stop2" />
+      <stop
+         style="stop-color:#000000;stop-opacity:0;"
+         offset="0.34895092"
+         id="stop3" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient2"
+       id="linearGradient3"
+       x1="164.60001"
+       y1="135"
+       x2="225.39999"
+       y2="135"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="translate(4.2333335,1.5875)" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient4"
+       id="linearGradient5"
+       x1="149.60001"
+       y1="155.25"
+       x2="210.39999"
+       y2="155.25"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="translate(4.2333335,1.33745)" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient6"
+       id="linearGradient7"
+       x1="134.60001"
+       y1="175"
+       x2="195.39999"
+       y2="175"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="translate(4.2333335,1.5875)" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient9"
+       id="linearGradient10"
+       x1="145"
+       y1="115"
+       x2="145"
+       y2="100"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="translate(4.2333335,2.1166667)" />
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-10.61925,-100.12916)">
+    <rect
+       style="fill:none;stroke:#000000;stroke-width:0.8;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;paint-order:fill markers stroke"
+       id="rect2"
+       width="60"
+       height="20"
+       x="79.233337"
+       y="166.58748" />
+    <rect
+       style="fill:none;stroke:#000000;stroke-width:0.8;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;paint-order:fill markers stroke"
+       id="rect2-5"
+       width="60"
+       height="20"
+       x="94.233337"
+       y="146.58748" />
+    <rect
+       style="fill:none;stroke:#000000;stroke-width:0.8;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;paint-order:fill markers stroke"
+       id="rect2-5-7"
+       width="60"
+       height="20"
+       x="109.23331"
+       y="126.58749" />
+    <rect
+       style="fill:none;stroke:url(#linearGradient7);stroke-width:0.8;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;paint-order:fill markers stroke"
+       id="rect2-5-7-4"
+       width="60"
+       height="20"
+       x="139.23328"
+       y="166.58748" />
+    <path
+       id="rect2-5-7-4-6"
+       style="fill:none;stroke:url(#linearGradient5);stroke-width:0.8;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;paint-order:fill markers stroke"
+       d="m 154.23351,146.58751 v 19.99981 h 59.99995 v -19.99981 z" />
+    <rect
+       style="fill:none;stroke:url(#linearGradient3);stroke-width:0.8;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;paint-order:fill markers stroke"
+       id="rect2-5-7-4-6-6"
+       width="60"
+       height="20"
+       x="169.23328"
+       y="126.58749" />
+    <rect
+       style="fill:none;stroke:#000000;stroke-width:0.799999;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;paint-order:fill markers stroke"
+       id="rect7"
+       width="49.999996"
+       height="4.4218173"
+       x="124.23331"
+       y="122.1657" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.835379;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;paint-order:fill markers stroke"
+       id="rect8"
+       width="60.305557"
+       height="5.1781912"
+       x="115"
+       y="115.00001"
+       inkscape:path-effect="#path-effect8"
+       sodipodi:type="rect"
+       d="m 117.38125,115.00001 h 55.54306 a 2.38125,2.38125 45 0 1 2.38125,2.38125 v 0.41569 a 2.38125,2.38125 135 0 1 -2.38125,2.38125 H 117.38125 A 2.38125,2.38125 45 0 1 115,117.79695 v -0.41569 a 2.38125,2.38125 135 0 1 2.38125,-2.38125 z"
+       transform="matrix(0.9170889,0,0,1,16.115332,2.1166667)" />
+    <rect
+       style="fill:none;stroke:url(#linearGradient10);stroke-width:0.799999;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;paint-order:fill markers stroke"
+       id="rect9"
+       width="45.516918"
+       height="14.999998"
+       x="126.45801"
+       y="102.11665" />
+    <text
+       xml:space="preserve"
+       style="font-size:6.35px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';letter-spacing:1.05833px;fill:none;stroke:#000000;stroke-width:0.799999;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;paint-order:fill markers stroke"
+       x="201.83595"
+       y="159.11017"
+       id="text10-8-8"><tspan
+         sodipodi:role="line"
+         id="tspan10-0-7"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;font-family:Helvetica;-inkscape-font-specification:Helvetica;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.8"
+         x="201.83595"
+         y="159.11017">CREPIDOMA</tspan></text>
+    <path
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.3;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+       d="m 194.47876,126.73751 h 4.71902 v 60.10809 h -5.00001"
+       id="path12-9-0" />
+    <path
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.3;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+       d="m 194.47876,103.62916 h 4.71902 v 22.30835 h -5.00001"
+       id="path-pillar" />
+    <text
+       xml:space="preserve"
+       style="font-size:6.35px;font-family:sans-serif;letter-spacing:1.05833px;fill:#000000;stroke:none"
+       x="201.83595"
+       y="117.10000"
+       id="text-pillar"><tspan
+         sodipodi:role="line"
+         id="tspan-pillar"
+         style="font-style:normal;font-weight:normal;font-size:6.35px;font-family:Helvetica;fill:#000000;fill-opacity:1;stroke:none"
+         x="201.83595"
+         y="117.10000">PILLAR</tspan></text>
+  </g>
+</svg>

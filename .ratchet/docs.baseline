@@ -1,0 +1,10 @@
+docs/adr/0004-taskfile-as-the-interface.md:10: links scripts/
+docs/migration.md:14: links .crepidoma/configs/
+docs/migration.md:18: links .crepidoma/configs/eslint.config.js
+docs/migration.md:35: links .github/workflows/ci.yml
+plugins/crepidoma/directives/30-conventions.md:3: links tasks/
+plugins/crepidoma/directives/50-skills-and-plugins.md:3: links .claude/skills/
+plugins/crepidoma/directives/50-skills-and-plugins.md:8: links graphify-out/GRAPH_REPORT.md
+templates/AGENTS.md:5: links ../../CLAUDE.md
+templates/CLAUDE.md:20: links .crepidoma/taskfiles/
+templates/claude-README.md:25: links skills/

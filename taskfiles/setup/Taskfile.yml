@@ -1,0 +1,64 @@
+version: "3"
+
+# Environment bootstrap checks. Never print .env values.
+
+tasks:
+  tools:
+    desc: "Check required and optional tools. Usage: task setup:tools"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - |
+        miss=0
+        chk() {
+          # name, binary, required(1/0), install hint
+          if command -v "$2" >/dev/null 2>&1; then
+            echo "ok       $1"
+          elif [ "$3" = 1 ]; then
+            echo "MISSING  $1 (required). Install: $4"
+            miss=1
+          else
+            echo "missing  $1. Install: $4"
+          fi
+        }
+        chk uv uv 1 "https://docs.astral.sh/uv/getting-started/installation/"
+        chk task task 1 "https://taskfile.dev/installation/"
+        chk git git 1 "https://git-scm.com/downloads"
+        chk gh gh 0 "https://cli.github.com/"
+        chk node node 0 "https://nodejs.org/"
+        chk npx npx 0 "https://nodejs.org/ (ships with node)"
+        chk pre-commit pre-commit 0 "uv tool install pre-commit"
+        chk gitleaks gitleaks 0 "https://github.com/gitleaks/gitleaks#installing"
+        chk graphify graphify 0 "uv tool install graphifyy"
+        chk rtk rtk 0 "https://github.com/rtk-ai/rtk#installation"
+        exit $miss
+
+  env:check:
+    desc: "List keys in .env.example missing from .env, names only. Usage: task setup:env:check"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    preconditions:
+      - sh: "[ -f .env.example ]"
+        msg: ".env.example not found in the working directory"
+      - sh: "[ -f .env ]"
+        msg: ".env not found. Create it: cp .env.example .env"
+    cmds:
+      - |
+        keys() { sed -n 's/^[[:space:]]*\(export[[:space:]]\{1,\}\)\{0,1\}\([A-Za-z_][A-Za-z0-9_]*\)=.*/\2/p' "$1"; }
+        rc=0
+        for k in $(keys .env.example); do
+          keys .env | grep -qx "$k" || { echo "$k"; rc=1; }
+        done
+        [ "$rc" = 0 ] && echo "all .env.example keys present in .env"
+        exit $rc
+
+  hooks:
+    desc: "Install the pre-commit, pre-push and commit-msg git hooks. Usage: task setup:hooks"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    preconditions:
+      - sh: command -v uv
+        msg: "`uv` not on PATH. Install: https://docs.astral.sh/uv/getting-started/installation/"
+    cmds:
+      - uvx pre-commit install --hook-type pre-commit --hook-type pre-push --hook-type commit-msg
+      - uv run --no-project python "{{.TASKFILE_DIR}}/../../plugins/crepidoma/scripts/hook_shebang.py"

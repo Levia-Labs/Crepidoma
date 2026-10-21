@@ -1,0 +1,10 @@
+{
+  "name": "crepidoma",
+  "version": "0.3.2",
+  "description": "Shared directives, agents, guard hooks and output tools for Levia Labs pillar projects",
+  "author": {
+    "name": "Levia Labs"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/Levia-Labs/Crepidoma"
+}

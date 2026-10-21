@@ -1,0 +1,3 @@
+# One private name per line, matched case-insensitively on word boundaries.
+# Generate the real list with: task scrub:denylist
+# The real file is .scrub-denylist and is gitignored.

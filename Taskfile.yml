@@ -1,0 +1,103 @@
+version: "3"
+
+includes:
+  claude: ./taskfiles/claude
+  lint: ./taskfiles/lint
+  repo: ./taskfiles/repo
+  todo: ./taskfiles/todo
+  git: ./taskfiles/git
+  graph: ./taskfiles/graph
+  test: ./taskfiles/test
+  quality: ./taskfiles/quality
+  security: ./taskfiles/security
+  ci: ./taskfiles/ci
+  rtk: ./taskfiles/rtk
+  setup: ./taskfiles/setup
+
+vars:
+  PILLARS: '{{.PILLARS | default ".."}}'
+  LINT_HOOKS: [ruff, yamllint, shellcheck, actionlint, zizmor, check-yaml, check-json, check-toml]
+  SEC_HOOKS: [gitleaks, crepidoma-scrub]
+
+tasks:
+  setup:
+    desc: Install dev dependencies and git hooks
+    cmds:
+      - uv sync
+      - uv run pre-commit install
+
+  fmt:
+    desc: Format Python, Markdown, JSON, YAML
+    cmds:
+      - cmd: uv run pre-commit run ruff-format --all-files
+        ignore_error: true
+      - cmd: uv run pre-commit run prettier --all-files
+        ignore_error: true
+
+  lint:
+    desc: Run linters over the whole repo
+    cmds:
+      - for: { var: LINT_HOOKS }
+        cmd: uv run pre-commit run {{.ITEM}} --all-files
+
+  sec:
+    desc: Secret scan and publication scrub over the whole repo
+    cmds:
+      - for: { var: SEC_HOOKS }
+        cmd: uv run pre-commit run {{.ITEM}} --all-files
+
+  scrub:denylist:
+    desc: Generate gitignored .scrub-denylist from private repos under PILLARS
+    cmds:
+      - uv run python tools/denylist.py "{{.PILLARS}}" --out .scrub-denylist
+
+  drift:
+    desc: "Compare a pillar with Crepidoma: task drift -- <pillar path>"
+    cmds:
+      - uv run python tools/drift_check.py {{.CLI_ARGS}} --report .local/drift-report.tsv
+
+  crepidoma:pin:
+    desc: "Pin a pillar's .crepidoma submodule to a release tag. Usage: task crepidoma:pin -- <pillar path> <tag>"
+    silent: true
+    cmds:
+      - uv run python tools/pin_pillar.py {{.CLI_ARGS}}
+
+  release:
+    desc: "Bump version, changelog, commit and tag: task release -- 0.2.0"
+    cmds:
+      - uv run python tools/release.py {{.CLI_ARGS}}
+
+  docs:readmes:
+    desc: Write or refresh README.md in every tracked folder
+    cmds:
+      - uv run python tools/folder_readme.py update
+
+  test:
+    desc: Run pytest
+    cmds:
+      - uv run pytest
+
+  plugin:validate:
+    desc: Validate marketplace and plugin manifests
+    cmds:
+      - claude plugin validate .
+
+  ratchet:update:
+    desc: Rewrite the long-file baseline from all tracked files
+    cmds:
+      - uv run python tools/ratchet.py long-files --max-lines 300 --update --git
+
+  hooks:pre-commit:
+    desc: Run the pre-commit stage on all files
+    cmds:
+      - uv run pre-commit run --all-files --hook-stage pre-commit
+
+  hooks:pre-push:
+    desc: Run the pre-push stage on all files
+    cmds:
+      - uv run pre-commit run --all-files --hook-stage pre-push
+
+  validate:
+    desc: Full gate, same as CI
+    cmds:
+      - task: hooks:pre-push
