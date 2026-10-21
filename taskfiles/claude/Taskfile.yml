@@ -2,6 +2,13 @@ version: "3"
 
 vars:
   CLAUDE_CREDENTIALS: "{{.HOME}}/.claude/.credentials.json"
+  # macOS keeps the same credentials blob in the login Keychain instead of on disk.
+  CLAUDE_KEYCHAIN_SERVICE: "Claude Code-credentials"
+  # Prints the credentials blob from the file, or from the macOS Keychain when there is no file.
+  CLAUDE_CRED_READ: >-
+    if [ -f "{{.CLAUDE_CREDENTIALS}}" ]; then cat "{{.CLAUDE_CREDENTIALS}}";
+    elif command -v security > /dev/null 2>&1; then
+    security find-generic-password -s "{{.CLAUDE_KEYCHAIN_SERVICE}}" -w 2> /dev/null || true; fi
   CLAUDE_USAGE_URL: "https://api.anthropic.com/api/oauth/usage"
   CLAUDE_PY: '{{if eq OS "windows"}}python{{else}}python3{{end}}'
   CLAUDE_SCRIPTS: "{{.TASKFILE_DIR}}/../../plugins/crepidoma/scripts"
@@ -90,18 +97,21 @@ tasks:
         organisation    : \(.orgName)
         subscription    : \(.subscriptionType)"'
 
-        cred="{{.CLAUDE_CREDENTIALS}}"
-        if [ -f "$cred" ]; then
+        blob=$({{.CLAUDE_CRED_READ}})
+        if [ -n "$blob" ]; then
           echo ""
           echo "== OAuth session =="
-          tier=$(jq -r '.claudeAiOauth.rateLimitTier // "unknown"' "$cred")
-          exp_ms=$(jq -r '.claudeAiOauth.expiresAt // 0' "$cred")
+          tier=$(printf '%s' "$blob" | jq -r '.claudeAiOauth.rateLimitTier // "unknown"')
+          exp_ms=$(printf '%s' "$blob" | jq -r '.claudeAiOauth.expiresAt // 0')
           echo "rate limit tier : $tier"
           if [ "$exp_ms" -gt 0 ]; then
             exp_s=$((exp_ms / 1000))
             now_s=$(date +%s)
             left=$(( (exp_s - now_s) / 60 ))
-            echo "token expires   : $(date -d @"$exp_s" '+%Y-%m-%d %H:%M:%S %Z') (in ${left} min)"
+            # GNU date takes -d @epoch; BSD date on macOS takes -r epoch.
+            exp_at=$(date -d @"$exp_s" '+%Y-%m-%d %H:%M:%S %Z' 2> /dev/null \
+                       || date -r "$exp_s" '+%Y-%m-%d %H:%M:%S %Z')
+            echo "token expires   : $exp_at (in ${left} min)"
             echo "                  ^ access-token refresh, NOT a usage-window reset"
           fi
         fi
@@ -116,15 +126,15 @@ tasks:
     deps: [_require-cli]
     cmds:
       - |
-        cred="{{.CLAUDE_CREDENTIALS}}"
-        if [ ! -f "$cred" ]; then
-          echo "No $cred - run 'claude auth login' first."
+        blob=$({{.CLAUDE_CRED_READ}})
+        if [ -z "$blob" ]; then
+          echo "No Claude credentials in {{.CLAUDE_CREDENTIALS}} or the macOS Keychain - run 'claude auth login' first."
           exit 1
         fi
 
-        tok=$(jq -r '.claudeAiOauth.accessToken // empty' "$cred")
+        tok=$(printf '%s' "$blob" | jq -r '.claudeAiOauth.accessToken // empty')
         if [ -z "$tok" ]; then
-          echo "No OAuth access token in the credentials file (API-key auth?)."
+          echo "No OAuth access token in the Claude credentials (API-key auth?)."
           echo "Usage windows are a subscription concept and are not reported for API keys."
           exit 0
         fi
