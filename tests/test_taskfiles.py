@@ -1,3 +1,4 @@
+import os
 import subprocess
 from pathlib import Path
 
@@ -20,7 +21,8 @@ def test_shared_taskfiles_list_tasks():
 def test_taskfiles_use_taskfile_dir_for_paths():
     for taskfile in (ROOT / "taskfiles").rglob("Taskfile.yml"):
         text = taskfile.read_text(encoding="utf-8")
-        assert "../" not in text or "{{.TASKFILE_DIR}}" in text, taskfile
+        # Matches both {{.TASKFILE_DIR}} and template calls such as (printf "%s/.." .TASKFILE_DIR).
+        assert "../" not in text or ".TASKFILE_DIR" in text, taskfile
 
 
 def test_hooks_check_sends_a_stop_event():
@@ -80,3 +82,34 @@ def test_taskfiles_pass_the_shell_lint():
         text=True,
     )
     assert result.returncode == 0, result.stdout[-600:]
+
+
+def test_include_vars_override_config_dirs(tmp_path):
+    for name, var in (
+        ("lint", "LINT_CFG"),
+        ("security", "SECURITY_CONFIGS"),
+        ("quality", "QUALITY_CONFIGS"),
+    ):
+        text = (ROOT / "taskfiles" / name / "Taskfile.yml").read_text(encoding="utf-8")
+        assert f"{var} | default" in text, var
+    (tmp_path / "Taskfile.yml").write_text(
+        'version: "3"\nincludes:\n  lint:\n'
+        f"    taskfile: {ROOT.as_posix()}/taskfiles/lint\n"
+        '    vars: { LINT_CFG: "/pillar/root" }\n',
+        encoding="utf-8",
+    )
+    fake = tmp_path / "bin"
+    fake.mkdir()
+    (fake / "gitleaks").write_text('#!/bin/sh\necho "ARGS $*"\n', encoding="utf-8")
+    (fake / "gitleaks").chmod(0o755)
+    env = {**os.environ, "PATH": f"{fake}{os.pathsep}{os.environ['PATH']}"}
+    result = subprocess.run(
+        ["task", "lint:secrets"], cwd=tmp_path, capture_output=True, text=True, env=env
+    )
+    assert "/pillar/root/gitleaks.toml" in result.stdout + result.stderr
+
+
+def test_shared_gitleaks_prefers_root_config():
+    for name in ("lint", "security"):
+        text = (ROOT / "taskfiles" / name / "Taskfile.yml").read_text(encoding="utf-8")
+        assert "[ -f .gitleaks.toml ]" in text, name

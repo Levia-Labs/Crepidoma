@@ -50,3 +50,7 @@
 3. Remove the PreToolUse `raw_read_guard.py` hook from `~/.claude/settings.json`.
 4. Reduce `~/.claude/CLAUDE.md` to personal content; delete `~/.claude/bin/digest.py` and
    `~/.claude/bin/raw_read_guard.py`.
+
+## Config overrides
+
+Shared `lint`, `security` and `quality` read `LINT_CFG`, `SECURITY_CONFIGS` and `QUALITY_CONFIGS` (default: Crepidoma `configs/`). Override per include with `vars: { LINT_CFG: "{{.ROOT_DIR}}" }`, the CLI or the environment. Shared gitleaks uses a repo-root `.gitleaks.toml` when present; let it extend the shared config.

@@ -4,7 +4,8 @@ vars:
   QUALITY_PY: '{{if eq OS "windows"}}python{{else}}python3{{end}}'
   QUALITY_SCRIPTS: "{{.TASKFILE_DIR}}/../../plugins/crepidoma/scripts"
   QUALITY_TOOLS: "{{.TASKFILE_DIR}}/../../tools"
-  QUALITY_CONFIGS: "{{.TASKFILE_DIR}}/../../configs"
+  # default: {{.TASKFILE_DIR}}/../../configs; an including Taskfile may override
+  QUALITY_CONFIGS: '{{.QUALITY_CONFIGS | default (printf "%s/../../configs" .TASKFILE_DIR)}}'
   QUALITY_DUP_THRESHOLD: "10"
   QUALITY_FAST: "quality:long-files quality:docs quality:taskfiles quality:encoding"
   QUALITY_ALL: >-

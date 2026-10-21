@@ -1,7 +1,8 @@
 version: "3"
 
 vars:
-  SECURITY_CONFIGS: "{{.TASKFILE_DIR}}/../../configs"
+  # default: {{.TASKFILE_DIR}}/../../configs; an including Taskfile may override
+  SECURITY_CONFIGS: '{{.SECURITY_CONFIGS | default (printf "%s/../../configs" .TASKFILE_DIR)}}'
 
 tasks:
   secrets:
@@ -12,7 +13,9 @@ tasks:
       - |
         command -v gitleaks >/dev/null 2>&1 \
           || { echo "missing gitleaks: install https://github.com/gitleaks/gitleaks#installing" >&2; exit 1; }
-        gitleaks git --config "{{.SECURITY_CONFIGS}}/gitleaks.toml" --redact --no-banner .
+        cfg="{{.SECURITY_CONFIGS}}/gitleaks.toml"
+        if [ -f .gitleaks.toml ]; then cfg=.gitleaks.toml; fi
+        gitleaks git --config "$cfg" --redact --no-banner .
 
   sast:
     desc: "semgrep static analysis, metrics off. Usage: task security:sast"
