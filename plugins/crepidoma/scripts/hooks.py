@@ -30,14 +30,8 @@ import shutil  # noqa: F401 - tests patch hooks.shutil
 import subprocess  # noqa: F401 - tests patch hooks.subprocess
 import sys
 import tempfile  # noqa: F401 - tests patch hooks.tempfile
-import types
 from pathlib import Path  # noqa: F401 - tests patch hooks.Path
 
-import hooks_bash
-import hooks_budget
-import hooks_common
-import hooks_pre_tool
-import hooks_stop
 from hooks_bash import (  # noqa: F401
     GIT_COMPILED,
     GIT_DENY,
@@ -116,22 +110,6 @@ from hooks_stop import (  # noqa: F401
     skip_reason,
     stop,
 )
-
-PARTS = (hooks_common, hooks_budget, hooks_pre_tool, hooks_stop, hooks_bash)
-
-
-class _Facade(types.ModuleType):
-    """Setting a name here sets it in every part that holds it, so a patched ROOT, LEDGER or
-    run reaches the code that reads it however the parts are split."""
-
-    def __setattr__(self, name: str, value: object) -> None:
-        super().__setattr__(name, value)
-        for part in PARTS:
-            if name in vars(part):
-                setattr(part, name, value)
-
-
-sys.modules[__name__].__class__ = _Facade
 
 
 def build_parser() -> argparse.ArgumentParser:

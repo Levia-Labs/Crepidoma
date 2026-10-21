@@ -3,7 +3,9 @@
 import subprocess
 
 import hooks
+import hooks_stop
 import pytest
+from hooks_patch import patch_shared
 
 
 @pytest.fixture
@@ -11,16 +13,16 @@ def calls(monkeypatch, tmp_path):
     marker = tmp_path / "dirty"
     marker.touch()
     gate = hooks.Gate(marker, "", (".py",), ("check",), (), ())
-    monkeypatch.setattr(hooks, "GATES", (gate,))
-    monkeypatch.setattr(hooks, "opted_in", lambda: True)
-    monkeypatch.setattr(hooks, "usage_reading", lambda: {})
+    monkeypatch.setattr(hooks_stop, "GATES", (gate,))
+    patch_shared(monkeypatch, "opted_in", lambda: True)
+    patch_shared(monkeypatch, "usage_reading", lambda: {})
     seen = []
 
     def run(*command):
         seen.append(command)
         return subprocess.CompletedProcess(command, 0, "", "")
 
-    monkeypatch.setattr(hooks, "run", run)
+    monkeypatch.setattr(hooks_stop, "run", run)
     return seen
 
 

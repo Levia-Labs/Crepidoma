@@ -8,60 +8,19 @@ import time
 from pathlib import Path
 
 import hooks
+import hooks_budget
+import hooks_common
+import hooks_pre_tool
+import hooks_stop
 import pytest
+from hooks_patch import patch_shared
 
 
 @pytest.fixture(autouse=True)
 def opted_in(request, monkeypatch):
     """Ported tests assume a pillar that adopted Crepidoma; opt-in tests mark themselves."""
     if "no_opt_in" not in request.keywords:
-        monkeypatch.setattr(hooks, "opted_in", lambda: True)
-
-
-def write_settings(root, plugins):
-    settings = root / ".claude" / "settings.json"
-    settings.parent.mkdir(parents=True, exist_ok=True)
-    settings.write_text(json.dumps({"enabledPlugins": plugins}), encoding="utf-8")
-
-
-@pytest.mark.no_opt_in
-def test_opt_in_requires_project_enabled_plugin(tmp_path, monkeypatch):
-    monkeypatch.setattr(hooks, "ROOT", tmp_path)
-    assert hooks.opted_in() is False
-    write_settings(tmp_path, {"crepidoma@levia-labs": False})
-    assert hooks.opted_in() is False
-    write_settings(tmp_path, {"crepidoma@levia-labs": True})
-    assert hooks.opted_in() is True
-
-
-@pytest.mark.no_opt_in
-def test_malformed_settings_is_not_opt_in(tmp_path, monkeypatch):
-    monkeypatch.setattr(hooks, "ROOT", tmp_path)
-    (tmp_path / ".claude").mkdir()
-    (tmp_path / ".claude" / "settings.json").write_text("{not json", encoding="utf-8")
-    assert hooks.opted_in() is False
-
-
-@pytest.mark.no_opt_in
-def test_stop_runs_no_project_code_without_opt_in(tmp_path, monkeypatch):
-    monkeypatch.setattr(hooks, "ROOT", tmp_path)
-    marker = tmp_path / "dirty"
-    marker.write_text("", encoding="utf-8")
-    gate = hooks.GATES[0]._replace(marker=marker)
-    monkeypatch.setattr(hooks, "GATES", (gate,))
-    calls = []
-    monkeypatch.setattr(hooks, "run", lambda *args, **kw: calls.append(args))
-    assert hooks.stop({}) == 0
-    assert calls == []
-
-
-@pytest.mark.no_opt_in
-def test_project_budget_script_never_preferred_over_plugin(tmp_path, monkeypatch):
-    monkeypatch.setattr(hooks, "ROOT", tmp_path)
-    script = tmp_path / hooks.BUDGET_SCRIPTS[0]
-    script.parent.mkdir(parents=True)
-    script.write_text("", encoding="utf-8")
-    assert hooks.budget_script() != script
+        patch_shared(monkeypatch, "opted_in", lambda: True)
 
 
 NAMED = {"subagent_type": "toolsmith", "model": "sonnet"}
@@ -80,12 +39,12 @@ CHECK_SKIP = (
 def isolated(tmp_path, monkeypatch):
     root = tmp_path / "repo"
     root.mkdir()
-    monkeypatch.setattr(hooks, "ROOT", root)
-    monkeypatch.setattr(hooks, "USAGE_CACHE", tmp_path / "usage.json")
-    monkeypatch.setattr(hooks, "LEDGER", tmp_path / "lanes.json")
-    monkeypatch.setattr(hooks, "PLUGIN_AGENTS", tmp_path / "plugin-agents")
-    gates = tuple(gate._replace(marker=tmp_path / gate.marker.name) for gate in hooks.GATES)
-    monkeypatch.setattr(hooks, "GATES", gates)
+    patch_shared(monkeypatch, "ROOT", root)
+    monkeypatch.setattr(hooks_budget, "USAGE_CACHE", tmp_path / "usage.json")
+    monkeypatch.setattr(hooks_pre_tool, "LEDGER", tmp_path / "lanes.json")
+    monkeypatch.setattr(hooks_pre_tool, "PLUGIN_AGENTS", tmp_path / "plugin-agents")
+    gates = tuple(gate._replace(marker=tmp_path / gate.marker.name) for gate in hooks_stop.GATES)
+    monkeypatch.setattr(hooks_stop, "GATES", gates)
     return root
 
 
@@ -129,7 +88,7 @@ def test_in_scope(tmp_path, path, expected):
 
 
 def test_in_scope_accepts_an_absolute_path(tmp_path):
-    path = str(hooks.ROOT / "tasks" / "lint" / "Taskfile.yml")
+    path = str(hooks_common.ROOT / "tasks" / "lint" / "Taskfile.yml")
     assert hooks.in_scope(path, check_gate(tmp_path / "m"))
 
 
@@ -137,7 +96,7 @@ def test_in_scope_accepts_an_absolute_path(tmp_path):
 def dirty(monkeypatch, tmp_path):
     marker = tmp_path / "check-dirty"
     marker.touch()
-    monkeypatch.setattr(hooks, "GATES", (check_gate(marker),))
+    monkeypatch.setattr(hooks_stop, "GATES", (check_gate(marker),))
     return marker
 
 
@@ -148,7 +107,7 @@ def fake(monkeypatch, returncode, output):
         calls.append(command)
         return subprocess.CompletedProcess(command, returncode, output, "")
 
-    monkeypatch.setattr(hooks, "run", run)
+    monkeypatch.setattr(hooks_stop, "run", run)
     return calls
 
 
@@ -244,7 +203,7 @@ def test_stop_blocks_when_a_pytest_error_line_in_the_tail_quotes_a_skip_reason(
 )
 def test_pre_tool_use_refuses_a_catch_all_agent(monkeypatch, capsys, subagent_type):
     # The policy is checked before the allowance: no usage reading is needed to refuse.
-    monkeypatch.setattr(hooks, "usage_reading", lambda: pytest.fail("read the allowance"))
+    patch_shared(monkeypatch, "usage_reading", lambda: pytest.fail("read the allowance"))
     hooks.pre_tool_use(agent(subagent_type))
     result = decision(capsys)
     assert result["permissionDecision"] == "deny"
@@ -253,7 +212,7 @@ def test_pre_tool_use_refuses_a_catch_all_agent(monkeypatch, capsys, subagent_ty
 
 @pytest.mark.parametrize("subagent_type", ["toolsmith", "caveman:cavecrew-builder", "explorer"])
 def test_pre_tool_use_lets_a_named_agent_through(monkeypatch, capsys, subagent_type):
-    monkeypatch.setattr(hooks, "usage_reading", dict)
+    patch_shared(monkeypatch, "usage_reading", dict)
     assert hooks.pre_tool_use(agent(subagent_type)) == 0
     assert capsys.readouterr().out == ""
 
@@ -264,7 +223,7 @@ def test_pre_tool_use_refuses_a_named_agent_at_the_ceiling(monkeypatch, capsys):
         "wait_seconds": 600,
         "windows": [{"label": "Session (5 hour)", "utilization": 97.0}],
     }
-    monkeypatch.setattr(hooks, "usage_reading", lambda: reading)
+    patch_shared(monkeypatch, "usage_reading", lambda: reading)
     hooks.pre_tool_use(agent("toolsmith"))
     result = decision(capsys)
     assert result["permissionDecision"] == "deny"
@@ -288,7 +247,7 @@ def test_running_agents_counts_only_unfinished_lanes(tmp_path):
 
 def test_running_agents_ignores_a_stale_lane(tmp_path, monkeypatch):
     transcript = lanes(tmp_path, False, 2)
-    monkeypatch.setattr(hooks, "RUNNING_SECONDS", -1)
+    monkeypatch.setattr(hooks_pre_tool, "RUNNING_SECONDS", -1)
     assert hooks.running_agents(transcript, time.time()) == 0
 
 
@@ -297,7 +256,7 @@ def test_running_agents_without_a_transcript_is_zero():
 
 
 def test_pre_tool_use_refuses_a_seventh_agent(tmp_path, monkeypatch, capsys):
-    monkeypatch.setattr(hooks, "usage_reading", dict)
+    patch_shared(monkeypatch, "usage_reading", dict)
     event = agent("toolsmith")
     event["transcript_path"] = lanes(tmp_path, False, hooks.MAX_AGENTS)
     hooks.pre_tool_use(event)
@@ -307,7 +266,7 @@ def test_pre_tool_use_refuses_a_seventh_agent(tmp_path, monkeypatch, capsys):
 
 
 def test_pre_tool_use_ignores_bash(monkeypatch, capsys):
-    monkeypatch.setattr(hooks, "usage_reading", lambda: pytest.fail("read the allowance"))
+    patch_shared(monkeypatch, "usage_reading", lambda: pytest.fail("read the allowance"))
     assert hooks.pre_tool_use({"tool_name": "Bash", "tool_input": {}}) == 0
     assert capsys.readouterr().out == ""
 
@@ -334,7 +293,7 @@ def gates(tmp_path, monkeypatch):
         ),
         hooks.Gate(tmp_path / "claude-py-dirty", "Tasks/", (".py",), ("py:check",), (".py:",), ()),
     )
-    monkeypatch.setattr(hooks, "GATES", patched)
+    monkeypatch.setattr(hooks_stop, "GATES", patched)
     return patched
 
 
@@ -359,14 +318,14 @@ def test_docs_edit_marks_nothing(gates):
 
 
 def test_stop_without_dirty_runs_nothing(gates, monkeypatch):
-    monkeypatch.setattr(hooks, "run", lambda *a: pytest.fail(f"ran {a}"))
+    monkeypatch.setattr(hooks_stop, "run", lambda *a: pytest.fail(f"ran {a}"))
     assert hooks.stop({}) == 0
 
 
 def test_stop_blocks_on_failure_and_keeps_marker(gates, monkeypatch, capsys):
     gates[1].marker.touch()
     monkeypatch.setattr(
-        hooks, "run", lambda *a: completed(1, "noise\nTasks/x.py:3:1: F401 unused\n")
+        hooks_stop, "run", lambda *a: completed(1, "noise\nTasks/x.py:3:1: F401 unused\n")
     )
     assert hooks.stop({}) == 0
     result = json.loads(capsys.readouterr().out)
@@ -381,8 +340,8 @@ def test_stop_clears_markers_when_gates_pass(gates, monkeypatch, capsys):
     for gate in gates:
         gate.marker.touch()
     ran = []
-    monkeypatch.setattr(hooks, "run", lambda *a: ran.append(a) or completed(0))
-    monkeypatch.setattr(hooks, "usage_reading", dict)
+    monkeypatch.setattr(hooks_stop, "run", lambda *a: ran.append(a) or completed(0))
+    patch_shared(monkeypatch, "usage_reading", dict)
     assert hooks.stop({}) == 0
     assert capsys.readouterr().out == ""
     assert not any(gate.marker.exists() for gate in gates)
@@ -393,7 +352,7 @@ def test_stop_clears_markers_when_gates_pass(gates, monkeypatch, capsys):
 
 def test_stop_reentry_does_nothing(gates, monkeypatch):
     gates[0].marker.touch()
-    monkeypatch.setattr(hooks, "run", lambda *a: pytest.fail("ran"))
+    monkeypatch.setattr(hooks_stop, "run", lambda *a: pytest.fail("ran"))
     assert hooks.stop({"stop_hook_active": True}) == 0
 
 
@@ -403,7 +362,7 @@ def test_pre_tool_use_denies_agent_over_ceiling(monkeypatch, capsys):
         "wait_seconds": 3720,
         "windows": [{"label": "Session", "utilization": 97.0}],
     }
-    monkeypatch.setattr(hooks, "usage_reading", lambda: reading)
+    patch_shared(monkeypatch, "usage_reading", lambda: reading)
     assert hooks.pre_tool_use(AGENT) == 0
     result = decision(capsys)
     assert result["permissionDecision"] == "deny"
@@ -412,7 +371,7 @@ def test_pre_tool_use_denies_agent_over_ceiling(monkeypatch, capsys):
 
 
 def test_pre_tool_use_ignores_other_tools(monkeypatch):
-    monkeypatch.setattr(hooks, "usage_reading", lambda: pytest.fail("read usage"))
+    patch_shared(monkeypatch, "usage_reading", lambda: pytest.fail("read usage"))
     assert hooks.pre_tool_use({"tool_name": "Edit"}) == 0
 
 
@@ -425,12 +384,12 @@ def test_span_formats_hours_and_minutes(seconds):
 @pytest.fixture
 def cache(tmp_path, monkeypatch):
     path = tmp_path / "git" / "usage.json"
-    monkeypatch.setattr(hooks, "USAGE_CACHE", path)
+    monkeypatch.setattr(hooks_budget, "USAGE_CACHE", path)
     return path
 
 
 def fake_budget(monkeypatch, out):
-    budget = hooks.ROOT / "tasks" / "claude" / "budget.py"
+    budget = hooks_common.ROOT / "tasks" / "claude" / "budget.py"
     budget.parent.mkdir(parents=True, exist_ok=True)
     budget.touch()
     calls = []
@@ -490,7 +449,7 @@ def test_usage_reading_survives_cache_write_failure(cache, monkeypatch):
 
 
 def test_usage_reading_without_a_budget_script_is_empty(cache, monkeypatch):
-    monkeypatch.setattr(hooks, "budget_script", lambda: None)
+    monkeypatch.setattr(hooks_budget, "budget_script", lambda: None)
     monkeypatch.setattr(hooks.subprocess, "run", lambda *a, **k: pytest.fail("spawned"))
     assert hooks.usage_reading() == {}
 
@@ -507,18 +466,18 @@ def test_run_resolves_the_executable_without_a_shell(monkeypatch):
     hooks.run("task", "py:check")
     assert seen["args"] == (["/bin/task", "py:check"],)
     assert seen["kwargs"]["shell"] is False
-    assert seen["kwargs"]["cwd"] == hooks.ROOT
+    assert seen["kwargs"]["cwd"] == hooks_common.ROOT
 
 
 def test_pre_tool_use_allows_agent_under_ceiling(monkeypatch, capsys):
-    monkeypatch.setattr(hooks, "usage_reading", lambda: {"over_ceiling": False})
+    patch_shared(monkeypatch, "usage_reading", lambda: {"over_ceiling": False})
     assert hooks.pre_tool_use(AGENT) == 0
     assert capsys.readouterr().out == ""
 
 
 @pytest.mark.parametrize("kind", [None, "", "general-purpose", "claude", "fork"])
 def test_pre_tool_use_denies_generic_agents(monkeypatch, capsys, kind):
-    monkeypatch.setattr(hooks, "usage_reading", lambda: pytest.fail("read usage"))
+    patch_shared(monkeypatch, "usage_reading", lambda: pytest.fail("read usage"))
     event = {"tool_name": "Agent", "tool_input": {"subagent_type": kind, "model": "sonnet"}}
     assert hooks.pre_tool_use(event) == 0
     result = decision(capsys)
@@ -543,7 +502,7 @@ def test_running_agents_counts_unfinished_fresh_metas(tmp_path):
 
 
 def test_pre_tool_use_denies_past_the_agent_limit(tmp_path, monkeypatch, capsys):
-    monkeypatch.setattr(hooks, "usage_reading", dict)
+    patch_shared(monkeypatch, "usage_reading", dict)
     transcript = session(tmp_path, ["{}"] * hooks.MAX_AGENTS)
     hooks.pre_tool_use({**AGENT, "transcript_path": transcript})
     assert "limit is 6" in decision(capsys)["permissionDecisionReason"]
@@ -551,9 +510,9 @@ def test_pre_tool_use_denies_past_the_agent_limit(tmp_path, monkeypatch, capsys)
 
 def test_stop_reports_ceiling_after_gates_pass(gates, monkeypatch, capsys):
     gates[1].marker.touch()
-    monkeypatch.setattr(hooks, "run", lambda *a: completed(0))
+    monkeypatch.setattr(hooks_stop, "run", lambda *a: completed(0))
     reading = {"over_ceiling": True, "wait_seconds": 600}
-    monkeypatch.setattr(hooks, "usage_reading", lambda: reading)
+    patch_shared(monkeypatch, "usage_reading", lambda: reading)
     assert hooks.stop({}) == 0
     captured = capsys.readouterr()
     assert captured.out == ""
@@ -617,7 +576,7 @@ def test_payload_invalid_json_is_empty(monkeypatch, text):
 
 
 def test_pre_tool_use_refuses_an_agent_without_a_cheap_model(monkeypatch, capsys):
-    monkeypatch.setattr(hooks, "usage_reading", lambda: pytest.fail("read usage"))
+    patch_shared(monkeypatch, "usage_reading", lambda: pytest.fail("read usage"))
     hooks.pre_tool_use(agent("unknown-agent", model=None))
     assert "would run on" in decision(capsys)["permissionDecisionReason"]
 
@@ -628,8 +587,8 @@ def test_pre_tool_use_refuses_opus(capsys):
 
 
 def test_pre_tool_use_accepts_a_model_from_the_project_definition(monkeypatch, capsys):
-    monkeypatch.setattr(hooks, "usage_reading", dict)
-    folder = hooks.ROOT / ".claude" / "agents"
+    patch_shared(monkeypatch, "usage_reading", dict)
+    folder = hooks_common.ROOT / ".claude" / "agents"
     folder.mkdir(parents=True)
     (folder / "indexer.md").write_text("---\nname: indexer\nmodel: haiku\n---\n", encoding="utf-8")
     assert hooks.pre_tool_use(agent("indexer", model=None)) == 0
@@ -637,7 +596,7 @@ def test_pre_tool_use_accepts_a_model_from_the_project_definition(monkeypatch, c
 
 
 def test_defined_model_reads_a_plugin_agent_by_its_short_name():
-    folder = hooks.PLUGIN_AGENTS
+    folder = hooks_pre_tool.PLUGIN_AGENTS
     folder.mkdir(parents=True)
     (folder / "toolsmith.md").write_text("---\nmodel: sonnet\n---\n", encoding="utf-8")
     assert hooks.defined_model("some-plugin:toolsmith") == "sonnet"
@@ -650,16 +609,18 @@ def test_pre_tool_use_polices_the_task_tool_name(capsys):
 
 
 def test_pre_tool_use_reserves_a_lane(monkeypatch):
-    monkeypatch.setattr(hooks, "usage_reading", dict)
+    patch_shared(monkeypatch, "usage_reading", dict)
     hooks.pre_tool_use({**AGENT, "tool_use_id": "t1"})
-    assert list(json.loads(hooks.LEDGER.read_text(encoding="utf-8"))["pending"]) == ["t1"]
+    assert list(json.loads(hooks_pre_tool.LEDGER.read_text(encoding="utf-8"))["pending"]) == ["t1"]
 
 
 def test_pre_tool_use_refuses_when_the_ledger_is_full(monkeypatch, capsys):
-    monkeypatch.setattr(hooks, "usage_reading", dict)
+    patch_shared(monkeypatch, "usage_reading", dict)
     now = time.time()
     pending = {f"t{n}": now for n in range(hooks.MAX_AGENTS)}
-    hooks.LEDGER.write_text(json.dumps({"running": {}, "pending": pending}), encoding="utf-8")
+    hooks_pre_tool.LEDGER.write_text(
+        json.dumps({"running": {}, "pending": pending}), encoding="utf-8"
+    )
     hooks.pre_tool_use(AGENT)
     assert "already running" in decision(capsys)["permissionDecisionReason"]
 
@@ -667,12 +628,12 @@ def test_pre_tool_use_refuses_when_the_ledger_is_full(monkeypatch, capsys):
 def test_ledger_forgets_expired_entries():
     old = time.time() - hooks.RUNNING_SECONDS - 1
     state = {"running": {"a": old}, "pending": {"t": old}}
-    hooks.LEDGER.write_text(json.dumps(state), encoding="utf-8")
+    hooks_pre_tool.LEDGER.write_text(json.dumps(state), encoding="utf-8")
     assert hooks.load_ledger(time.time()) == {"running": {}, "pending": {}}
 
 
 def test_ledger_survives_a_corrupt_file():
-    hooks.LEDGER.write_text("[]", encoding="utf-8")
+    hooks_pre_tool.LEDGER.write_text("[]", encoding="utf-8")
     assert hooks.load_ledger(time.time()) == {"running": {}, "pending": {}}
 
 
@@ -731,23 +692,23 @@ def call(monkeypatch, argv, event):
 
 
 def ledger():
-    return json.loads(hooks.LEDGER.read_text(encoding="utf-8"))
+    return json.loads(hooks_pre_tool.LEDGER.read_text(encoding="utf-8"))
 
 
 def test_cli_post_tool_use_allow(monkeypatch, capsys):
     assert call(monkeypatch, ["post-tool-use"], {"tool_input": {"file_path": "a.png"}}) == 0
     assert capsys.readouterr().out == ""
-    assert not hooks.GATES[0].marker.exists()
+    assert not hooks_stop.GATES[0].marker.exists()
 
 
 def test_cli_post_tool_use_deny(monkeypatch, capsys):
     assert call(monkeypatch, ["post-tool-use"], {"tool_input": {"file_path": "src/a.py"}}) == 0
     assert capsys.readouterr().out == ""
-    assert hooks.GATES[0].marker.exists()
+    assert hooks_stop.GATES[0].marker.exists()
 
 
 def test_cli_pre_tool_use_allow(monkeypatch, capsys):
-    monkeypatch.setattr(hooks, "usage_reading", dict)
+    patch_shared(monkeypatch, "usage_reading", dict)
     assert call(monkeypatch, ["pre-tool-use"], AGENT) == 0
     assert capsys.readouterr().out == ""
     assert len(ledger()["pending"]) == 1
@@ -783,7 +744,7 @@ def fill_lanes(monkeypatch):
 
 
 def test_cli_subagent_start_allow(monkeypatch, capsys):
-    monkeypatch.setattr(hooks, "usage_reading", dict)
+    patch_shared(monkeypatch, "usage_reading", dict)
     call(monkeypatch, ["pre-tool-use"], {**AGENT, "tool_use_id": "t1"})
     assert call(monkeypatch, ["subagent-start"], {"agent_id": "a1"}) == 0
     assert capsys.readouterr().out == ""
@@ -792,14 +753,14 @@ def test_cli_subagent_start_allow(monkeypatch, capsys):
 
 
 def test_cli_subagent_start_deny(monkeypatch, capsys):
-    monkeypatch.setattr(hooks, "usage_reading", dict)
+    patch_shared(monkeypatch, "usage_reading", dict)
     fill_lanes(monkeypatch)
     call(monkeypatch, ["pre-tool-use"], AGENT)
     assert "already running" in decision(capsys)["permissionDecisionReason"]
 
 
 def test_cli_subagent_stop_allow(monkeypatch, capsys):
-    monkeypatch.setattr(hooks, "usage_reading", dict)
+    patch_shared(monkeypatch, "usage_reading", dict)
     fill_lanes(monkeypatch)
     assert call(monkeypatch, ["subagent-stop"], {"agent_id": "a0"}) == 0
     call(monkeypatch, ["pre-tool-use"], AGENT)
@@ -807,7 +768,7 @@ def test_cli_subagent_stop_allow(monkeypatch, capsys):
 
 
 def test_cli_subagent_stop_deny(monkeypatch, capsys):
-    monkeypatch.setattr(hooks, "usage_reading", dict)
+    patch_shared(monkeypatch, "usage_reading", dict)
     fill_lanes(monkeypatch)
     assert call(monkeypatch, ["subagent-stop"], {"agent_id": "someone-else"}) == 0
     call(monkeypatch, ["pre-tool-use"], AGENT)
@@ -815,22 +776,22 @@ def test_cli_subagent_stop_deny(monkeypatch, capsys):
 
 
 def test_cli_stop_allow(monkeypatch, capsys):
-    hooks.GATES[0].marker.touch()
+    hooks_stop.GATES[0].marker.touch()
     calls = fake(monkeypatch, 0, "")
     assert call(monkeypatch, ["stop"], {"session_id": "s"}) == 0
     assert capsys.readouterr().out == ""
     assert calls[0] == ("task", "validate")
-    assert not hooks.GATES[0].marker.exists()
+    assert not hooks_stop.GATES[0].marker.exists()
 
 
 def test_cli_stop_deny(monkeypatch, capsys):
-    hooks.GATES[0].marker.touch()
+    hooks_stop.GATES[0].marker.touch()
     calls = fake(monkeypatch, 1, "src/a.py:1:1: F401 unused")
     assert call(monkeypatch, ["stop", "--task", "check"], {"session_id": "s"}) == 0
     result = json.loads(capsys.readouterr().out)
     assert result["decision"] == "block"
     assert calls == [("task", "check")]
-    assert hooks.GATES[0].marker.exists()
+    assert hooks_stop.GATES[0].marker.exists()
 
 
 @pytest.mark.parametrize(
@@ -839,13 +800,13 @@ def test_cli_stop_deny(monkeypatch, capsys):
 )
 @pytest.mark.parametrize("stdin", ["{nope", "", "[1, 2]"])
 def test_cli_malformed_stdin_fails_open(monkeypatch, capsys, event, stdin):
-    hooks.GATES[0].marker.touch()
-    monkeypatch.setattr(hooks, "run", lambda *a: pytest.fail("ran"))
-    monkeypatch.setattr(hooks, "usage_reading", lambda: pytest.fail("read usage"))
+    hooks_stop.GATES[0].marker.touch()
+    monkeypatch.setattr(hooks_stop, "run", lambda *a: pytest.fail("ran"))
+    patch_shared(monkeypatch, "usage_reading", lambda: pytest.fail("read usage"))
     assert run_main(monkeypatch, [event], stdin) == 0
     assert capsys.readouterr().out == ""
-    assert hooks.GATES[0].marker.exists()
-    assert not hooks.LEDGER.exists()
+    assert hooks_stop.GATES[0].marker.exists()
+    assert not hooks_pre_tool.LEDGER.exists()
 
 
 def test_cli_internal_error_fails_open(monkeypatch, capsys):
@@ -894,8 +855,8 @@ def test_future_dated_usage_cache_is_ignored(tmp_path, monkeypatch):
     cache.write_text(
         json.dumps({"read_at": time.time() + 10_000, "reading": reading}), encoding="utf-8"
     )
-    monkeypatch.setattr(hooks, "USAGE_CACHE", cache)
-    monkeypatch.setattr(hooks, "budget_script", lambda: None)
+    monkeypatch.setattr(hooks_budget, "USAGE_CACHE", cache)
+    monkeypatch.setattr(hooks_budget, "budget_script", lambda: None)
     assert hooks.usage_reading() == {}
 
 
@@ -948,10 +909,10 @@ def test_state_dir_plain_repo_and_no_repo(tmp_path):
 
 @pytest.mark.no_opt_in
 def test_post_tool_use_writes_nothing_without_opt_in(tmp_path, monkeypatch):
-    monkeypatch.setattr(hooks, "ROOT", tmp_path)
+    patch_shared(monkeypatch, "ROOT", tmp_path)
     marker = tmp_path / "state" / "dirty"
-    gate = hooks.GATES[0]._replace(marker=marker)
-    monkeypatch.setattr(hooks, "GATES", (gate,))
+    gate = hooks_stop.GATES[0]._replace(marker=marker)
+    monkeypatch.setattr(hooks_stop, "GATES", (gate,))
     event = {"tool_input": {"file_path": str(tmp_path / "a.py")}}
     assert hooks.post_tool_use(event) == 0
     assert not marker.exists()

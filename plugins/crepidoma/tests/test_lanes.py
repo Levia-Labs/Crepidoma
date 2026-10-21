@@ -2,15 +2,17 @@ import json
 import time
 
 import hooks
+import hooks_pre_tool
 import lanes
 import pytest
+from hooks_patch import patch_shared
 
 
 @pytest.fixture
 def ledger(tmp_path, monkeypatch):
     path = tmp_path / "claude-lanes.json"
-    monkeypatch.setattr(hooks, "LEDGER", path)
-    monkeypatch.setattr(hooks, "ROOT", tmp_path)
+    monkeypatch.setattr(hooks_pre_tool, "LEDGER", path)
+    patch_shared(monkeypatch, "ROOT", tmp_path)
 
     def write(running: dict, pending: dict) -> None:
         path.write_text(json.dumps({"running": running, "pending": pending}), encoding="utf-8")
@@ -38,7 +40,7 @@ def test_reset_clears_all(ledger, capsys):
     ledger({"a": now, "b": now - hooks.RUNNING_SECONDS - 10}, {"c": now})
     assert lanes.main(["reset"]) == 0
     assert capsys.readouterr().out.strip() == "removed 3"
-    state = json.loads(hooks.LEDGER.read_text(encoding="utf-8"))
+    state = json.loads(hooks_pre_tool.LEDGER.read_text(encoding="utf-8"))
     assert state == {"running": {}, "pending": {}}
 
 
@@ -47,7 +49,7 @@ def test_reset_stale_keeps_fresh(ledger, capsys):
     ledger({"a": now, "b": now - hooks.RUNNING_SECONDS - 10}, {})
     assert lanes.main(["reset", "--stale"]) == 0
     assert capsys.readouterr().out.strip() == "removed 1"
-    state = json.loads(hooks.LEDGER.read_text(encoding="utf-8"))
+    state = json.loads(hooks_pre_tool.LEDGER.read_text(encoding="utf-8"))
     assert list(state["running"]) == ["a"]
 
 

@@ -29,7 +29,7 @@ exclude-newer-package = { certifi = "2026-10-21T00:00:00Z" }
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "plugins/crepidoma/tests"]
-pythonpath = ["tools", "plugins/crepidoma/scripts"]
+pythonpath = ["tools", "plugins/crepidoma/scripts", "plugins/crepidoma/tests"]
 addopts = "--import-mode=importlib -q"
 markers = ["no_opt_in: run without the autouse crepidoma opt-in stub"]
 

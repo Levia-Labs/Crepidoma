@@ -14,19 +14,22 @@ import time
 from pathlib import Path
 
 import hooks
+import hooks_common
+import hooks_pre_tool
+import hooks_stop
 
 HANDOFF = ".claude/handoff.md"
 RECENT_COMMITS = 5
 
 
 def git(*args: str) -> str:
-    return hooks.run("git", *args).stdout
+    return hooks_stop.run("git", *args).stdout
 
 
 def raw_count() -> int:
     """Entries on disk, expired ones included (load_ledger drops those)."""
     try:
-        state = json.loads(hooks.LEDGER.read_text(encoding="utf-8"))
+        state = json.loads(hooks_pre_tool.LEDGER.read_text(encoding="utf-8"))
         return len(state["running"]) + len(state["pending"])
     except (OSError, ValueError, KeyError, TypeError, AttributeError):
         return 0
@@ -57,7 +60,7 @@ def reset(stale: bool) -> int:
 
 def todo_count() -> int:
     try:
-        text = (hooks.ROOT / "TODO.md").read_text(encoding="utf-8")
+        text = (hooks_common.ROOT / "TODO.md").read_text(encoding="utf-8")
     except OSError:
         return 0
     return sum(line.count("TODO") for line in text.splitlines())
@@ -82,7 +85,7 @@ def handoff(out: str) -> int:
     ]
     path = Path(out)
     if not path.is_absolute():
-        path = hooks.ROOT / path
+        path = hooks_common.ROOT / path
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8", newline="\n") as handle:
         handle.write("\n".join(lines) + "\n")
