@@ -107,3 +107,12 @@ def test_migration_documents_ci_tools():
     text = (TEMPLATES.parent / "docs" / "migration.md").read_text(encoding="utf-8")
     assert "fetch-depth: 0" in text
     assert "8.30.1" in text
+
+
+def test_rtk_config_excludes_quiet_grep():
+    """rtk's grep rewrite loses grep's -q exit status; the user config keeps these raw."""
+    import tomllib
+
+    text = (TEMPLATES / "rtk-config.toml").read_text(encoding="utf-8")
+    excluded = tomllib.loads(text)["hooks"]["exclude_commands"]
+    assert {"grep -q", "grep --quiet", "grep -s"} <= set(excluded)

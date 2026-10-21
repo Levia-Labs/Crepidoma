@@ -1,0 +1,7 @@
+# Merge into rtk's user config (`rtk config` prints its path). User-global, not per project:
+# rtk reads hooks.exclude_commands only there, never from .rtk/filters.toml.
+#
+# rtk rewrites `grep -q x f` to `rtk grep -q x f`, which drops grep's quiet exit status, so an
+# `until grep -q` wait loop never ends. These stay raw.
+[hooks]
+exclude_commands = ["grep -q", "grep --quiet", "grep -s"]

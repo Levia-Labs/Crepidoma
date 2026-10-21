@@ -16,6 +16,7 @@
 - [`claude-README.md`](claude-README.md) - .claude
 - [`copilot-instructions.md`](copilot-instructions.md) - Pointer for Copilot.
 - [`gitmodules.txt`](gitmodules.txt) - Commands that add the .crepidoma submodule.
+- [`rtk-config.toml`](rtk-config.toml) - TOML config.
 - [`rtk-filters.toml`](rtk-filters.toml) - rtk filters a pillar copies to .rtk/filters.toml.
 - [`settings.json`](settings.json) - Claude Code settings.
 

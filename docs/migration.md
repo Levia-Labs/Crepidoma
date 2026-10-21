@@ -37,7 +37,8 @@
    `.github/copilot-instructions.md`.
 2. `templates/claude-README.md` to `.claude/README.md`; `templates/rules/taskfile-shell.md` to
    `.claude/rules/taskfile-shell.md`.
-3. `templates/rtk-filters.toml` to `.rtk/filters.toml`.
+3. `templates/rtk-filters.toml` to `.rtk/filters.toml`; merge `templates/rtk-config.toml` into rtk's
+   user config (`rtk config` prints the path) so rtk leaves `grep -q`, `--quiet` and `-s` raw.
 4. `templates/ci.yml` to the pillar's `ci.yml` workflow (calls Crepidoma's reusable workflow).
 5. Drop pillar copies of budget, rate, history, tokens, lanes, sessions, outline, section, todo, docs
    and gate scripts; the shared namespaces replace them.
