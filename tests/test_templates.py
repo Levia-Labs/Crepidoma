@@ -1,4 +1,5 @@
 import json
+import re
 from pathlib import Path
 
 TEMPLATES = Path(__file__).resolve().parent.parent / "templates"
@@ -76,7 +77,9 @@ def test_template_has_no_wrapper_allows():
 
 def test_templates_track_main():
     root = TEMPLATES.parent
-    assert "rev: main" in (TEMPLATES / ".pre-commit-config.yaml").read_text(encoding="utf-8")
+    hooks = (TEMPLATES / ".pre-commit-config.yaml").read_text(encoding="utf-8")
+    assert re.search(r"Crepidoma\s+rev: v\d+\.\d+\.\d+\n", hooks)
+    assert "rev: main" not in hooks
     assert "reusable-validate.yml@main" in (TEMPLATES / "ci.yml").read_text(encoding="utf-8")
     assert "-b main" in (TEMPLATES / "gitmodules.txt").read_text(encoding="utf-8")
     assert "rev: v0" not in (root / "README.md").read_text(encoding="utf-8")

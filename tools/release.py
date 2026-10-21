@@ -18,6 +18,8 @@ MANIFEST = Path("plugins/crepidoma/.claude-plugin/plugin.json")
 SEMVER = re.compile(r"^\d+\.\d+\.\d+$")
 DEFAULT_BRANCH = "main"
 HEADER = "# Changelog\n"
+TEMPLATE = Path("templates/.pre-commit-config.yaml")
+HOOKS_REPO = re.compile(r"(repo: \S*/Crepidoma\s+rev: )\S+")
 
 
 def bump(root: Path, version: str, today: str) -> list[Path]:
@@ -29,7 +31,11 @@ def bump(root: Path, version: str, today: str) -> list[Path]:
     body = changelog.read_text(encoding="utf-8").removeprefix(HEADER).lstrip("\n")
     entry = f"{HEADER}\n## v{version} - {today}\n" + (f"\n{body}" if body else "")
     changelog.write_text(entry, encoding="utf-8", newline="\n")
-    return [manifest, changelog]
+    template = root / TEMPLATE
+    text = template.read_text(encoding="utf-8")
+    pinned = HOOKS_REPO.sub(lambda m: f"{m.group(1)}v{version}", text)
+    template.write_text(pinned, encoding="utf-8", newline="\n")
+    return [manifest, changelog, template]
 
 
 def git(root: Path, *args: str) -> subprocess.CompletedProcess[str]:

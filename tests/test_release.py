@@ -4,12 +4,20 @@ from pathlib import Path
 
 import release
 
+TEMPLATE = (
+    "repos:\n  - repo: https://github.com/Example/Crepidoma\n    rev: v0.1.0\n    hooks: []\n"
+    "  - repo: https://github.com/pre-commit/pre-commit-hooks\n    rev: v6.0.0\n"
+)
+
 
 def setup_repo(root: Path) -> Path:
     manifest = root / "plugins/crepidoma/.claude-plugin/plugin.json"
     manifest.parent.mkdir(parents=True)
     manifest.write_text(json.dumps({"name": "crepidoma", "version": "0.1.0"}), encoding="utf-8")
     (root / "CHANGELOG.md").write_text("# Changelog\n\n## v0.1.0 - 2026-10-20\n", encoding="utf-8")
+    template = root / "templates/.pre-commit-config.yaml"
+    template.parent.mkdir(parents=True)
+    template.write_text(TEMPLATE, encoding="utf-8")
     return manifest
 
 
@@ -20,7 +28,10 @@ def test_bump_updates_manifest_and_changelog(tmp_path: Path):
     changelog = (tmp_path / "CHANGELOG.md").read_text(encoding="utf-8")
     assert changelog.startswith("# Changelog\n\n## v0.2.0 - 2026-11-01\n")
     assert "## v0.1.0" in changelog
-    assert len(changed) == 2
+    assert len(changed) == 3
+    pinned = (tmp_path / "templates/.pre-commit-config.yaml").read_text(encoding="utf-8")
+    assert "rev: v0.2.0\n" in pinned and "rev: v0.1.0" not in pinned
+    assert "rev: v6.0.0\n" in pinned
     assert b"\r\n" not in manifest.read_bytes()
 
 
