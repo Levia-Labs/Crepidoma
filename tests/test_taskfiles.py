@@ -21,7 +21,8 @@ def test_shared_taskfiles_list_tasks():
 def test_taskfiles_use_taskfile_dir_for_paths():
     for taskfile in (ROOT / "taskfiles").rglob("Taskfile.yml"):
         text = taskfile.read_text(encoding="utf-8")
-        assert "../" not in text or "{{.TASKFILE_DIR}}" in text, taskfile
+        # Matches both {{.TASKFILE_DIR}} and template calls such as (printf "%s/.." .TASKFILE_DIR).
+        assert "../" not in text or ".TASKFILE_DIR" in text, taskfile
 
 
 def test_hooks_check_sends_a_stop_event():
