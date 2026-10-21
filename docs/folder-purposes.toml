@@ -37,6 +37,7 @@
 "taskfiles/ci" = "GitHub Actions status, failure excerpts and watch."
 "taskfiles/claude" = "Claude usage, spend, history, lanes, handoff and plugin checks."
 "taskfiles/git" = "Read-only git views and the main-thread commit task."
+"taskfiles/go" = "Vet and test one Go module; set GO_DIR when including."
 "taskfiles/graph" = "graphify queries and index updates; LLM pass on Haiku."
 "taskfiles/lint" = "Linters, formatters and pre-commit helpers."
 "taskfiles/quality" = "Ratchets, docs and type gates, gate tiers."

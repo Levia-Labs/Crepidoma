@@ -9,6 +9,7 @@
 - [`ci/`](ci/README.md) - GitHub Actions status, failure excerpts and watch.
 - [`claude/`](claude/README.md) - Claude usage, spend, history, lanes, handoff and plugin checks.
 - [`git/`](git/README.md) - Read-only git views and the main-thread commit task.
+- [`go/`](go/README.md) - Vet and test one Go module; set GO_DIR when including.
 - [`graph/`](graph/README.md) - graphify queries and index updates; LLM pass on Haiku.
 - [`lint/`](lint/README.md) - Linters, formatters and pre-commit helpers.
 - [`quality/`](quality/README.md) - Ratchets, docs and type gates, gate tiers.

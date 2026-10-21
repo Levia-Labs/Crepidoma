@@ -1,0 +1,12 @@
+version: "3"
+
+vars:
+  GO_DIR: '{{.GO_DIR | default "."}}'
+
+tasks:
+  check:
+    desc: "Vet and test one Go module. Usage: task go:check (include with vars GO_DIR)"
+    dir: "{{.GO_DIR}}"
+    cmds:
+      - go vet ./...
+      - go test ./...
