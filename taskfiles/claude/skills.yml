@@ -1,0 +1,45 @@
+version: "3"
+
+vars:
+  SKILLS_PY: '{{if eq OS "windows"}}python{{else}}python3{{end}}'
+  SKILLS_SCRIPTS: "{{.TASKFILE_DIR}}/../../plugins/crepidoma/scripts/claude"
+
+# The plugins .claude/settings.json enables, installed and checked. Included (not flattened) by
+# ./Taskfile.yml, so these run as `task claude:skills:setup` and `task claude:skills:verify`.
+# Enabling a plugin does not install it: plugins.py reads enabledPlugins and
+# extraKnownMarketplaces, so a plugin added to the settings is installed by the same task.
+
+tasks:
+  setup:
+    desc: Install every plugin .claude/settings.json enables, adding its marketplace first
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    preconditions:
+      - sh: command -v claude
+        msg: The `claude` CLI is not on PATH. Install it with task claude:install.
+    cmds:
+      - uv run --no-project {{.SKILLS_PY}} "{{.SKILLS_SCRIPTS}}/plugins.py" --install
+
+  verify:
+    desc: Enabled plugins that are not installed, one line each; exit 1 if any
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.SKILLS_PY}} "{{.SKILLS_SCRIPTS}}/plugins.py" --check
+
+  # The copy an offline machine installs from:
+  #   claude plugin marketplace add ./.claude/marketplace
+  #   claude plugin install <name>@vendored -y
+  vendor:
+    desc: "Copy user-scope plugins into .claude/marketplace/. Usage: task claude:skills:vendor [DRY=1]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.SKILLS_PY}} "{{.SKILLS_SCRIPTS}}/vendor_plugins.py" {{if .DRY}}--dry-run{{end}}
+
+  vendor:check:
+    desc: Vendored plugins that differ from the installed version; exit 1 if any
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.SKILLS_PY}} "{{.SKILLS_SCRIPTS}}/vendor_plugins.py" --check

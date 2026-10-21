@@ -1,0 +1,6 @@
+# ast-grep: shared conventions as checks rather than prose. Rules live in ast-grep/rules.
+#
+#   task lint:sg        scan (part of task lint:check)
+#   task lint:sg:test   each rule against its own valid and invalid examples
+ruleDirs:
+  - ast-grep/rules

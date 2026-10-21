@@ -1,0 +1,106 @@
+version: "3"
+
+vars:
+  QUALITY_PY: '{{if eq OS "windows"}}python{{else}}python3{{end}}'
+  QUALITY_SCRIPTS: "{{.TASKFILE_DIR}}/../../plugins/crepidoma/scripts"
+  QUALITY_TOOLS: "{{.TASKFILE_DIR}}/../../tools"
+  # default: {{.TASKFILE_DIR}}/../../configs; an including Taskfile may override
+  QUALITY_CONFIGS: '{{.QUALITY_CONFIGS | default (printf "%s/../../configs" .TASKFILE_DIR)}}'
+  QUALITY_DUP_THRESHOLD: "10"
+  QUALITY_FAST: "quality:long-files quality:docs quality:taskfiles quality:encoding"
+  QUALITY_ALL: >-
+    quality:long-files quality:docs quality:types quality:duplication quality:bandit
+    quality:taskfiles quality:encoding security:check
+
+tasks:
+  long-files:
+    desc: "Fail on new or grown files over the line cap. Usage: task quality:long-files"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - 'uv run --no-project {{.QUALITY_PY}} "{{.QUALITY_TOOLS}}/ratchet.py" long-files --git'
+
+  docs:
+    desc: "Docs links and README gate. Usage: task quality:docs"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - 'uv run {{.QUALITY_PY}} "{{.QUALITY_SCRIPTS}}/docs_gate.py" all'
+
+  types:
+    desc: "basedpyright error count, ratcheted downward. Usage: task quality:types"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - |
+        command -v uvx >/dev/null 2>&1 || { echo "missing uvx: install uv https://docs.astral.sh/uv/" >&2; exit 1; }
+        out=$(uvx basedpyright -p "{{.QUALITY_CONFIGS}}/pyrightconfig.json" 2>&1 || true)
+        n=$(printf '%s\n' "$out" | grep -c ' - error:' || true)
+        echo "type errors: $n"
+        uv run --no-project {{.QUALITY_PY}} "{{.QUALITY_TOOLS}}/ratchet.py" metric \
+          --baseline .ratchet/types.baseline --direction down --value "$n"
+
+  duplication:
+    desc: "jscpd duplicated-lines percent, ratcheted downward. Usage: task quality:duplication"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - |
+        command -v npx >/dev/null 2>&1 || { echo "missing npx: install Node.js https://nodejs.org" >&2; exit 1; }
+        npx --no jscpd --version >/dev/null 2>&1 \
+          || { echo "missing jscpd: run npm install -D jscpd" >&2; exit 1; }
+        rc=0
+        out=$(npx --no jscpd --silent --reporters console --threshold {{.QUALITY_DUP_THRESHOLD}} . 2>&1) || rc=1
+        pct=$(printf '%s\n' "$out" | grep 'Total' | grep -o '[0-9.]*%' | head -n 1 | tr -d '%')
+        if [ -z "$pct" ]; then
+          echo "jscpd did not run; install it with: npm install -D jscpd" >&2
+          exit 1
+        fi
+        echo "duplication: ${pct}%"
+        uv run --no-project {{.QUALITY_PY}} "{{.QUALITY_TOOLS}}/ratchet.py" metric \
+          --baseline .ratchet/duplication.baseline --direction down --value "$pct" || rc=1
+        exit $rc
+
+  bandit:
+    desc: "bandit finding count, ratcheted downward. Usage: task quality:bandit"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - |
+        command -v uvx >/dev/null 2>&1 || { echo "missing uvx: install uv https://docs.astral.sh/uv/" >&2; exit 1; }
+        out=$(uvx bandit -q -r . -x '*/tests/*,*/.venv/*,*/node_modules/*' 2>&1 || true)
+        n=$(printf '%s\n' "$out" | grep -c '>> Issue:' || true)
+        echo "bandit findings: $n"
+        uv run --no-project {{.QUALITY_PY}} "{{.QUALITY_TOOLS}}/ratchet.py" metric \
+          --baseline .ratchet/bandit.baseline --direction down --value "$n"
+
+  taskfiles:
+    desc: "Lint Taskfile vars and embedded shell. Usage: task quality:taskfiles"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - 'uv run {{.QUALITY_PY}} "{{.QUALITY_SCRIPTS}}/taskfile_lint.py" all'
+
+  encoding:
+    desc: "ast-grep text-io-encoding rule over the tree. Usage: task quality:encoding"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - |
+        command -v uvx >/dev/null 2>&1 || { echo "missing uvx: install uv https://docs.astral.sh/uv/" >&2; exit 1; }
+        uvx --from ast-grep-cli ast-grep scan --filter text-io-encoding \
+          --config "{{.QUALITY_CONFIGS}}/sgconfig.yml" --report-style short .
+
+  gate:
+    desc: "Fast quality checks, stop at first failure. Usage: task quality:gate"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - 'uv run {{.QUALITY_PY}} "{{.QUALITY_SCRIPTS}}/gate_runner.py" run {{.QUALITY_FAST}}'
+
+  deep:
+    desc: "Every quality check plus security:check, run to completion. Usage: task quality:deep"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - 'uv run {{.QUALITY_PY}} "{{.QUALITY_SCRIPTS}}/gate_runner.py" run --keep-going {{.QUALITY_ALL}}'

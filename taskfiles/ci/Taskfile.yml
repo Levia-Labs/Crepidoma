@@ -1,0 +1,42 @@
+version: "3"
+
+vars:
+  CI_PY: '{{if eq OS "windows"}}python{{else}}python3{{end}}'
+  CI_RUNS: "{{.TASKFILE_DIR}}/../../plugins/crepidoma/scripts/ci_runs.py"
+
+tasks:
+  status:
+    desc: "Last 5 workflow runs, one line each. Usage: task ci:status"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - |
+        command -v gh >/dev/null 2>&1 || { echo "missing gh: install https://cli.github.com" >&2; exit 1; }
+        gh run list --limit 5 --json databaseId,status,conclusion,workflowName,headBranch \
+          --jq '.[] | "\(.databaseId) \(.status)/\(.conclusion) \(.workflowName) \(.headBranch)"'
+
+  fail:
+    desc: >-
+      Failing jobs of a run: name, URL, up to LINES error lines (exit 1 failures, 3 no run).
+      Usage: task ci:fail [REPO=owner/name] [SHA=<commit> | RUN=<id>] [LINES=20]
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - |
+        command -v gh >/dev/null 2>&1 || { echo "missing gh: install https://cli.github.com" >&2; exit 1; }
+        command -v uv >/dev/null 2>&1 || { echo "missing uv: install https://docs.astral.sh/uv/" >&2; exit 1; }
+        uv run --no-project {{.CI_PY}} "{{.CI_RUNS}}" fail --lines '{{.LINES | default "20"}}' \
+          {{if .REPO}}--repo '{{.REPO}}'{{end}} {{if .SHA}}--sha '{{.SHA}}'{{end}} {{if .RUN}}--run '{{.RUN}}'{{end}}
+
+  watch:
+    desc: >-
+      Wait for a run to appear, watch it, one line per run (exit 0 success, 1 failed, 3 none in TIMEOUT s).
+      Usage: task ci:watch [REPO=owner/name] [SHA=<commit> | RUN=<id>] [TIMEOUT=300]
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - |
+        command -v gh >/dev/null 2>&1 || { echo "missing gh: install https://cli.github.com" >&2; exit 1; }
+        command -v uv >/dev/null 2>&1 || { echo "missing uv: install https://docs.astral.sh/uv/" >&2; exit 1; }
+        uv run --no-project {{.CI_PY}} "{{.CI_RUNS}}" watch --timeout '{{.TIMEOUT | default "300"}}' \
+          {{if .REPO}}--repo '{{.REPO}}'{{end}} {{if .SHA}}--sha '{{.SHA}}'{{end}} {{if .RUN}}--run '{{.RUN}}'{{end}}

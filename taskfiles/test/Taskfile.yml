@@ -1,0 +1,61 @@
+version: "3"
+
+vars:
+  TEST_PY: '{{if eq OS "windows"}}python{{else}}python3{{end}}'
+  TEST_SCRIPTS: "{{.TASKFILE_DIR}}/../../plugins/crepidoma/scripts"
+  TEST_TOOLS: "{{.TASKFILE_DIR}}/../../tools"
+  TEST_GATE: 'uv run {{.TEST_PY}} "{{.TEST_SCRIPTS}}/gate_runner.py" quiet --'
+
+tasks:
+  run:
+    desc: "Run the test suite, printing only the verdict. Usage: task test:run -- [pytest args]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - "{{.TEST_GATE}} uv run pytest -q {{.CLI_ARGS}}"
+
+  failed:
+    desc: "Rerun only the tests that failed last time. Usage: task test:failed -- [pytest args]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - "{{.TEST_GATE}} uv run pytest -q --lf {{.CLI_ARGS}}"
+
+  file:
+    desc: "Run the tests in one path. Usage: task test:file F=tests/test_x.py [-- pytest args]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    requires:
+      vars: [F]
+    cmds:
+      - "{{.TEST_GATE}} uv run pytest -q {{shellQuote .F}} {{.CLI_ARGS}}"
+
+  cov:
+    desc: "Branch coverage, then ratchet the total upward. Usage: task test:cov -- [pytest args]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - "{{.TEST_GATE}} uv run --with pytest-cov pytest -q --cov --cov-branch {{.CLI_ARGS}}"
+      - |
+        total=$(uv run --with pytest-cov coverage report --format=total) || exit 1
+        echo "coverage total: $total"
+        uv run --no-project {{.TEST_PY}} "{{.TEST_TOOLS}}/ratchet.py" metric \
+          --baseline .ratchet/coverage.baseline --direction up --value "$total"
+
+  changed:
+    desc: "Run tests mapped from files changed vs origin/main (x.py to test_x.py). Usage: task test:changed"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - |
+        tests=""
+        for f in $(git diff --name-only origin/main...HEAD -- '*.py'); do
+          b=$(basename "$f")
+          case "$b" in
+            test_*.py) [ -f "$f" ] && tests="$tests $f" ;;
+            *) for t in $(git ls-files -- "*test_$b"); do tests="$tests $t"; done ;;
+          esac
+        done
+        tests=$(printf '%s\n' $tests | sort -u)
+        if [ -z "$tests" ]; then echo "no tests map to changed files"; exit 0; fi
+        {{.TEST_GATE}} uv run pytest -q $tests {{.CLI_ARGS}}

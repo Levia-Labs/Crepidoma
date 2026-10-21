@@ -1,0 +1,280 @@
+version: "3"
+
+vars:
+  CLAUDE_CREDENTIALS: "{{.HOME}}/.claude/.credentials.json"
+  CLAUDE_USAGE_URL: "https://api.anthropic.com/api/oauth/usage"
+  CLAUDE_PY: '{{if eq OS "windows"}}python{{else}}python3{{end}}'
+  CLAUDE_SCRIPTS: "{{.TASKFILE_DIR}}/../../plugins/crepidoma/scripts"
+
+includes:
+  budget: { taskfile: ./budget.yml, flatten: true }
+  sessions: { taskfile: ./sessions.yml, flatten: true }
+  skills: ./skills.yml
+
+tasks:
+  install:
+    desc: Install or update the Claude Code CLI (npm global)
+    silent: true
+    cmds:
+      - |
+        if ! command -v npm > /dev/null 2>&1; then
+          echo "npm is not installed, and the Claude Code CLI is an npm global."
+          echo "Install Node.js and npm, then re-run."
+          exit 1
+        fi
+      - |
+        if [ -w "$(npm prefix -g)" ]; then
+          npm install -g @anthropic-ai/claude-code
+        else
+          sudo npm install -g @anthropic-ai/claude-code
+        fi || {
+          echo ""
+          echo "npm install failed. Check that registry.npmjs.org is reachable."
+          exit 1
+        }
+        echo ""
+        echo "installed: $(claude --version 2>/dev/null || echo 'open a new shell to pick it up')"
+      - |
+        echo ""
+        echo 'Not logged in yet? Run: claude   then follow the browser prompt.'
+
+  _require-cli:
+    desc: Fail unless the claude CLI is on PATH
+    internal: true
+    preconditions:
+      - sh: "command -v claude"
+        msg: |
+          The `claude` CLI is not on PATH.
+          Install it (https://claude.com/claude-code) or add its directory to PATH.
+
+  reach:
+    desc: Can this machine reach every host the Claude Code CLI needs? Changes nothing.
+    silent: true
+    cmds:
+      - |
+        # Any HTTP answer proves DNS, routing and TLS work; only a transport failure counts.
+        bad=0
+        for host in api.anthropic.com claude.ai console.anthropic.com registry.npmjs.org; do
+          if curl -s -m 10 -I "https://$host" > /dev/null; then
+            echo "reachable    $host"
+          else
+            echo "UNREACHABLE  $host"
+            bad=$((bad + 1))
+          fi
+        done
+        [ "$bad" -eq 0 ] || { echo "$bad host(s) unreachable: check DNS, proxy and firewall."; exit 1; }
+        echo "All reachable. If the CLI still fails, it is not the network: task claude:doctor"
+
+  status:
+    desc: "Auth status: account, subscription tier, org (JSON from the CLI)"
+    silent: true
+    deps: [_require-cli]
+    cmds:
+      - claude auth status --text
+      - echo ""
+      - claude auth status --json
+
+  quota:
+    desc: Everything the CLI exposes about plan limits, and what it cannot report
+    silent: true
+    deps: [_require-cli]
+    cmds:
+      - |
+        set -e
+        echo "== Account =="
+        claude auth status --json | jq -r '
+          "logged in       : \(.loggedIn)
+        auth method     : \(.authMethod)
+        api provider    : \(.apiProvider)
+        account         : \(.email)
+        organisation    : \(.orgName)
+        subscription    : \(.subscriptionType)"'
+
+        cred="{{.CLAUDE_CREDENTIALS}}"
+        if [ -f "$cred" ]; then
+          echo ""
+          echo "== OAuth session =="
+          tier=$(jq -r '.claudeAiOauth.rateLimitTier // "unknown"' "$cred")
+          exp_ms=$(jq -r '.claudeAiOauth.expiresAt // 0' "$cred")
+          echo "rate limit tier : $tier"
+          if [ "$exp_ms" -gt 0 ]; then
+            exp_s=$((exp_ms / 1000))
+            now_s=$(date +%s)
+            left=$(( (exp_s - now_s) / 60 ))
+            echo "token expires   : $(date -d @"$exp_s" '+%Y-%m-%d %H:%M:%S %Z') (in ${left} min)"
+            echo "                  ^ access-token refresh, NOT a usage-window reset"
+          fi
+        fi
+
+        echo ""
+        echo "== Usage windows =="
+      - task: usage
+
+  usage:
+    desc: Live 5-hour and weekly allowance with reset times (same data as /usage)
+    silent: true
+    deps: [_require-cli]
+    cmds:
+      - |
+        cred="{{.CLAUDE_CREDENTIALS}}"
+        if [ ! -f "$cred" ]; then
+          echo "No $cred - run 'claude auth login' first."
+          exit 1
+        fi
+
+        tok=$(jq -r '.claudeAiOauth.accessToken // empty' "$cred")
+        if [ -z "$tok" ]; then
+          echo "No OAuth access token in the credentials file (API-key auth?)."
+          echo "Usage windows are a subscription concept and are not reported for API keys."
+          exit 0
+        fi
+
+        # The token goes through a curl config on stdin, never argv (visible in ps).
+        resp=$(printf 'header = "Authorization: Bearer %s"\n' "$tok" \
+                 | curl -s -K - -w '\n%{http_code}' "{{.CLAUDE_USAGE_URL}}" \
+                     -H "Content-Type: application/json")
+        code=$(printf '%s' "$resp" | tail -n 1)
+        body=$(printf '%s' "$resp" | sed '$d')
+
+        if [ "$code" = "401" ]; then
+          echo "401 - the stored access token has expired."
+          echo "Run any 'claude' command once to refresh it, then retry."
+          exit 1
+        fi
+        if [ "$code" != "200" ]; then
+          echo "HTTP $code from the usage endpoint. It is undocumented and may have moved;"
+          echo "fall back to an interactive session: claude, then /usage"
+          printf '%s\n' "$body" | head -c 300; echo
+          exit 1
+        fi
+
+        printf '%s' "$body" | jq -r '
+          [ {label: "Session (5 hour)", w: .five_hour},
+            {label: "Weekly (7 day)",   w: .seven_day},
+            {label: "Weekly Opus",      w: .seven_day_opus},
+            {label: "Weekly Sonnet",    w: .seven_day_sonnet} ]
+          | .[] | select(.w != null)
+          | ((.w.resets_at | split(".")[0]) + "Z" | fromdateiso8601) as $r
+          | "\(.label)\t\(.w.utilization)\t\(($r - now) | floor)\t\($r | strflocaltime("%Y-%m-%d %H:%M"))"
+        ' | while IFS=$(printf '\t') read -r label pct secs local_time; do
+          d=$((secs / 86400))
+          h=$(((secs % 86400) / 3600))
+          m=$(((secs % 3600) / 60))
+          if [ "$d" -gt 0 ]; then left="${d}d ${h}h"; else left="${h}h ${m}m"; fi
+          filled=$(awk -v p="$pct" 'BEGIN { printf "%d", p / 5 }')
+          bar=""
+          i=0
+          while [ "$i" -lt 20 ]; do
+            if [ "$i" -lt "$filled" ]; then bar="${bar}#"; else bar="${bar}."; fi
+            i=$((i + 1))
+          done
+          printf '%-18s [%s] %5s%%   resets in %-8s (%s)\n' "$label" "$bar" "$pct" "$left" "$local_time"
+        done
+
+  doctor:
+    desc: Health check of the Claude Code installation
+    silent: true
+    deps: [_require-cli]
+    cmds:
+      - claude doctor
+
+  version:
+    desc: Installed Claude Code version
+    silent: true
+    deps: [_require-cli]
+    cmds:
+      - claude --version
+
+  hooks:check:
+    desc: Run the Stop hook by hand - validates if an edit marked the tree dirty
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - >-
+        echo '{"hook_event_name":"Stop"}'
+        | uv run --no-project python "{{.TASKFILE_DIR}}/../../plugins/crepidoma/scripts/hooks.py" stop
+
+  spend:
+    desc: "One line per session. Usage: task claude:spend -- [--last N] [--top N] [--dir D]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/spend.py" sessions {{.CLI_ARGS}}
+
+  spend:*:
+    desc: >-
+      Spend by subcommand: tools, reads, calls, agents, cost.
+      Usage: task claude:spend:<sub> -- [--session ID] [--top N] (calls also takes SESSION/AGENT)
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/spend.py" {{index .MATCH 0}} {{.CLI_ARGS}}
+
+  history:
+    desc: "Repeated shell commands. Usage: task claude:history -- [--min N] [--top N] [--report F]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/history.py" commands {{.CLI_ARGS}}
+
+  history:inline:
+    desc: "Repeated inline scripts. Usage: task claude:history:inline -- [--min N] [--top N]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/history.py" inline {{.CLI_ARGS}}
+
+  history:prompts:
+    desc: "Repeated prompts. Usage: task claude:history:prompts -- [--min N] [--top N] [--prompts F]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/history.py" prompts {{.CLI_ARGS}}
+
+  lanes:
+    desc: "Running and pending lanes. Usage: task claude:lanes"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/lanes.py" list {{.CLI_ARGS}}
+
+  lanes:reset:
+    desc: "Clear lanes. Usage: task claude:lanes:reset -- [--stale]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/lanes.py" reset {{.CLI_ARGS}}
+
+  handoff:
+    desc: "Write a save-state note. Usage: task claude:handoff -- [--out PATH]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/lanes.py" handoff {{.CLI_ARGS}}
+
+  allow:*:
+    desc: "Permission rules: check or report. Usage: task claude:allow:<check|report> -- [--settings PATH]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/allow_tasks.py" {{index .MATCH 0}} {{.CLI_ARGS}}
+
+  pool:
+    desc: "Reusable subagents. Usage: task claude:pool -- [--type T] [--max-context N] [--ttl S] [--top N]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/agent_pool.py" list {{.CLI_ARGS}}
+
+  plugins:verify:
+    desc: "Fail when crepidoma@levia-labs is not installed. Usage: task claude:plugins:verify"
+    silent: true
+    deps: [_require-cli]
+    cmds:
+      - |
+        if claude plugin list | grep -q 'crepidoma@levia-labs'; then
+          echo "ok - crepidoma@levia-labs installed"
+        else
+          echo "crepidoma@levia-labs missing."
+          exit 1
+        fi
