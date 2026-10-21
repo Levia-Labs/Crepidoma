@@ -56,6 +56,12 @@ tasks:
     cmds:
       - uv run python tools/drift_check.py {{.CLI_ARGS}} --report .local/drift-report.tsv
 
+  crepidoma:pin:
+    desc: "Pin a pillar's .crepidoma submodule to a release tag. Usage: task crepidoma:pin -- <pillar path> <tag>"
+    silent: true
+    cmds:
+      - uv run python tools/pin_pillar.py {{.CLI_ARGS}}
+
   release:
     desc: "Bump version, changelog, commit and tag: task release -- 0.2.0"
     cmds:
