@@ -2,7 +2,7 @@
 
 ## Pillar repo
 
-1. Add the submodule: run the two commands in `templates/gitmodules.txt`.
+1. Add the submodule: run the two commands in `templates/gitmodules.txt`; set `submodules: true` on every kept CI `actions/checkout` that runs `task`.
 2. Merge `templates/Taskfile.includes.yml` into the pillar `Taskfile.yml`; delete the pillar's own
    `tasks/claude` and `tasks/lint` directories (or `Tasks/...`).
 3. Merge `templates/settings.json` into `.claude/settings.json`; delete the pillar hooks block that
