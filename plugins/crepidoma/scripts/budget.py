@@ -20,6 +20,8 @@ import urllib.request
 from datetime import UTC, datetime
 from pathlib import Path
 
+from budget_view import row_line, span
+
 USAGE_URL = "https://api.anthropic.com/api/oauth/usage"
 
 WINDOWS = (
@@ -125,18 +127,6 @@ def readings(
     return rows
 
 
-def span(seconds: int | None) -> str:
-    if seconds is None:
-        return "unknown"
-    days, rest = divmod(seconds, 86400)
-    hours, rest = divmod(rest, 3600)
-    if days:
-        return f"{days}d {hours}h"
-    if hours:
-        return f"{hours}h {rest // 60}m"
-    return f"{rest // 60}m"
-
-
 def breached(rows: list[dict], ceiling: float) -> list[dict]:
     return [row for row in rows if row["utilization"] >= ceiling]
 
@@ -156,33 +146,30 @@ def load(only: list[str] | None = None) -> tuple[list[dict] | None, str]:
     return rows, ""
 
 
+def unreadable(args: argparse.Namespace, reason: str) -> int:
+    if args.json:
+        print(json.dumps({"ok": False, "reason": reason}))
+    else:
+        print(reason, file=sys.stderr)
+    return ERROR
+
+
 def show(args: argparse.Namespace) -> int:
     rows, reason = load(args.window)
     if rows is None:
-        if args.json:
-            print(json.dumps({"ok": False, "reason": reason}))
-        else:
-            print(reason, file=sys.stderr)
-        return ERROR
+        return unreadable(args, reason)
     if args.json:
         print(json.dumps({"ok": True, "windows": rows}))
         return UNDER
     for row in rows:
-        print(
-            f"{row['window']} {row['utilization']:.1f}% "
-            f"resets {row['resets_at'] or 'unknown'} ({span(row['seconds_until_reset'])})"
-        )
+        print(row_line(row))
     return UNDER
 
 
 def check(args: argparse.Namespace) -> int:
     rows, reason = load(args.window)
     if rows is None:
-        if args.json:
-            print(json.dumps({"ok": False, "reason": reason}))
-        else:
-            print(reason, file=sys.stderr)
-        return ERROR
+        return unreadable(args, reason)
     over = breached(rows, args.ceiling)
     if args.json:
         print(
