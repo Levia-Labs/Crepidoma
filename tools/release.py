@@ -16,6 +16,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 MANIFEST = Path("plugins/crepidoma/.claude-plugin/plugin.json")
 SEMVER = re.compile(r"^\d+\.\d+\.\d+$")
+DEFAULT_BRANCH = "main"
 HEADER = "# Changelog\n"
 
 
@@ -31,6 +32,42 @@ def bump(root: Path, version: str, today: str) -> list[Path]:
     return [manifest, changelog]
 
 
+def git(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["git", "-C", str(root), *args], capture_output=True, text=True, encoding="utf-8"
+    )
+
+
+def preflight(root: Path, version: str) -> str | None:
+    """Return a refusal message, or None when the release may proceed."""
+    branch = git(root, "rev-parse", "--abbrev-ref", "HEAD").stdout.strip()
+    if branch != DEFAULT_BRANCH:
+        return f"refusing: on branch {branch!r}, releases run from {DEFAULT_BRANCH}"
+    if git(root, "status", "--porcelain", "--untracked-files=no").stdout.strip():
+        return "refusing: working tree has tracked changes"
+    fetched = git(root, "fetch", "--quiet", "origin")
+    if fetched.returncode:
+        return f"refusing: git fetch failed: {fetched.stderr.strip()}"
+    local = git(root, "rev-parse", DEFAULT_BRANCH).stdout.strip()
+    remote = git(root, "rev-parse", f"origin/{DEFAULT_BRANCH}").stdout.strip()
+    if local != remote:
+        return f"refusing: local {DEFAULT_BRANCH} differs from origin/{DEFAULT_BRANCH}"
+    tags = set(git(root, "tag", "--list", "v*").stdout.split())
+    listed = git(root, "ls-remote", "--tags", "origin", "refs/tags/v*")
+    if listed.returncode:
+        return f"refusing: cannot list origin tags: {listed.stderr.strip()}"
+    for line in listed.stdout.splitlines():
+        ref = line.split("	")[-1].removeprefix("refs/tags/")
+        tags.add(ref.removesuffix("^{}"))
+    if f"v{version}" in tags:
+        return f"refusing: tag v{version} already exists"
+    versions = [tuple(map(int, t[1:].split("."))) for t in tags if SEMVER.match(t[1:])]
+    if versions and tuple(map(int, version.split("."))) <= max(versions):
+        latest = ".".join(map(str, max(versions)))
+        return f"refusing: {version} is not greater than latest tag v{latest}"
+    return None
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("version")
@@ -42,6 +79,10 @@ def main(argv: list[str] | None = None) -> int:
     if args.dry_run:
         print(f"would release v{args.version}")
         return 0
+    refusal = preflight(ROOT, args.version)
+    if refusal:
+        print(refusal, file=sys.stderr)
+        return 1
     changed = bump(ROOT, args.version, datetime.date.today().isoformat())
     subprocess.run(["git", "-C", str(ROOT), "add", *map(str, changed)], check=True)
     message = f"chore(release): v{args.version}"
