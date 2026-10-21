@@ -76,4 +76,15 @@ repos:
         language: python
         additional_dependencies: [ast-grep-cli==0.51.0]
         pass_filenames: false
+      - id: gofmt
+        name: gofmt
+        entry: gofmt -l -w
+        language: system
+        types: [go]
+      - id: go-check
+        name: go vet and go test
+        entry: task go:check
+        language: system
+        types: [go]
+        pass_filenames: false
 # semgrep and osv-scanner run in CI (see Crepidoma .github/workflows/validate.yml).
