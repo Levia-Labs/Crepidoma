@@ -27,3 +27,10 @@ status: open
 class: debt
 
 plugins/crepidoma/scripts/hooks.py is 756 lines. Split it by hook event into modules under the cap.
+
+## 6 security:secrets needs a gitleaks with the git subcommand
+
+status: open
+class: bug
+
+taskfiles/security/Taskfile.yml:18 runs 'gitleaks git'; Ubuntu's apt gitleaks predates it ('unknown command "git" for "gitleaks"' in a pillar's CI). Pin a minimum version in setup:tools or fall back to 'gitleaks detect --source .'.
