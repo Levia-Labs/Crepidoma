@@ -14,6 +14,8 @@ schema_version = 1
 [filters.gate]
 match_command = "^task\\s+(validate|boom)\\b"
 strip_lines_matching = ["^noise$"]
+[filters.grep]
+match_command = "^e?grep\\b"
 [filters.other]
 description = "no match_command"
 """
@@ -126,3 +128,25 @@ def test_noise_matches_passed_rows_and_not_failures():
     assert route.NOISE.match("hook.......\x1b[32mPassed\x1b[m")
     assert not route.NOISE.match("ruff..............................Failed")
     assert not route.NOISE.match("- hook id: ruff")
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "grep -q foo file",
+        "grep -qE foo file",
+        "grep -Eq foo file",
+        "grep -iqx foo file",
+        "grep --quiet foo file",
+        "grep --silent foo file",
+        "egrep -q foo file",
+        "grep foo file -q",
+    ],
+)
+def test_grep_quiet_stays_out_of_rtk(root, command):
+    assert route.rewrite(event(command), root) is None
+
+
+@pytest.mark.parametrize("command", ["grep foo file", "grep -rn foo .", "grep -e quiet file"])
+def test_other_grep_still_routes(root, command):
+    assert route.rewrite(event(command), root) is not None

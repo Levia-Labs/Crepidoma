@@ -42,11 +42,24 @@ def patterns(root: Path) -> list[re.Pattern]:
     return found
 
 
+def quiet_grep(text: str) -> bool:
+    """grep with -q/--quiet/--silent (also inside combined short flags like -qE)."""
+    words = text.split()
+    if not words or words[0] not in ("grep", "egrep", "fgrep"):
+        return False
+    for word in words[1:]:
+        if word in ("--quiet", "--silent"):
+            return True
+        if re.fullmatch(r"-[A-Za-z]*q[A-Za-z]*", word):
+            return True
+    return False
+
+
 def routed(command: str, root: Path) -> bool:
     text = command.strip()
     if not text or COMPOUND.search(text) or re.match(r"rtk(\.exe)?(\s|$)", text):
         return False
-    if shutil.which("rtk") is None:
+    if quiet_grep(text) or shutil.which("rtk") is None:
         return False
     return any(pattern.search(text) for pattern in patterns(root))
 
