@@ -54,6 +54,13 @@ def test_readme_missing_and_extra(repo, capsys):
     assert "tools/README.md:1: readme missing two.py" in out
 
 
+def test_readme_ignores_meta_sidecars(repo, capsys):
+    write(repo, "tools/README.md", "- `one.py` does x\n- `gone.py.meta` does y\n")
+    write(repo, "tools/one.py")
+    write(repo, "tools/one.py.meta")
+    assert docs_gate.main(["readme", "tools/README.md"]) == 0
+
+
 def test_readme_without_list_is_skipped(repo):
     write(repo, "tools/README.md", "prose only\n")
     write(repo, "tools/one.py")
