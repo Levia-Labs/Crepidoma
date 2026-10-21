@@ -7,7 +7,8 @@ Every mode takes --window NAME (repeatable) to judge only those windows; `wait -
 --ceiling 20` blocks until a fresh session, where the weekly figure would hold the wait for days.
 
 Exit codes: 0 under ceiling, 1 unknown, 2 usage error, 3 at or over ceiling.
-Reads the undocumented OAuth usage endpoint with the token from the Claude credentials file.
+Reads the undocumented OAuth usage endpoint with the token from the Claude credentials file, or
+on macOS, which keeps no such file, from the login Keychain.
 The token is never printed and never placed in a subprocess argv.
 """
 
@@ -18,8 +19,8 @@ import time
 import urllib.error
 import urllib.request
 from datetime import UTC, datetime
-from pathlib import Path
 
+from budget_auth import token
 from budget_view import row_line, span
 
 USAGE_URL = "https://api.anthropic.com/api/oauth/usage"
@@ -47,23 +48,14 @@ UNDER, ERROR, OVER = 0, 1, 3
 NO_WINDOWS = "The usage endpoint reported no windows."
 
 
-def credentials_path() -> Path:
-    return Path.home() / ".claude" / ".credentials.json"
-
-
-def token() -> str | None:
-    try:
-        data = json.loads(credentials_path().read_text(encoding="utf-8"))
-        return data.get("claudeAiOauth", {}).get("accessToken") or None
-    except (OSError, ValueError, AttributeError):
-        return None
-
-
 def fetch() -> tuple[dict | None, str]:
     """The usage payload, or None and the reason it could not be read."""
     access = token()
     if access is None:
-        return None, "No OAuth access token in the credentials file."
+        where = (
+            "credentials file or login Keychain" if sys.platform == "darwin" else "credentials file"
+        )
+        return None, f"No OAuth access token in the {where} (API-key auth, or not logged in)."
     request = urllib.request.Request(
         USAGE_URL,
         headers={"Authorization": "Bearer " + access, "Content-Type": "application/json"},

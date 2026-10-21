@@ -2,6 +2,7 @@ import json
 from datetime import UTC, datetime, timedelta, timezone
 
 import budget
+import budget_auth
 import budget_view
 import pytest
 
@@ -143,9 +144,28 @@ def test_json_contract_unknown(monkeypatch, capsys):
 
 
 def test_token_missing(monkeypatch, tmp_path):
-    monkeypatch.setattr(budget, "credentials_path", lambda: tmp_path / "none.json")
-    assert budget.token() is None
+    monkeypatch.setattr(budget_auth, "credentials_path", lambda: tmp_path / "none.json")
+    monkeypatch.setattr(budget_auth, "keychain_credentials", lambda: None)
+    assert budget_auth.token() is None
     assert budget.fetch()[0] is None
+
+
+def test_token_falls_back_to_keychain(monkeypatch, tmp_path):
+    monkeypatch.setattr(budget_auth, "credentials_path", lambda: tmp_path / "none.json")
+    monkeypatch.setattr(
+        budget_auth, "keychain_credentials", lambda: {"claudeAiOauth": {"accessToken": "kc"}}
+    )
+    assert budget_auth.token() == "kc"
+
+
+def test_token_prefers_credentials_file(monkeypatch, tmp_path):
+    cred = tmp_path / "cred.json"
+    cred.write_text(json.dumps({"claudeAiOauth": {"accessToken": "file"}}), encoding="utf-8")
+    monkeypatch.setattr(budget_auth, "credentials_path", lambda: cred)
+    monkeypatch.setattr(
+        budget_auth, "keychain_credentials", lambda: {"claudeAiOauth": {"accessToken": "kc"}}
+    )
+    assert budget_auth.token() == "file"
 
 
 def test_window_filter_judges_only_the_named_window(monkeypatch):
