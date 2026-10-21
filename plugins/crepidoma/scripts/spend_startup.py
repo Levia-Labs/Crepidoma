@@ -19,6 +19,7 @@ ATTACHMENTS = {
     "session_context": ("sess", None),
     "environment": ("env", None),
 }
+LATE = "mcp_instructions_delta"
 USAGE = ("input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens")
 MAX_LINES = 20
 
@@ -50,6 +51,7 @@ def startup_row(path: Path, name: str, agent_type: str) -> StartupRow:
         lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
     except OSError:
         return row
+    turns = 0
     for line in lines:
         try:
             entry = json.loads(line)
@@ -59,15 +61,20 @@ def startup_row(path: Path, name: str, agent_type: str) -> StartupRow:
             continue
         att = entry.get("attachment")
         if entry.get("type") == "attachment" and isinstance(att, dict):
-            if att.get("type") in ATTACHMENTS:
-                row.sizes[att["type"]] += attachment_size(att)
+            kind = att.get("type")
+            # the MCP delta is logged after the first assistant message, with its tool results
+            if kind in ATTACHMENTS and (turns == 0 or kind == LATE):
+                row.sizes[kind] += attachment_size(att)
             continue
         msg = entry.get("message")
         if entry.get("type") == "assistant" and isinstance(msg, dict):
-            row.model = str(msg.get("model", "?"))
-            usage = msg.get("usage")
-            row.tokens = first_turn_tokens(usage) if isinstance(usage, dict) else 0
-            break
+            turns += 1
+            if turns == 1:
+                row.model = str(msg.get("model", "?"))
+                usage = msg.get("usage")
+                row.tokens = first_turn_tokens(usage) if isinstance(usage, dict) else 0
+            else:
+                break
     return row
 
 

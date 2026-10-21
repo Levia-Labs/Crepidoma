@@ -89,3 +89,26 @@ def test_cmd_startup(tmp_path: Path) -> None:
 def test_registered_in_spend() -> None:
     assert "startup" in spend.COMMANDS
     spend.build_parser().parse_args(["startup", "--session", "x"])
+
+
+def test_mcp_delta_delivered_with_first_tool_result_counts(tmp_path: Path) -> None:
+    usage = {"input_tokens": 1}
+    delta = {"type": "mcp_instructions_delta", "addedNames": ["srv"], "addedBlocks": ["x" * 50]}
+    late = {"type": "mcp_instructions_delta", "addedNames": ["later"]}
+    f = tmp_path / "agent-1.jsonl"
+    write(
+        f,
+        [
+            {"type": "attachment", "attachment": {"type": "environment", "snapshot": "q"}},
+            {"type": "assistant", "message": {"model": "m", "usage": usage}},
+            {"type": "attachment", "attachment": {"type": "date", "date": "2026-01-01"}},
+            {"type": "attachment", "attachment": delta},
+            {"type": "assistant", "message": {"model": "m", "usage": usage}},
+            {"type": "attachment", "attachment": late},
+        ],
+    )
+    row = spend_startup.startup_row(f, "s/1", "x")
+    assert row.sizes["mcp_instructions_delta"] == len(
+        json.dumps({"addedNames": ["srv"], "addedBlocks": ["x" * 50]})
+    )
+    assert "date" not in row.sizes
