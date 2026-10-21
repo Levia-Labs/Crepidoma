@@ -58,3 +58,7 @@ Shared `lint`, `security` and `quality` read `LINT_CFG`, `SECURITY_CONFIGS` and 
 ## Commit message scrub
 
 Add `- id: crepidoma-scrub-msg` under the Crepidoma hooks and `commit-msg` to `default_install_hook_types`, then run `task setup:hooks` so the commit-msg hook installs. Scrub a drafted PR body before `gh pr create` with `task repo:scrub:text -- <file>`.
+
+## Stop gate off per repo
+
+Set `CREPIDOMA_STOP_GATE` to `off` in the pillar's `.claude/settings.json` `env` to skip the plugin Stop gate (`task validate`) there, for a repo whose own hooks compile and check; any other value keeps it on.

@@ -23,6 +23,7 @@
 - [`test_hook_shebang.py`](test_hook_shebang.py) - Tests for `hook_shebang`.
 - [`test_hooks_json.py`](test_hooks_json.py) - Tests for `hooks_json`.
 - [`test_hooks_py.py`](test_hooks_py.py) - hooks.py: gates, the agent dispatch policy, the git guard and the CLI contract.
+- [`test_hooks_stop_gate.py`](test_hooks_stop_gate.py) - CREPIDOMA_STOP_GATE=off switches the plugin Stop gate off; any other value keeps it.
 - [`test_inject_directives.py`](test_inject_directives.py) - Tests for `inject_directives`.
 - [`test_lanes.py`](test_lanes.py) - Tests for `lanes`.
 - [`test_push_guard.py`](test_push_guard.py) - Pushing is main-thread only: settings no longer deny it, so the subagent Bash hook must.
