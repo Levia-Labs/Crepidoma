@@ -13,3 +13,10 @@ status: open
 class: debt
 
 hooks.py swaps its module class to _Facade so tests that patch hooks.ROOT, hooks.LEDGER or hooks.run reach the split parts. Patch the owning hooks_* module in test_hooks_py.py, test_lanes.py and lanes.py, then drop _Facade.
+
+## 5 quality:allowlist:dead misreads directory includes
+
+status: open
+class: debt
+
+A pillar's quality:allowlist:dead check cannot read directory includes (.crepidoma/taskfiles/<dir>), so it reports live task names as dead. Resolve each include to <dir>/Taskfile.yml before collecting task names.
