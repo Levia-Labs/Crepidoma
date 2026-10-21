@@ -1,5 +1,6 @@
 """Rendering for budget.py: spans, labels, the usage bar and tab-separated rows."""
 
+import math
 from datetime import datetime, tzinfo
 
 
@@ -24,7 +25,8 @@ def label(window: str) -> str:
 
 
 def bar(percent: float) -> str:
-    used = max(0, min(BAR_CELLS, round(percent / 10)))
+    # Half up, not round(): banker's rounding would show 5% as empty and 25% as two cells.
+    used = max(0, min(BAR_CELLS, math.floor(percent / 10 + 0.5)))
     return "[" + "#" * used + "." * (BAR_CELLS - used) + "]"
 
 
