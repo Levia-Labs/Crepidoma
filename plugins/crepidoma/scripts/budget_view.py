@@ -39,4 +39,4 @@ def row_line(row: dict, tz: tzinfo | None = None) -> str:
     if row["resets_at"]:
         when = f"{local_stamp(row['resets_at'], tz)} ({span(row['seconds_until_reset'])})"
     pct = f"{row['utilization']:.1f}%"
-    return "\t".join((label(row["window"]), "resets", pct, bar(row["utilization"]), when))
+    return "\t".join((label(row["window"]), pct, bar(row["utilization"]), "resets", when))

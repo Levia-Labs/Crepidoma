@@ -27,8 +27,8 @@ def test_show_formats_one_line_per_window(monkeypatch, capsys):
     assert len(lines) == 2
     first = lines[0].split("\t")
     second = lines[1].split("\t")
-    assert first[:4] == ["5h", "resets", "42.5%", "[####......]"]
-    assert second[:4] == ["7d", "resets", "20.0%", "[##........]"]
+    assert first[:4] == ["5h", "42.5%", "[####......]", "resets"]
+    assert second[:4] == ["7d", "20.0%", "[##........]", "resets"]
     assert len(first) == len(second) == 5
 
 
@@ -73,10 +73,10 @@ def test_row_line_known_and_unknown_reset():
         "seconds_until_reset": 4 * 3600 + 43 * 60,
     }
     assert (
-        budget_view.row_line(row, tz) == "5h\tresets\t3.0%\t[..........]\t2026-10-21 14:20 (4h 43m)"
+        budget_view.row_line(row, tz) == "5h\t3.0%\t[..........]\tresets\t2026-10-21 14:20 (4h 43m)"
     )
     row.update(resets_at=None, seconds_until_reset=None)
-    assert budget_view.row_line(row, tz) == "5h\tresets\t3.0%\t[..........]\tunknown"
+    assert budget_view.row_line(row, tz) == "5h\t3.0%\t[..........]\tresets\tunknown"
 
 
 def test_show_json(monkeypatch, capsys):
