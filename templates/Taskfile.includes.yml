@@ -12,3 +12,9 @@ includes:
   ci: .crepidoma/taskfiles/ci
   rtk: .crepidoma/taskfiles/rtk
   setup: .crepidoma/taskfiles/setup
+
+# Override a shared config dir per include, e.g. use the pillar's root configs:
+#   lint:
+#     taskfile: .crepidoma/taskfiles/lint
+#     vars: { LINT_CFG: "{{.ROOT_DIR}}" }
+# Same for SECURITY_CONFIGS and QUALITY_CONFIGS. gitleaks prefers a root .gitleaks.toml when present.

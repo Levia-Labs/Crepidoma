@@ -4,7 +4,8 @@ includes:
   shell: { taskfile: ./shell.yml, flatten: true }
 
 vars:
-  LINT_CFG: "{{.TASKFILE_DIR}}/../../configs"
+  # default: {{.TASKFILE_DIR}}/../../configs; an including Taskfile may override
+  LINT_CFG: '{{.LINT_CFG | default (printf "%s/../../configs" .TASKFILE_DIR)}}'
   LINT_RUFF: '{{.LINT_RUFF | default "uvx ruff"}}'
   LINT_YAMLLINT: '{{.LINT_YAMLLINT | default "uvx yamllint"}}'
   LINT_SG: '{{.LINT_SG | default "uvx --from ast-grep-cli ast-grep"}}'
@@ -193,7 +194,10 @@ tasks:
     silent: true
     dir: "{{.USER_WORKING_DIR}}"
     cmds:
-      - 'gitleaks git --config "{{.LINT_CFG}}/gitleaks.toml" --redact --no-banner .'
+      - |
+        cfg="{{.LINT_CFG}}/gitleaks.toml"
+        if [ -f .gitleaks.toml ]; then cfg=.gitleaks.toml; fi
+        gitleaks git --config "$cfg" --redact --no-banner .
 
   sg:
     desc: ast-grep shared rules over the working directory
