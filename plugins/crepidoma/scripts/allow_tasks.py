@@ -17,21 +17,28 @@ from pathlib import Path
 DEFAULT_SETTINGS = Path(".claude") / "settings.json"
 BASH_RULE = re.compile(r"^Bash\((.*)\)$")
 TASK_RULE = re.compile(r"^task\s+([A-Za-z0-9_.:-]+?)(?::\*)?(?:\s+\*)?$")
-# Tool command -> task name segments that cover the same job.
-TOOL_SEGMENTS = {
-    "ruff": ("lint", "format", "fmt"),
-    "black": ("format", "fmt"),
-    "flake8": ("lint",),
-    "pylint": ("lint",),
-    "eslint": ("lint",),
-    "prettier": ("format", "fmt"),
-    "pytest": ("test", "tests"),
-    "mypy": ("type", "types", "typecheck"),
-    "pyright": ("type", "types", "typecheck"),
-    "tsc": ("type", "types", "typecheck"),
-    "jest": ("test", "tests"),
-    "vitest": ("test", "tests"),
+INTERPRETERS = {"python", "python3", "node", "xargs", "find"}
+SHELLS = {"sh", "bash"}
+WRAPPERS = {
+    "uv",
+    "uvx",
+    "npx",
+    "env",
+    "python",
+    "python3",
+    "node",
+    "pipx",
+    "poetry",
+    "sudo",
+    "time",
 }
+# Shell builtins and generic utilities: sharing one with a task is not a bypass.
+GENERIC = {
+    "echo", "printf", "test", "[", "[[", "grep", "wc", "tr", "cat", "sed", "awk", "head", "tail",
+    "sort", "ls", "cd", "command", "exit", "true", "false", "diff", "file", "cp", "mv", "rm",
+    "mkdir", "touch", "if", "then", "else", "fi", "for", "do", "done", "set", "export", "cut",
+}  # fmt: skip
+SEPARATORS = re.compile(r"&&|\|\||[|;]")
 
 
 def run(cmd: list[str]) -> str:
@@ -50,28 +57,78 @@ def load_permissions(path: Path) -> dict:
     return settings.get("permissions", {})
 
 
-def bypassed_task(command: str, names: set[str]) -> str | None:
-    """Name of an existing task covering the same job as `command`, else None."""
+def task_executables(names: set[str]) -> dict[str, set[str]]:
+    """Map each task to the executables its commands run, from `task --summary`."""
+    try:
+        text = run(["task", "--summary", *sorted(names)])
+    except subprocess.CalledProcessError:
+        return {}
+    tools: dict[str, set[str]] = {}
+    current = None
+    in_commands = False
+    for line in text.splitlines():
+        head = re.match(r"^task: (\S+)$", line)
+        if head:
+            current, in_commands = head.group(1), False
+            tools.setdefault(current, set())
+        elif line.startswith("commands:"):
+            in_commands = True
+        elif in_commands and current and line.startswith(" - "):
+            tools[current].update(executables(line[3:]))
+    return tools
+
+
+def executables(command: str) -> set[str]:
+    """Programs a shell command line runs, looking through launchers such as `uv run`."""
+    found = set()
+    for part in SEPARATORS.split(command):
+        words = part.replace('"', " ").replace("'", " ").split()
+        while words and (words[0] in WRAPPERS or words[0].startswith("-") or words[0] == "run"):
+            if words[0] in WRAPPERS:
+                found.add(words[0].rsplit("/", 1)[-1])
+            words.pop(0)
+            while words and words[0].startswith("-"):
+                words.pop(0)
+        if words:
+            found.add(words[0].rsplit("/", 1)[-1])
+    return found
+
+
+def is_interpreter(command: str) -> bool:
     words = command.split()
-    if not words or words[0] == "task":
+    if not words:
+        return False
+    return words[0] in INTERPRETERS or (words[0] in SHELLS and len(words) > 1 and words[1] == "-c")
+
+
+def bypassed_task(command: str, tools: dict[str, set[str]]) -> str | None:
+    """Name of a task whose commands run the same tool as `command`, else None."""
+    words = command.split()
+    if not words or words[0] == "task" or words[0] in INTERPRETERS | SHELLS:
         return None
-    wanted = {words[0], *TOOL_SEGMENTS.get(words[0], ())}
-    for name in sorted(names):
-        segments = name.split(":")
-        # The tool's own name matching only the namespace (git -> git:commit) is not a bypass.
-        if (wanted - {words[0]}) & set(segments) or words[0] in segments[1:]:
+    for name in sorted(tools):
+        if words[0] not in GENERIC and words[0] in tools[name]:
             return name
     return None
 
 
+def task_matches(pattern: str, name: str) -> bool:
+    """go-task wildcard: `*` matches one name segment or more."""
+    regex = ".+".join(re.escape(part) for part in pattern.split("*"))
+    return re.fullmatch(regex, name) is not None
+
+
 def task_exists(name: str, names: set[str], wildcard: bool) -> bool:
     if name in names:
+        return True
+    if any("*" in n and task_matches(n, name) for n in names):
         return True
     return wildcard and any(n.startswith(name + ":") for n in names)
 
 
 def findings(allow: list[str], names: set[str]) -> list[str]:
     found = []
+    tools = None
     for rule in allow:
         if rule.startswith("PowerShell"):
             found.append(f"{rule}: PowerShell must be denied, not allowed")
@@ -86,7 +143,12 @@ def findings(allow: list[str], names: set[str]) -> list[str]:
             if task.group(1) != "*" and not task_exists(task.group(1), names, wildcard):
                 found.append(f"{rule}: task {task.group(1)} does not exist")
             continue
-        covering = bypassed_task(command, names)
+        if is_interpreter(command):
+            found.append(f"{rule}: interpreter or wrapper")
+            continue
+        if tools is None:
+            tools = task_executables(names)
+        covering = bypassed_task(command, tools)
         if covering:
             found.append(f"{rule}: bypasses task {covering}")
     return found
