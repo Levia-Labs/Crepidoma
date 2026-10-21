@@ -7,10 +7,10 @@ vars:
   # default: {{.TASKFILE_DIR}}/../../configs; an including Taskfile may override
   QUALITY_CONFIGS: '{{.QUALITY_CONFIGS | default (printf "%s/../../configs" .TASKFILE_DIR)}}'
   QUALITY_DUP_THRESHOLD: "10"
-  QUALITY_FAST: "quality:long-files quality:docs quality:taskfiles quality:encoding"
-  QUALITY_ALL: >-
-    quality:long-files quality:docs quality:types quality:duplication quality:bandit
-    quality:taskfiles quality:encoding security:check
+  # Member names resolve under QUALITY_NS, derived from the running task so a nested include works.
+  QUALITY_FAST_MEMBERS: "long-files docs taskfiles encoding"
+  QUALITY_ALL_MEMBERS: "long-files docs types duplication bandit taskfiles encoding"
+  QUALITY_SECURITY: '{{.QUALITY_SECURITY | default "security:check"}}'
 
 tasks:
   long-files:
@@ -95,12 +95,22 @@ tasks:
     desc: "Fast quality checks, stop at first failure. Usage: task quality:gate"
     silent: true
     dir: "{{.USER_WORKING_DIR}}"
+    vars:
+      QUALITY_NS: '{{.QUALITY_NS | default (trimSuffix ":gate" .TASK)}}'
     cmds:
-      - 'uv run {{.QUALITY_PY}} "{{.QUALITY_SCRIPTS}}/gate_runner.py" run {{.QUALITY_FAST}}'
+      - |
+        set --
+        for m in {{.QUALITY_FAST_MEMBERS}}; do set -- "$@" "{{.QUALITY_NS}}:$m"; done
+        uv run {{.QUALITY_PY}} "{{.QUALITY_SCRIPTS}}/gate_runner.py" run "$@"
 
   deep:
     desc: "Every quality check plus security:check, run to completion. Usage: task quality:deep"
     silent: true
     dir: "{{.USER_WORKING_DIR}}"
+    vars:
+      QUALITY_NS: '{{.QUALITY_NS | default (trimSuffix ":deep" .TASK)}}'
     cmds:
-      - 'uv run {{.QUALITY_PY}} "{{.QUALITY_SCRIPTS}}/gate_runner.py" run --keep-going {{.QUALITY_ALL}}'
+      - |
+        set --
+        for m in {{.QUALITY_ALL_MEMBERS}}; do set -- "$@" "{{.QUALITY_NS}}:$m"; done
+        uv run {{.QUALITY_PY}} "{{.QUALITY_SCRIPTS}}/gate_runner.py" run --keep-going "$@" {{.QUALITY_SECURITY}}
