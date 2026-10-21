@@ -62,3 +62,7 @@ Add `- id: crepidoma-scrub-msg` under the Crepidoma hooks and `commit-msg` to `d
 ## Stop gate off per repo
 
 Set `CREPIDOMA_STOP_GATE` to `off` in the pillar's `.claude/settings.json` `env` to skip the plugin Stop gate (`task validate`) there, for a repo whose own hooks compile and check; any other value keeps it on.
+
+## CI tools for shared gates
+
+A pillar CI job that runs `task lint:check` or `task security:check` needs shellcheck 0.11.0, shfmt 3.14.1, hadolint and gitleaks 8.30.1 on `PATH`, pinned. Copy the `shared-gates` job from `templates/ci.yml`. Its checkout must set `submodules: true` and `fetch-depth: 0`: a shallow clone breaks history secret scans that rely on `.gitleaksignore` fingerprints. Copy `templates/.prettierignore` to the pillar root so prettier skips the submodule.

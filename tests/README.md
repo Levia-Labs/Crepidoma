@@ -13,6 +13,7 @@
 - [`test_folder_readme.py`](test_folder_readme.py) - Tests for `folder_readme`.
 - [`test_pin_pillar.py`](test_pin_pillar.py) - Tests for `pin_pillar`.
 - [`test_precommit_hooks.py`](test_precommit_hooks.py) - Tests for `precommit_hooks`.
+- [`test_quality_nested.py`](test_quality_nested.py) - Tests for `quality_nested`.
 - [`test_ratchet.py`](test_ratchet.py) - Tests for `ratchet`.
 - [`test_ratchet_skip.py`](test_ratchet_skip.py) - Tests for `ratchet_skip`.
 - [`test_release.py`](test_release.py) - Tests for `release`.

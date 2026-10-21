@@ -10,6 +10,7 @@ vars:
   LINT_YAMLLINT: '{{.LINT_YAMLLINT | default "uvx yamllint"}}'
   LINT_SG: '{{.LINT_SG | default "uvx --from ast-grep-cli ast-grep"}}'
   LINT_PRETTIER: '{{.LINT_PRETTIER | default "npx --no-install prettier"}}' # not --no: breaks on Windows
+  LINT_PRETTIER_ARGS: '--ignore-unknown --log-level warn --config "{{.LINT_CFG}}/.prettierrc"'
   LINT_ESLINT: '{{.LINT_ESLINT | default "npx --no-install eslint"}}'
   LINT_PRECOMMIT: '{{.LINT_PRECOMMIT | default "uvx pre-commit"}}'
 
@@ -63,7 +64,7 @@ tasks:
         fi
         if [ -n "$sh" ]; then shellcheck $sh && shfmt -d -i 2 -ci $sh || rc=1; fi
         if [ -n "$pr" ]; then
-          {{.LINT_PRETTIER}} --check --ignore-unknown --log-level warn --config "{{.LINT_CFG}}/.prettierrc" $pr || rc=1
+          {{.LINT_PRETTIER}} --check {{.LINT_PRETTIER_ARGS}} $pr || rc=1
         fi
         if [ -n "$es" ]; then
           {{.LINT_ESLINT}} --max-warnings 0 --config "{{.LINT_CFG}}/eslint.config.js" $es || rc=1
@@ -100,7 +101,7 @@ tasks:
         fi
         if [ -n "$sh" ]; then shfmt -w -i 2 -ci $sh && shellcheck $sh || rc=1; fi
         if [ -n "$pr" ]; then
-          {{.LINT_PRETTIER}} --write --ignore-unknown --log-level warn --config "{{.LINT_CFG}}/.prettierrc" $pr || rc=1
+          {{.LINT_PRETTIER}} --write {{.LINT_PRETTIER_ARGS}} $pr || rc=1
         fi
         if [ -n "$es" ]; then
           {{.LINT_ESLINT}} --fix --max-warnings 0 --config "{{.LINT_CFG}}/eslint.config.js" $es || rc=1
@@ -176,7 +177,7 @@ tasks:
     silent: true
     dir: "{{.USER_WORKING_DIR}}"
     cmds:
-      - '{{.LINT_PRETTIER}} --check --ignore-unknown --log-level warn --config "{{.LINT_CFG}}/.prettierrc" .'
+      - '{{.LINT_PRETTIER}} --check {{.LINT_PRETTIER_ARGS}} . "!.crepidoma/**"'
       - '{{.LINT_ESLINT}} --max-warnings 0 --no-error-on-unmatched-pattern --config "{{.LINT_CFG}}/eslint.config.js" .'
 
   web:run:
@@ -184,7 +185,7 @@ tasks:
     silent: true
     dir: "{{.USER_WORKING_DIR}}"
     cmds:
-      - '{{.LINT_PRETTIER}} --write --ignore-unknown --log-level warn --config "{{.LINT_CFG}}/.prettierrc" .'
+      - '{{.LINT_PRETTIER}} --write {{.LINT_PRETTIER_ARGS}} . "!.crepidoma/**"'
       - >-
         {{.LINT_ESLINT}} --fix --max-warnings 0 --no-error-on-unmatched-pattern
         --config "{{.LINT_CFG}}/eslint.config.js" .
@@ -303,7 +304,6 @@ tasks:
         done
         if [ -n "$py" ]; then {{.LINT_RUFF}} format --config "{{.LINT_CFG}}/ruff.toml" $py || exit 1; fi
         if [ -n "$pr" ]; then
-          {{.LINT_PRETTIER}} --write --ignore-unknown --log-level warn \
-            --config "{{.LINT_CFG}}/.prettierrc" $pr || exit 1
+          {{.LINT_PRETTIER}} --write {{.LINT_PRETTIER_ARGS}} $pr || exit 1
         fi
         [ -z "$py$pr" ] || git add -- $py $pr

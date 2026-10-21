@@ -8,6 +8,7 @@
 
 - [`rules/`](rules/README.md) - Path-scoped Claude rules for a pillar's .claude/rules.
 - [`.pre-commit-config.yaml`](.pre-commit-config.yaml) - Pillar commit gates linking Crepidoma hooks and shared configs.
+- [`.prettierignore`](.prettierignore) - Pillar prettier ignores; keeps the .crepidoma submodule out.
 - [`AGENTS.md`](AGENTS.md) - AGENTS.md
 - [`CLAUDE.md`](CLAUDE.md) - Project name
 - [`Taskfile.includes.yml`](Taskfile.includes.yml) - Includes block for every shared namespace.
