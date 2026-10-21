@@ -85,6 +85,7 @@
 "shared.yml" = "ast-grep rules."
 "rtk-filters.toml" = "rtk filters a pillar copies to .rtk/filters.toml."
 ".pre-commit-config.yaml" = "Pillar commit gates linking Crepidoma hooks and shared configs."
+".prettierignore" = "Pillar prettier ignores; keeps the .crepidoma submodule out."
 "gitmodules.txt" = "Commands that add the .crepidoma submodule."
 "Taskfile.includes.yml" = "Includes block for every shared namespace."
 "digest" = "Bounded output digest on PATH."
