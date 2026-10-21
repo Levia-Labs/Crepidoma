@@ -16,6 +16,8 @@ def test_precommit_template_links_repo():
     text = (TEMPLATES / ".pre-commit-config.yaml").read_text(encoding="utf-8")
     assert "repo: https://github.com/Levia-Labs/Crepidoma" in text
     assert "id: crepidoma-scrub" in text
+    assert "id: crepidoma-scrub-msg" in text
+    assert "commit-msg" in text
 
 
 def test_taskfile_includes_point_into_submodule():

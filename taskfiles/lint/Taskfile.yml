@@ -254,14 +254,14 @@ tasks:
       - "{{.LINT_PRECOMMIT}} run"
 
   precommit:setup:
-    desc: Install the pre-commit and pre-push git hooks. Usage task lint:precommit:setup
+    desc: Install the pre-commit, pre-push and commit-msg git hooks. Usage task lint:precommit:setup
     silent: true
     dir: "{{.USER_WORKING_DIR}}"
     preconditions:
       - sh: command -v uv
         msg: "`uv` not on PATH. Install: https://docs.astral.sh/uv/getting-started/installation/"
     cmds:
-      - "{{.LINT_PRECOMMIT}} install --hook-type pre-commit --hook-type pre-push"
+      - "{{.LINT_PRECOMMIT}} install --hook-type pre-commit --hook-type pre-push --hook-type commit-msg"
 
   precommit:autoupdate:
     desc: Bump the pre-commit hook revisions. Usage task lint:precommit:autoupdate

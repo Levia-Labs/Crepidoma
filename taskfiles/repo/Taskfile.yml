@@ -28,3 +28,12 @@ tasks:
     dir: "{{.USER_WORKING_DIR}}"
     cmds:
       - uv run --no-project {{.REPO_PY}} "{{.REPO_SCRIPTS}}/repo_nav.py" diff {{.CLI_ARGS}}
+
+  scrub:text:
+    desc: "Scrub a text file (PR draft) for private names. Usage: task repo:scrub:text -- <file>"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    requires:
+      vars: [CLI_ARGS]
+    cmds:
+      - uv run --no-project {{.REPO_PY}} "{{.TASKFILE_DIR}}/../../tools/scrub_check.py" --strict {{.CLI_ARGS}}

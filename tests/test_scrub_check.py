@@ -78,3 +78,28 @@ def test_main_exit_codes(tmp_path: Path, capsys):
     assert scrub_check.main(["--denylist", none, str(clean)]) == 0
     assert scrub_check.main(["--denylist", none, str(dirty)]) == 1
     assert "dirty.md:1: local-projects-path" in capsys.readouterr().out
+
+
+def _deny_file(tmp_path: Path) -> Path:
+    deny_file = tmp_path / "deny"
+    deny_file.write_text("secret-pillar\n", encoding="utf-8")
+    return deny_file
+
+
+def test_commit_message_with_denylisted_name_fails(tmp_path: Path, capsys):
+    msg = tmp_path / "COMMIT_EDITMSG"
+    msg.write_text("feat: port\n\nCopied from secret-pillar.\n", encoding="utf-8")
+    assert scrub_check.main(["--denylist", str(_deny_file(tmp_path)), str(msg)]) == 1
+    assert "COMMIT_EDITMSG:3: denylisted-name" in capsys.readouterr().out
+
+
+def test_clean_commit_message_passes(tmp_path: Path):
+    msg = tmp_path / "COMMIT_EDITMSG"
+    msg.write_text("feat: port\n\nNothing private.\n", encoding="utf-8")
+    assert scrub_check.main(["--denylist", str(_deny_file(tmp_path)), str(msg)]) == 0
+
+
+def test_strict_missing_file_is_usage_error(tmp_path: Path):
+    none = str(tmp_path / "none")
+    assert scrub_check.main(["--denylist", none, "--strict", str(tmp_path / "gone.md")]) == 2
+    assert scrub_check.main(["--denylist", none, str(tmp_path / "gone.md")]) == 0

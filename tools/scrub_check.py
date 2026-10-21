@@ -1,7 +1,9 @@
 """Fail when files carry local paths, emails, tokens or denylisted names.
 
-Usage: scrub_check.py [--denylist FILE] PATH...
+Usage: scrub_check.py [--denylist FILE] [--strict] PATH...
 Prints `path:line: rule` per hit; exit 1 on any hit, 0 when clean.
+Also serves the commit-msg hook and drafted PR text: any text file works.
+`--strict` exits 2 when a PATH is not a file.
 A line containing `scrub:allow` is skipped. Undecodable files are skipped.
 """
 
@@ -68,12 +70,16 @@ def scan_file(path: Path, deny: re.Pattern[str] | None) -> list[tuple[int, str]]
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--denylist", type=Path, default=Path(".scrub-denylist"))
+    parser.add_argument("--strict", action="store_true")
     parser.add_argument("paths", nargs="*", type=Path)
     args = parser.parse_args(argv)
     deny = load_denylist(args.denylist)
     found = 0
     for path in args.paths:
         if not path.is_file():
+            if args.strict:
+                print(f"{path.as_posix()}: not a file")
+                return 2
             continue
         for number, rule in scan_file(path, deny):
             print(f"{path.as_posix()}:{number}: {rule}")

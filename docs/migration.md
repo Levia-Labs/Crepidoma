@@ -54,3 +54,7 @@
 ## Config overrides
 
 Shared `lint`, `security` and `quality` read `LINT_CFG`, `SECURITY_CONFIGS` and `QUALITY_CONFIGS` (default: Crepidoma `configs/`). Override per include with `vars: { LINT_CFG: "{{.ROOT_DIR}}" }`, the CLI or the environment. Shared gitleaks uses a repo-root `.gitleaks.toml` when present; let it extend the shared config.
+
+## Commit message scrub
+
+Add `- id: crepidoma-scrub-msg` under the Crepidoma hooks and `commit-msg` to `default_install_hook_types`, then run `task setup:hooks` so the commit-msg hook installs. Scrub a drafted PR body before `gh pr create` with `task repo:scrub:text -- <file>`.
