@@ -120,3 +120,8 @@ def test_interpreter_rules_always_reported(tmp_path, monkeypatch, capsys):
 def test_executables_look_through_launchers():
     assert allow_tasks.executables("uv run pytest -q && uvx ruff check .") >= {"pytest", "ruff"}
     assert "test" not in allow_tasks.executables("sg scan --files")
+
+
+def test_executables_skip_launcher_option_values():
+    command = 'uv run --no-project --python ">=3.12" "scripts/budget.py" show'
+    assert allow_tasks.executables(command) == {"uv", "budget.py"}

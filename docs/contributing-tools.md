@@ -21,5 +21,6 @@ with a small receipt.
 7. Tests use `tmp_path`, `monkeypatch` and `capsys`; no network, no real home directory, no real
    transcripts. Build any fixture that looks like a secret, email or local path by concatenation.
 8. Taskfile entries live in `taskfiles/<namespace>/Taskfile.yml`, call
-   `uv run {{.PY}} "{{.TASKFILE_DIR}}/../../plugins/crepidoma/scripts/<name>.py"`, carry a `desc`
+   `uv run --no-project --python ">=3.12" "{{.TASKFILE_DIR}}/../../plugins/crepidoma/scripts/<name>.py"`
+   (a command name such as `python3` can resolve to another interpreter), carry a `desc`
    with a `Usage:` hint, and run in `{{.USER_WORKING_DIR}}`.

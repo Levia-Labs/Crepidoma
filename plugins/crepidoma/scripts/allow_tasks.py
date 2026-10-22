@@ -32,6 +32,8 @@ WRAPPERS = {
     "sudo",
     "time",
 }
+# Launcher options whose value is a separate word, not the program.
+VALUE_OPTIONS = {"--python", "--with", "--from"}
 # Shell builtins and generic utilities: sharing one with a task is not a bypass.
 GENERIC = {
     "echo", "printf", "test", "[", "[[", "grep", "wc", "tr", "cat", "sed", "awk", "head", "tail",
@@ -88,7 +90,8 @@ def executables(command: str) -> set[str]:
                 found.add(words[0].rsplit("/", 1)[-1])
             words.pop(0)
             while words and words[0].startswith("-"):
-                words.pop(0)
+                if words.pop(0) in VALUE_OPTIONS and words:
+                    words.pop(0)
         if words:
             found.add(words[0].rsplit("/", 1)[-1])
     return found

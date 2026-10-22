@@ -18,7 +18,7 @@ tasks:
     silent: true
     dir: "{{.USER_WORKING_DIR}}"
     cmds:
-      - 'uv run --no-project {{.QUALITY_PY}} "{{.QUALITY_TOOLS}}/ratchet.py" long-files --git'
+      - 'uv run --no-project --python ">=3.12" "{{.QUALITY_TOOLS}}/ratchet.py" long-files --git'
 
   docs:
     desc: "Docs links and README gate. Usage: task quality:docs"
@@ -37,7 +37,7 @@ tasks:
         out=$(uvx basedpyright -p "{{.QUALITY_CONFIGS}}/pyrightconfig.json" 2>&1 || true)
         n=$(printf '%s\n' "$out" | grep -c ' - error:' || true)
         echo "type errors: $n"
-        uv run --no-project {{.QUALITY_PY}} "{{.QUALITY_TOOLS}}/ratchet.py" metric \
+        uv run --no-project --python ">=3.12" "{{.QUALITY_TOOLS}}/ratchet.py" metric \
           --baseline .ratchet/types.baseline --direction down --value "$n"
 
   duplication:
@@ -57,7 +57,7 @@ tasks:
           exit 1
         fi
         echo "duplication: ${pct}%"
-        uv run --no-project {{.QUALITY_PY}} "{{.QUALITY_TOOLS}}/ratchet.py" metric \
+        uv run --no-project --python ">=3.12" "{{.QUALITY_TOOLS}}/ratchet.py" metric \
           --baseline .ratchet/duplication.baseline --direction down --value "$pct" || rc=1
         exit $rc
 
@@ -71,7 +71,7 @@ tasks:
         out=$(uvx bandit -q -r . -x '*/tests/*,*/.venv/*,*/node_modules/*' 2>&1 || true)
         n=$(printf '%s\n' "$out" | grep -c '>> Issue:' || true)
         echo "bandit findings: $n"
-        uv run --no-project {{.QUALITY_PY}} "{{.QUALITY_TOOLS}}/ratchet.py" metric \
+        uv run --no-project --python ">=3.12" "{{.QUALITY_TOOLS}}/ratchet.py" metric \
           --baseline .ratchet/bandit.baseline --direction down --value "$n"
 
   taskfiles:

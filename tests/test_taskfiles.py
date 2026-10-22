@@ -1,5 +1,7 @@
 import os
+import re
 import subprocess
+import tomllib
 from pathlib import Path
 
 import pytest
@@ -31,6 +33,30 @@ def test_hooks_check_sends_a_stop_event():
     text = (ROOT / "taskfiles" / "claude" / "Taskfile.yml").read_text(encoding="utf-8")
     assert "hook_event_name" in text
     assert "echo '{}'" not in text
+
+
+def no_project_runs():
+    plugin = ROOT / "plugins" / "crepidoma"
+    paths = [
+        *(ROOT / "taskfiles").rglob("*.yml"),
+        plugin / "hooks" / "hooks.json",
+        *(plugin / "bin").iterdir(),
+    ]
+    for path in paths:
+        for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            for match in re.finditer(r"uv run --no-project\b(.*)", line):
+                yield f"{path.relative_to(ROOT).as_posix()}:{number}", match.group(1)
+
+
+def test_plugin_scripts_run_on_the_required_python_by_path():
+    # Unpinned, uv may pick an older managed Python; a command name such as python3 may then
+    # resolve to yet another interpreter on PATH, or to the Store stub on Windows.
+    pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    spec = re.escape(pyproject["project"]["requires-python"])
+    pinned = re.compile(rf'^(?: --quiet)? --python \\?"{spec}\\?" \\?"')
+    runs = list(no_project_runs())
+    assert runs
+    assert not [where for where, rest in runs if not pinned.match(rest)]
 
 
 NAMESPACES = (

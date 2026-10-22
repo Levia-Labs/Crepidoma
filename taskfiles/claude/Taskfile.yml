@@ -10,7 +10,6 @@ vars:
     elif command -v security > /dev/null 2>&1; then
     security find-generic-password -s "{{.CLAUDE_KEYCHAIN_SERVICE}}" -w 2> /dev/null || true; fi
   CLAUDE_USAGE_URL: "https://api.anthropic.com/api/oauth/usage"
-  CLAUDE_PY: '{{if eq OS "windows"}}python{{else}}python3{{end}}'
   CLAUDE_SCRIPTS: "{{.TASKFILE_DIR}}/../../plugins/crepidoma/scripts"
 
 includes:
@@ -202,14 +201,14 @@ tasks:
     cmds:
       - >-
         echo '{"hook_event_name":"Stop"}'
-        | uv run --no-project python "{{.TASKFILE_DIR}}/../../plugins/crepidoma/scripts/hooks.py" stop
+        | uv run --no-project --python ">=3.12" "{{.TASKFILE_DIR}}/../../plugins/crepidoma/scripts/hooks.py" stop
 
   spend:
     desc: "One line per session. Usage: task claude:spend -- [--last N] [--top N] [--dir D]"
     silent: true
     dir: "{{.USER_WORKING_DIR}}"
     cmds:
-      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/spend.py" sessions {{.CLI_ARGS}}
+      - uv run --no-project --python ">=3.12" "{{.CLAUDE_SCRIPTS}}/spend.py" sessions {{.CLI_ARGS}}
 
   spend:*:
     desc: >-
@@ -218,63 +217,63 @@ tasks:
     silent: true
     dir: "{{.USER_WORKING_DIR}}"
     cmds:
-      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/spend.py" {{index .MATCH 0}} {{.CLI_ARGS}}
+      - uv run --no-project --python ">=3.12" "{{.CLAUDE_SCRIPTS}}/spend.py" {{index .MATCH 0}} {{.CLI_ARGS}}
 
   history:
     desc: "Repeated shell commands. Usage: task claude:history -- [--min N] [--top N] [--report F]"
     silent: true
     dir: "{{.USER_WORKING_DIR}}"
     cmds:
-      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/history.py" commands {{.CLI_ARGS}}
+      - uv run --no-project --python ">=3.12" "{{.CLAUDE_SCRIPTS}}/history.py" commands {{.CLI_ARGS}}
 
   history:inline:
     desc: "Repeated inline scripts. Usage: task claude:history:inline -- [--min N] [--top N]"
     silent: true
     dir: "{{.USER_WORKING_DIR}}"
     cmds:
-      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/history.py" inline {{.CLI_ARGS}}
+      - uv run --no-project --python ">=3.12" "{{.CLAUDE_SCRIPTS}}/history.py" inline {{.CLI_ARGS}}
 
   history:prompts:
     desc: "Repeated prompts. Usage: task claude:history:prompts -- [--min N] [--top N] [--prompts F]"
     silent: true
     dir: "{{.USER_WORKING_DIR}}"
     cmds:
-      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/history.py" prompts {{.CLI_ARGS}}
+      - uv run --no-project --python ">=3.12" "{{.CLAUDE_SCRIPTS}}/history.py" prompts {{.CLI_ARGS}}
 
   lanes:
     desc: "Running and pending lanes. Usage: task claude:lanes"
     silent: true
     dir: "{{.USER_WORKING_DIR}}"
     cmds:
-      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/lanes.py" list {{.CLI_ARGS}}
+      - uv run --no-project --python ">=3.12" "{{.CLAUDE_SCRIPTS}}/lanes.py" list {{.CLI_ARGS}}
 
   lanes:reset:
     desc: "Clear lanes. Usage: task claude:lanes:reset -- [--stale]"
     silent: true
     dir: "{{.USER_WORKING_DIR}}"
     cmds:
-      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/lanes.py" reset {{.CLI_ARGS}}
+      - uv run --no-project --python ">=3.12" "{{.CLAUDE_SCRIPTS}}/lanes.py" reset {{.CLI_ARGS}}
 
   handoff:
     desc: "Write a save-state note. Usage: task claude:handoff -- [--out PATH]"
     silent: true
     dir: "{{.USER_WORKING_DIR}}"
     cmds:
-      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/lanes.py" handoff {{.CLI_ARGS}}
+      - uv run --no-project --python ">=3.12" "{{.CLAUDE_SCRIPTS}}/lanes.py" handoff {{.CLI_ARGS}}
 
   allow:*:
     desc: "Permission rules: check or report. Usage: task claude:allow:<check|report> -- [--settings PATH]"
     silent: true
     dir: "{{.USER_WORKING_DIR}}"
     cmds:
-      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/allow_tasks.py" {{index .MATCH 0}} {{.CLI_ARGS}}
+      - uv run --no-project --python ">=3.12" "{{.CLAUDE_SCRIPTS}}/allow_tasks.py" {{index .MATCH 0}} {{.CLI_ARGS}}
 
   pool:
     desc: "Reusable subagents. Usage: task claude:pool -- [--type T] [--max-context N] [--ttl S] [--top N]"
     silent: true
     dir: "{{.USER_WORKING_DIR}}"
     cmds:
-      - uv run --no-project {{.CLAUDE_PY}} "{{.CLAUDE_SCRIPTS}}/agent_pool.py" list {{.CLI_ARGS}}
+      - uv run --no-project --python ">=3.12" "{{.CLAUDE_SCRIPTS}}/agent_pool.py" list {{.CLI_ARGS}}
 
   plugins:verify:
     desc: "Fail when crepidoma@levia-labs is not installed. Usage: task claude:plugins:verify"

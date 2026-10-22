@@ -43,13 +43,12 @@ tasks:
     dir: "{{.USER_WORKING_DIR}}"
     silent: true
     vars:
-      GIT_AM_PY: '{{if eq OS "windows"}}python{{else}}python3{{end}}'
       GIT_AM: "{{.TASKFILE_DIR}}/../../plugins/crepidoma/scripts/git_after_merge.py"
     preconditions:
       - sh: "{{if .CLI_ARGS}}true{{else}}false{{end}}"
         msg: "Repo path required. Usage: task git:after-merge -- <repo-path> [branch]"
     cmds:
-      - uv run --no-project {{.GIT_AM_PY}} "{{.GIT_AM}}" {{.CLI_ARGS}}
+      - uv run --no-project --python ">=3.12" "{{.GIT_AM}}" {{.CLI_ARGS}}
 
   commit:
     desc: 'Stage all, commit, push. Usage: task git:commit -- "message"'
