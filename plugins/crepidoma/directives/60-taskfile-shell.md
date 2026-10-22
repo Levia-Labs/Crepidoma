@@ -1,7 +1,7 @@
 # Taskfile shell
 
 1. Write POSIX sh: the runner renders `{{...}}`, then runs `mvdan.cc/sh`, not bash. No arrays, `[[ ]]`, `<<<`; `task lint:embedded` checks blocks as sh (advisory), `task lint:sg` enforces the rules.
-2. Invoke Python only via var `PY: '{{if eq OS "windows"}}python{{else}}python3{{end}}'` as `uv run {{.PY}}`; never `.venv/bin/python`.
+2. Invoke Python only via var `PY: '{{if eq OS "windows"}}python{{else}}python3{{end}}'` as `uv run {{.PY}}`; never `.venv/bin/python`. Outside the project env, pin the interpreter and pass the script path, no command name: `uv run --no-project --python ">=3.12" "x.py"`.
 3. Pass root vars to includes via `vars: { PY: "{{.PY}}" }`; inheritance is unreliable.
 4. Prefix included top-level vars with the namespace (`RUST_RUN`, not `RUN`); scope is shared, last loaded wins. Inspect with `task --verbose --dry <name>`.
 5. `{{.TASKFILE_DIR}}` is the including file's directory; never append the repository path.

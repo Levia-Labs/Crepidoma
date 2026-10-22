@@ -3,7 +3,6 @@ version: "3"
 # Shell-linter tasks, flattened into the lint namespace by the sibling Taskfile.
 
 vars:
-  SHELL_PY: '{{if eq OS "windows"}}python{{else}}python3{{end}}'
   SHELL_SCRIPTS: "{{.TASKFILE_DIR}}/../../plugins/crepidoma/scripts"
 
 tasks:
@@ -14,14 +13,14 @@ tasks:
     cmds:
       # go-task templating is not shell, and shellcheck flags it. The extractor substitutes a
       # placeholder so the command still parses; a finding is worth reading, not failing on.
-      - uv run --no-project {{.SHELL_PY}} "{{.SHELL_SCRIPTS}}/lint/embedded_shell.py"
+      - uv run --no-project --python ">=3.12" "{{.SHELL_SCRIPTS}}/lint/embedded_shell.py"
 
   taskfiles:
     desc: Lint every Taskfile against the repository conventions. Usage task lint:taskfiles
     silent: true
     dir: "{{.USER_WORKING_DIR}}"
     cmds:
-      - uv run --no-project {{.SHELL_PY}} "{{.SHELL_SCRIPTS}}/taskfile_lint.py" all
+      - uv run --no-project --python ">=3.12" "{{.SHELL_SCRIPTS}}/taskfile_lint.py" all
 
   setup:
     desc: Install the shell and Dockerfile linters (shellcheck, shfmt, hadolint) with the system package manager

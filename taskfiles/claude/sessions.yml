@@ -1,7 +1,6 @@
 version: "3"
 
 vars:
-  SESSIONS_PY: '{{if eq OS "windows"}}python{{else}}python3{{end}}'
   SESSIONS_SCRIPTS: "{{.TASKFILE_DIR}}/../../plugins/crepidoma/scripts/claude"
 
 tasks:
@@ -11,7 +10,7 @@ tasks:
     dir: "{{.USER_WORKING_DIR}}"
     cmds:
       - >-
-        uv run --no-project {{.SESSIONS_PY}} "{{.SESSIONS_SCRIPTS}}/agents.py" --top {{.TOP | default 10}}
+        uv run --no-project --python ">=3.12" "{{.SESSIONS_SCRIPTS}}/agents.py" --top {{.TOP | default 10}}
         {{if .SESSION}}--session {{.SESSION}}{{end}}
 
   agents:reads:
@@ -20,7 +19,7 @@ tasks:
     dir: "{{.USER_WORKING_DIR}}"
     cmds:
       - >-
-        uv run --no-project {{.SESSIONS_PY}} "{{.SESSIONS_SCRIPTS}}/agents.py" --reads --top {{.TOP |
+        uv run --no-project --python ">=3.12" "{{.SESSIONS_SCRIPTS}}/agents.py" --reads --top {{.TOP |
         default 25}} {{if .SESSION}}--session {{.SESSION}}{{end}}
 
   agents:sessions:
@@ -29,5 +28,5 @@ tasks:
     dir: "{{.USER_WORKING_DIR}}"
     cmds:
       - >-
-        uv run --no-project {{.SESSIONS_PY}} "{{.SESSIONS_SCRIPTS}}/agents.py" --sessions {{if
+        uv run --no-project --python ">=3.12" "{{.SESSIONS_SCRIPTS}}/agents.py" --sessions {{if
         .SESSION}}--session {{.SESSION}}{{end}}

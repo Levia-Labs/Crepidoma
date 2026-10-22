@@ -61,4 +61,4 @@ tasks:
         msg: "`uv` not on PATH. Install: https://docs.astral.sh/uv/getting-started/installation/"
     cmds:
       - uvx pre-commit install --hook-type pre-commit --hook-type pre-push --hook-type commit-msg
-      - uv run --no-project python "{{.TASKFILE_DIR}}/../../plugins/crepidoma/scripts/hook_shebang.py"
+      - uv run --no-project --python ">=3.12" "{{.TASKFILE_DIR}}/../../plugins/crepidoma/scripts/hook_shebang.py"

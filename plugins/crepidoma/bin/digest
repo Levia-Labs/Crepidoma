@@ -1,2 +1,2 @@
 #!/bin/sh
-exec uv run --no-project --quiet python "$(dirname "$0")/../scripts/digest.py" "$@"
+exec uv run --no-project --quiet --python ">=3.12" "$(dirname "$0")/../scripts/digest.py" "$@"

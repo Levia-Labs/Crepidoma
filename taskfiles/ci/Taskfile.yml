@@ -1,7 +1,6 @@
 version: "3"
 
 vars:
-  CI_PY: '{{if eq OS "windows"}}python{{else}}python3{{end}}'
   CI_RUNS: "{{.TASKFILE_DIR}}/../../plugins/crepidoma/scripts/ci_runs.py"
 
 tasks:
@@ -25,7 +24,7 @@ tasks:
       - |
         command -v gh >/dev/null 2>&1 || { echo "missing gh: install https://cli.github.com" >&2; exit 1; }
         command -v uv >/dev/null 2>&1 || { echo "missing uv: install https://docs.astral.sh/uv/" >&2; exit 1; }
-        uv run --no-project {{.CI_PY}} "{{.CI_RUNS}}" fail --lines '{{.LINES | default "20"}}' \
+        uv run --no-project --python ">=3.12" "{{.CI_RUNS}}" fail --lines '{{.LINES | default "20"}}' \
           {{if .REPO}}--repo '{{.REPO}}'{{end}} {{if .SHA}}--sha '{{.SHA}}'{{end}} {{if .RUN}}--run '{{.RUN}}'{{end}}
 
   watch:
@@ -38,5 +37,5 @@ tasks:
       - |
         command -v gh >/dev/null 2>&1 || { echo "missing gh: install https://cli.github.com" >&2; exit 1; }
         command -v uv >/dev/null 2>&1 || { echo "missing uv: install https://docs.astral.sh/uv/" >&2; exit 1; }
-        uv run --no-project {{.CI_PY}} "{{.CI_RUNS}}" watch --timeout '{{.TIMEOUT | default "300"}}' \
+        uv run --no-project --python ">=3.12" "{{.CI_RUNS}}" watch --timeout '{{.TIMEOUT | default "300"}}' \
           {{if .REPO}}--repo '{{.REPO}}'{{end}} {{if .SHA}}--sha '{{.SHA}}'{{end}} {{if .RUN}}--run '{{.RUN}}'{{end}}

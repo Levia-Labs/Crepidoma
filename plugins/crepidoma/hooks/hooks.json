@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project --quiet python \"${CLAUDE_PLUGIN_ROOT}/scripts/inject_directives.py\""
+            "command": "uv run --no-project --quiet --python \">=3.12\" \"${CLAUDE_PLUGIN_ROOT}/scripts/inject_directives.py\""
           }
         ]
       }
@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project --quiet python \"${CLAUDE_PLUGIN_ROOT}/scripts/raw_read_guard.py\""
+            "command": "uv run --no-project --quiet --python \">=3.12\" \"${CLAUDE_PLUGIN_ROOT}/scripts/raw_read_guard.py\""
           }
         ]
       },
@@ -25,7 +25,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project --quiet python \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks.py\" pre-bash"
+            "command": "uv run --no-project --quiet --python \">=3.12\" \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks.py\" pre-bash"
           }
         ]
       },
@@ -34,7 +34,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project --quiet python \"${CLAUDE_PLUGIN_ROOT}/scripts/rtk_route.py\""
+            "command": "uv run --no-project --quiet --python \">=3.12\" \"${CLAUDE_PLUGIN_ROOT}/scripts/rtk_route.py\""
           }
         ]
       },
@@ -43,7 +43,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project --quiet python \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks.py\" pre-tool-use"
+            "command": "uv run --no-project --quiet --python \">=3.12\" \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks.py\" pre-tool-use"
           }
         ]
       },
@@ -52,7 +52,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project --quiet python \"${CLAUDE_PLUGIN_ROOT}/scripts/agent_pool.py\" hook"
+            "command": "uv run --no-project --quiet --python \">=3.12\" \"${CLAUDE_PLUGIN_ROOT}/scripts/agent_pool.py\" hook"
           }
         ]
       }
@@ -63,7 +63,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project --quiet python \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks.py\" post-tool-use"
+            "command": "uv run --no-project --quiet --python \">=3.12\" \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks.py\" post-tool-use"
           }
         ]
       }
@@ -73,7 +73,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project --quiet python \"${CLAUDE_PLUGIN_ROOT}/scripts/inject_directives.py\" --event SubagentStart"
+            "command": "uv run --no-project --quiet --python \">=3.12\" \"${CLAUDE_PLUGIN_ROOT}/scripts/inject_directives.py\" --event SubagentStart"
           }
         ]
       },
@@ -81,7 +81,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project --quiet python \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks.py\" subagent-start"
+            "command": "uv run --no-project --quiet --python \">=3.12\" \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks.py\" subagent-start"
           }
         ]
       }
@@ -91,7 +91,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project --quiet python \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks.py\" subagent-stop"
+            "command": "uv run --no-project --quiet --python \">=3.12\" \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks.py\" subagent-stop"
           }
         ]
       }
@@ -101,7 +101,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run --no-project --quiet python \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks.py\" stop"
+            "command": "uv run --no-project --quiet --python \">=3.12\" \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks.py\" stop"
           }
         ]
       }
