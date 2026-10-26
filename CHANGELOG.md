@@ -3,7 +3,7 @@
 ## Unreleased
 
 - fix(lint): pre-commit eslint hook uses `npx --no-install` so `--config` is honoured; shared eslint config defines browser globals for web/static/public/`*.browser.js` and node globals for `*.mjs`/scripts
-- fix(lint): complete browser and node globals; scope `.mjs` (browser dirs get browser globals) and `.cjs` (commonjs)
+- fix(lint): complete browser and node globals; scope `.mjs` (browser dirs get browser globals) and `.cjs` (commonjs); add `CSS`
 - fix(quality): parse jscpd 5 JSON report and skip vendored .crepidoma in bandit; consumer bandit baselines may drop and should be ratcheted down
 - fix(settings): deny allowlist escape flags for task, pre-commit, git commit and git diff/log/show
 - fix(settings): deny abbreviated `--no-v*` and `--ext*` flags (git rejects `--no-i`/`--no-in`/`--no-ind` for diff) and pin the `levia-labs` marketplace ref to a release tag; `release.py` now bumps that ref

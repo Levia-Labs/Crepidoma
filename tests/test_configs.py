@@ -49,7 +49,7 @@ def test_eslint_config_has_scoped_globals():
 
 
 FIXTURES = {
-    "web/app.js": "document.title = String(window.innerWidth);\n",
+    "web/app.js": "document.title = CSS.escape(String(window.innerWidth));\n",
     "web/app.mjs": "export const w = window.innerWidth;\n",
     "scripts/x.mjs": "export const p = process.argv;\n",
     "scripts/x.cjs": "module.exports = require('node:fs');\n",

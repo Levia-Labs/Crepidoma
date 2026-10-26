@@ -53,6 +53,7 @@ const browserGlobals = readonly([
   "MutationObserver",
   "IntersectionObserver",
   "ResizeObserver",
+  "CSS",
   "HTMLElement",
   "HTMLCanvasElement",
   "CanvasRenderingContext2D",
