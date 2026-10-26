@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- fix(settings): deny allowlist escape flags for task, pre-commit, git commit and git diff/log/show
+
 ## v0.4.3 - 2026-10-26
 
 ## v0.4.2 - 2026-10-22
