@@ -116,3 +116,33 @@ def test_rtk_config_excludes_quiet_grep():
     text = (TEMPLATES / "rtk-config.toml").read_text(encoding="utf-8")
     excluded = tomllib.loads(text)["hooks"]["exclude_commands"]
     assert {"grep -q", "grep --quiet", "grep -s"} <= set(excluded)
+
+
+ESCAPE_DENIES = [
+    "Bash(task -t *)",
+    "Bash(task * -t *)",
+    "Bash(task *--taskfile*)",
+    "Bash(task -d *)",
+    "Bash(task * -d *)",
+    "Bash(task *--dir*)",
+    "Bash(pre-commit run -c *)",
+    "Bash(pre-commit run *-c *)",
+    "Bash(pre-commit run *--config*)",
+    "Bash(git commit *--no-verify*)",
+    "Bash(git commit -n*)",
+    "Bash(git commit * -n*)",
+    *(
+        f"Bash(git {cmd} {pat})"
+        for cmd in ("diff", "log", "show")
+        for pat in ("*--out*", "*--ext-diff*", "*--no-index*", "* -O*", "-O*")
+    ),
+]
+
+
+def test_deny_covers_allowlist_escape_flags():
+    root = TEMPLATES.parent
+    for settings in (TEMPLATES / "settings.json", root / ".claude" / "settings.json"):
+        deny = json.loads(settings.read_text(encoding="utf-8"))["permissions"]["deny"]
+        missing = [rule for rule in ESCAPE_DENIES if rule not in deny]
+        assert not missing, (settings, missing)
+        assert not any("--output" in rule for rule in deny), settings
