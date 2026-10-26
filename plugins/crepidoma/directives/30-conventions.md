@@ -13,3 +13,4 @@
 11. Use Python 3.12+ with uv; pass `encoding="utf-8"` to text I/O.
 12. Record a decision with non-obvious reasons as an ADR. Make comments explain why; keep ones recording past errors.
 13. Use no em dashes, except in verbatim quotes.
+14. Keep a README.md in every folder except agent folders and `.github`. Keep the root README short: SVG logo, one-line pitch, quick start, links to public Levia Labs repos only.
