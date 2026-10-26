@@ -1,6 +1,7 @@
 # .ratchet
 
 - Ratchet baselines; numbers only move in the good direction.
+- Bandit skips the vendored `.crepidoma` submodule; a consumer's `bandit.baseline` may now be higher than the real count. Lower it to the new count.
 
 ## Contents
 

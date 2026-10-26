@@ -6,6 +6,7 @@
 
 <!-- contents:start -->
 
+- [`fixtures/`](fixtures/README.md) - Folder.
 - [`test_adrs.py`](test_adrs.py) - Tests for `adrs`.
 - [`test_configs.py`](test_configs.py) - Tests for `configs`.
 - [`test_denylist.py`](test_denylist.py) - Tests for `denylist`.
@@ -13,6 +14,7 @@
 - [`test_folder_readme.py`](test_folder_readme.py) - Tests for `folder_readme`.
 - [`test_pin_pillar.py`](test_pin_pillar.py) - Tests for `pin_pillar`.
 - [`test_precommit_hooks.py`](test_precommit_hooks.py) - Tests for `precommit_hooks`.
+- [`test_quality_jscpd.py`](test_quality_jscpd.py) - Tests for `quality_jscpd`.
 - [`test_quality_nested.py`](test_quality_nested.py) - Tests for `quality_nested`.
 - [`test_ratchet.py`](test_ratchet.py) - Tests for `ratchet`.
 - [`test_ratchet_skip.py`](test_ratchet_skip.py) - Tests for `ratchet_skip`.

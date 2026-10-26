@@ -7,6 +7,8 @@ vars:
   # default: {{.TASKFILE_DIR}}/../../configs; an including Taskfile may override
   QUALITY_CONFIGS: '{{.QUALITY_CONFIGS | default (printf "%s/../../configs" .TASKFILE_DIR)}}'
   QUALITY_DUP_THRESHOLD: "10"
+  # .crepidoma is the vendored submodule in consumers; Crepidoma itself has no such directory.
+  QUALITY_BANDIT_EXCLUDE: "./.crepidoma,*/.crepidoma/*,*/tests/*,*/.venv/*,*/node_modules/*"
   # Member names resolve under QUALITY_NS, derived from the running task so a nested include works.
   QUALITY_FAST_MEMBERS: "long-files docs taskfiles encoding"
   QUALITY_ALL_MEMBERS: "long-files docs types duplication bandit taskfiles encoding"
@@ -50,10 +52,14 @@ tasks:
         npx --no-install jscpd --version >/dev/null 2>&1 \
           || { echo "missing jscpd: run npm install -D jscpd" >&2; exit 1; }
         rc=0
-        out=$(npx --no-install jscpd --silent --reporters console --threshold {{.QUALITY_DUP_THRESHOLD}} . 2>&1) || rc=1
-        pct=$(printf '%s\n' "$out" | grep 'Total' | grep -o '[0-9.]*%' | head -n 1 | tr -d '%')
+        rep=$(mktemp -d)
+        trap 'rm -rf "$rep"' EXIT
+        npx --no-install jscpd --silent --reporters json --output "$rep" \
+          --threshold {{.QUALITY_DUP_THRESHOLD}} . >/dev/null 2>&1 || rc=1
+        pct=$(uv run --no-project --python ">=3.12" "{{.QUALITY_TOOLS}}/jscpd_pct.py" \
+          "$rep" 2>/dev/null) || pct=""
         if [ -z "$pct" ]; then
-          echo "jscpd did not run; install it with: npm install -D jscpd" >&2
+          echo "jscpd produced no report; check the jscpd run (npx jscpd .)" >&2
           exit 1
         fi
         echo "duplication: ${pct}%"
@@ -68,7 +74,7 @@ tasks:
     cmds:
       - |
         command -v uvx >/dev/null 2>&1 || { echo "missing uvx: install uv https://docs.astral.sh/uv/" >&2; exit 1; }
-        out=$(uvx bandit -q -r . -x '*/tests/*,*/.venv/*,*/node_modules/*' 2>&1 || true)
+        out=$(uvx bandit -q -r . -x '{{.QUALITY_BANDIT_EXCLUDE}}' 2>&1 || true)
         n=$(printf '%s\n' "$out" | grep -c '>> Issue:' || true)
         echo "bandit findings: $n"
         uv run --no-project --python ">=3.12" "{{.QUALITY_TOOLS}}/ratchet.py" metric \

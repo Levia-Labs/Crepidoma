@@ -1,0 +1,18 @@
+{
+  "statistics": {
+    "formats": {},
+    "total": {
+      "lines": 1200,
+      "tokens": 9000,
+      "sources": 14,
+      "clones": 3,
+      "duplicatedLines": 60,
+      "duplicatedTokens": 450,
+      "percentage": 4.99,
+      "percentageTokens": 5,
+      "newDuplicatedLines": 0,
+      "newClones": 0
+    }
+  },
+  "duplicates": []
+}
