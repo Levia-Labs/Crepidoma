@@ -19,6 +19,7 @@ SEMVER = re.compile(r"^\d+\.\d+\.\d+$")
 DEFAULT_BRANCH = "main"
 HEADER = "# Changelog\n"
 TEMPLATE = Path("templates/.pre-commit-config.yaml")
+SETTINGS = Path("templates/settings.json")
 HOOKS_REPO = re.compile(r"(repo: \S*/Crepidoma\s+rev: )\S+")
 
 
@@ -35,7 +36,15 @@ def bump(root: Path, version: str, today: str) -> list[Path]:
     text = template.read_text(encoding="utf-8")
     pinned = HOOKS_REPO.sub(lambda m: f"{m.group(1)}v{version}", text)
     template.write_text(pinned, encoding="utf-8", newline="\n")
-    return [manifest, changelog, template]
+    settings = root / SETTINGS
+    config = json.loads(settings.read_text(encoding="utf-8"))
+    try:
+        config["extraKnownMarketplaces"]["levia-labs"]["source"]["ref"] = f"v{version}"
+    except (KeyError, TypeError) as exc:
+        raise SystemExit(f"{SETTINGS}: no extraKnownMarketplaces.levia-labs.source to pin") from exc
+    dumped = json.dumps(config, indent=2, ensure_ascii=False) + "\n"
+    settings.write_text(dumped, encoding="utf-8", newline="\n")
+    return [manifest, changelog, template, settings]
 
 
 def git(root: Path, *args: str) -> subprocess.CompletedProcess[str]:

@@ -71,3 +71,7 @@ Set `CREPIDOMA_STOP_GATE` to `off` in the pillar's `.claude/settings.json` `env`
 ## CI tools for shared gates
 
 A pillar CI job that runs `task lint:check` or `task security:check` needs shellcheck 0.11.0, shfmt 3.14.1, hadolint and gitleaks 8.30.1 on `PATH`, pinned. Copy the `shared-gates` job from `templates/ci.yml`. Its checkout must set `submodules: true` and `fetch-depth: 0`: a shallow clone breaks history secret scans that rely on `.gitleaksignore` fingerprints. Copy `templates/.prettierignore` to the pillar root so prettier skips the submodule.
+
+## Commits are no longer allowlisted
+
+`templates/settings.json` no longer allows `Bash(git commit *)`: a glob cannot tell combined short flags such as `-an` or `-nm` (which skip hooks) from message text. Resync the pillar's `.claude/settings.json` allow and deny lists from the template, then commit through `task git:commit` or approve the permission prompt. The deny rules for `--no-verify`, `--no-v*` and `-n` stay.

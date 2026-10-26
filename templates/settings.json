@@ -17,7 +17,6 @@
       "Bash(git ls-files *)",
       "Bash(git blame *)",
       "Bash(git add *)",
-      "Bash(git commit *)",
       "Bash(graphify *)",
       "Bash(ruff *)",
       "Bash(yamllint *)",
@@ -57,20 +56,27 @@
       "Bash(pre-commit run *-c *)",
       "Bash(pre-commit run *--config*)",
       "Bash(git commit *--no-verify*)",
+      "Bash(git commit *--no-v*)",
       "Bash(git commit -n*)",
       "Bash(git commit * -n*)",
       "Bash(git diff *--out*)",
+      "Bash(git diff *--ext*)",
       "Bash(git diff *--ext-diff*)",
+      "Bash(git diff *--no-ind*)",
       "Bash(git diff *--no-index*)",
       "Bash(git diff * -O*)",
       "Bash(git diff -O*)",
       "Bash(git log *--out*)",
+      "Bash(git log *--ext*)",
       "Bash(git log *--ext-diff*)",
+      "Bash(git log *--no-ind*)",
       "Bash(git log *--no-index*)",
       "Bash(git log * -O*)",
       "Bash(git log -O*)",
       "Bash(git show *--out*)",
+      "Bash(git show *--ext*)",
       "Bash(git show *--ext-diff*)",
+      "Bash(git show *--no-ind*)",
       "Bash(git show *--no-index*)",
       "Bash(git show * -O*)",
       "Bash(git show -O*)"
@@ -81,7 +87,7 @@
       "source": {
         "source": "github",
         "repo": "Levia-Labs/Crepidoma",
-        "ref": "main"
+        "ref": "v0.4.3"
       }
     },
     "caveman": {

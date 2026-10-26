@@ -2,11 +2,23 @@ import json
 import subprocess
 from pathlib import Path
 
+import pytest
 import release
 
 TEMPLATE = (
     "repos:\n  - repo: https://github.com/Example/Crepidoma\n    rev: v0.1.0\n    hooks: []\n"
     "  - repo: https://github.com/pre-commit/pre-commit-hooks\n    rev: v6.0.0\n"
+)
+
+
+SETTINGS = json.dumps(
+    {
+        "extraKnownMarketplaces": {
+            "levia-labs": {"source": {"repo": "Levia-Labs/Crepidoma", "ref": "v0.1.0"}},
+            "caveman": {"source": {"repo": "x/caveman", "ref": "v4.0.1"}},
+        }
+    },
+    indent=2,
 )
 
 
@@ -18,6 +30,7 @@ def setup_repo(root: Path) -> Path:
     template = root / "templates/.pre-commit-config.yaml"
     template.parent.mkdir(parents=True)
     template.write_text(TEMPLATE, encoding="utf-8")
+    (root / "templates/settings.json").write_text(SETTINGS, encoding="utf-8")
     return manifest
 
 
@@ -28,7 +41,11 @@ def test_bump_updates_manifest_and_changelog(tmp_path: Path):
     changelog = (tmp_path / "CHANGELOG.md").read_text(encoding="utf-8")
     assert changelog.startswith("# Changelog\n\n## v0.2.0 - 2026-11-01\n")
     assert "## v0.1.0" in changelog
-    assert len(changed) == 3
+    assert len(changed) == 4
+    settings = json.loads((tmp_path / "templates/settings.json").read_text(encoding="utf-8"))
+    markets = settings["extraKnownMarketplaces"]
+    assert markets["levia-labs"]["source"]["ref"] == "v0.2.0"
+    assert markets["caveman"]["source"]["ref"] == "v4.0.1"
     pinned = (tmp_path / "templates/.pre-commit-config.yaml").read_text(encoding="utf-8")
     assert "rev: v0.2.0\n" in pinned and "rev: v0.1.0" not in pinned
     assert "rev: v6.0.0\n" in pinned
@@ -138,3 +155,19 @@ def test_refuses_version_not_greater_than_latest_tag(tmp_path: Path, monkeypatch
     run_git(work, "tag", "v0.10.0")
     code, err = attempt(work, monkeypatch, capsys, "0.9.0")
     assert code == 1 and err.count(chr(10)) == 1 and "not greater" in err
+
+
+def test_bump_pins_marketplace_in_reformatted_settings(tmp_path: Path):
+    setup_repo(tmp_path)
+    compact = json.dumps(json.loads(SETTINGS))
+    (tmp_path / "templates/settings.json").write_text(compact, encoding="utf-8")
+    release.bump(tmp_path, "0.2.0", "2026-11-01")
+    data = json.loads((tmp_path / "templates/settings.json").read_text(encoding="utf-8"))
+    assert data["extraKnownMarketplaces"]["levia-labs"]["source"]["ref"] == "v0.2.0"
+
+
+def test_bump_fails_when_marketplace_key_missing(tmp_path: Path):
+    setup_repo(tmp_path)
+    (tmp_path / "templates/settings.json").write_text("{}", encoding="utf-8")
+    with pytest.raises(SystemExit):
+        release.bump(tmp_path, "0.2.0", "2026-11-01")

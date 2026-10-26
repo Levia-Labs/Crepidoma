@@ -8,7 +8,8 @@ TEMPLATES = Path(__file__).resolve().parent.parent / "templates"
 def test_settings_template_links_marketplace():
     data = json.loads((TEMPLATES / "settings.json").read_text(encoding="utf-8"))
     source = data["extraKnownMarketplaces"]["levia-labs"]["source"]
-    assert source == {"source": "github", "repo": "Levia-Labs/Crepidoma", "ref": "main"}
+    assert re.fullmatch(r"v\d+\.\d+\.\d+", source.pop("ref"))
+    assert source == {"source": "github", "repo": "Levia-Labs/Crepidoma"}
     assert data["enabledPlugins"]["crepidoma@levia-labs"] is True
     assert "hooks" not in data
 
@@ -129,12 +130,21 @@ ESCAPE_DENIES = [
     "Bash(pre-commit run *-c *)",
     "Bash(pre-commit run *--config*)",
     "Bash(git commit *--no-verify*)",
+    "Bash(git commit *--no-v*)",
     "Bash(git commit -n*)",
     "Bash(git commit * -n*)",
     *(
         f"Bash(git {cmd} {pat})"
         for cmd in ("diff", "log", "show")
-        for pat in ("*--out*", "*--ext-diff*", "*--no-index*", "* -O*", "-O*")
+        for pat in (
+            "*--out*",
+            "*--ext*",
+            "*--no-ind*",
+            "*--ext-diff*",
+            "*--no-index*",
+            "* -O*",
+            "-O*",
+        )
     ),
 ]
 
@@ -152,3 +162,65 @@ def test_precommit_template_eslint_entry_avoids_npx_no():
     text = (TEMPLATES / ".pre-commit-config.yaml").read_text(encoding="utf-8")
     assert not re.search(r"npx --no\s+eslint", text)
     assert "npx --no-install eslint --config .crepidoma/configs/eslint.config.js" in text
+
+
+def test_marketplace_refs_are_pinned():
+    root = TEMPLATES.parent
+    for settings in (TEMPLATES / "settings.json", root / ".claude" / "settings.json"):
+        data = json.loads(settings.read_text(encoding="utf-8"))
+        for name, entry in data["extraKnownMarketplaces"].items():
+            ref = entry["source"].get("ref")
+            assert ref not in ("main", "master"), (settings, name)
+    levia = json.loads((TEMPLATES / "settings.json").read_text(encoding="utf-8"))
+    ref = levia["extraKnownMarketplaces"]["levia-labs"]["source"]["ref"]
+    assert re.fullmatch(r"v\d+\.\d+\.\d+", ref)
+
+
+def _matches(rule: str, command: str) -> bool:
+    """Claude Code Bash rule match: `*` is a wildcard over the whole command."""
+    body = rule.removeprefix("Bash(").removesuffix(")")
+    pattern = ".*".join(re.escape(part) for part in body.split("*"))
+    if body.endswith(" *"):
+        pattern = pattern.removesuffix(r"\ .*") + r"(\ .*)?"
+    return re.fullmatch(pattern, command, re.DOTALL) is not None
+
+
+ESCAPE_COMMANDS = [
+    "git commit --no-verify -m x",
+    "git commit --no-v -m x",
+    "git commit --no-ve -m x",
+    "git commit --no-veri -m x",
+    "git commit -nm x",
+    "git commit -m x -n",
+    "git diff --no-ind a b",
+    "git diff --no-index a b",
+    "git diff --ext-d",
+    "git log --output=x",
+    "git show --no-ind",
+    "task --taskfile x y",
+    "task st:test -d /tmp",
+    "pre-commit run -c x",
+    "pre-commit run --config x",
+]
+NORMAL_COMMANDS = [
+    "git diff --stat",
+    "git log --oneline -n 5",
+    "git show HEAD",
+    "task st:test",
+    "pre-commit run",
+    "pre-commit run --all-files",
+]
+
+
+def test_rule_matching_blocks_escapes_and_allows_normal_use():
+    root = TEMPLATES.parent
+    for settings in (TEMPLATES / "settings.json", root / ".claude" / "settings.json"):
+        perms = json.loads(settings.read_text(encoding="utf-8"))["permissions"]
+        allow, deny = perms["allow"], perms["deny"]
+        for cmd in ESCAPE_COMMANDS:
+            assert any(_matches(r, cmd) for r in deny), (settings, cmd)
+        for cmd in NORMAL_COMMANDS:
+            assert any(_matches(r, cmd) for r in allow), (settings, cmd)
+            assert not any(_matches(r, cmd) for r in deny), (settings, cmd)
+        assert "Bash(git commit *)" not in allow, settings
+        assert not any(_matches(r, "git commit -an") for r in allow), settings

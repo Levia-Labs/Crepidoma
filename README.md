@@ -29,12 +29,14 @@ Projects link it, never copy it, so nothing drifts.
    {
      "extraKnownMarketplaces": {
        "levia-labs": {
-         "source": { "source": "github", "repo": "Levia-Labs/Crepidoma", "ref": "main" }
+         "source": { "source": "github", "repo": "Levia-Labs/Crepidoma", "ref": "v0.4.3" }
        }
      },
      "enabledPlugins": { "crepidoma@levia-labs": true }
    }
    ```
+
+   The `ref` pins a release tag. `tools/release.py` bumps it in `templates/settings.json` with every release; update the copy in your project when you move to a newer Crepidoma.
 
    ```sh
    claude plugin install crepidoma@levia-labs --scope project
