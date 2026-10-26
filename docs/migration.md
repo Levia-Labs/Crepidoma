@@ -56,6 +56,10 @@
 
 Shared `lint`, `security` and `quality` read `LINT_CFG`, `SECURITY_CONFIGS` and `QUALITY_CONFIGS` (default: Crepidoma `configs/`). Override per include with `vars: { LINT_CFG: "{{.ROOT_DIR}}" }`, the CLI or the environment. Shared gitleaks uses a repo-root `.gitleaks.toml` when present; let it extend the shared config.
 
+## ESLint hook and globals
+
+When resyncing `.pre-commit-config.yaml`, change the eslint hook entry from `npx --no eslint ...` to `npx --no-install eslint --config .crepidoma/configs/eslint.config.js` (npm 10+ swallows `--config` after `npx --no`). The shared config now defines browser globals for `**/web/**`, `**/static/**`, `**/public/**` and `*.browser.js`, and node globals for `*.mjs` files and scripts directories; remove local `/* global ... */` headers there. Consumer devDependencies required: `eslint`, `@eslint/js`, `typescript-eslint`. No `globals` package is needed.
+
 ## Commit message scrub
 
 Add `- id: crepidoma-scrub-msg` under the Crepidoma hooks and `commit-msg` to `default_install_hook_types`, then run `task setup:hooks` so the commit-msg hook installs. Scrub a drafted PR body before `gh pr create` with `task repo:scrub:text -- <file>`.

@@ -146,3 +146,9 @@ def test_deny_covers_allowlist_escape_flags():
         missing = [rule for rule in ESCAPE_DENIES if rule not in deny]
         assert not missing, (settings, missing)
         assert not any("--output" in rule for rule in deny), settings
+
+
+def test_precommit_template_eslint_entry_avoids_npx_no():
+    text = (TEMPLATES / ".pre-commit-config.yaml").read_text(encoding="utf-8")
+    assert not re.search(r"npx --no\s+eslint", text)
+    assert "npx --no-install eslint --config .crepidoma/configs/eslint.config.js" in text
