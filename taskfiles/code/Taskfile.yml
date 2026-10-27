@@ -1,0 +1,14 @@
+version: "3"
+
+vars:
+  CODE_TOOL: "{{.TASKFILE_DIR}}/../../tools/code_refs.py"
+
+tasks:
+  refs:
+    desc: "Tracked source references to a symbol, at most 40 lines and a total. Usage: task code:refs -- SYMBOL [PATH]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    requires:
+      vars: [CLI_ARGS]
+    cmds:
+      - uv run --no-project --python ">=3.12" "{{.CODE_TOOL}}" {{.CLI_ARGS}}

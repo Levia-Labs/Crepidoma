@@ -22,6 +22,13 @@ tasks:
     cmds:
       - 'uv run --no-project --python ">=3.12" "{{.QUALITY_TOOLS}}/ratchet.py" long-files --git'
 
+  long-files:staged:
+    desc: "List staged files over the line cap (report only). Usage: task quality:long-files:staged"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - 'uv run --no-project --python ">=3.12" "{{.TASKFILE_DIR}}/staged_long_files.py"'
+
   docs:
     desc: "Docs links and README gate. Usage: task quality:docs"
     silent: true

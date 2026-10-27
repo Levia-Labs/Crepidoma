@@ -1,12 +1,81 @@
 version: "3"
 
 vars:
+  # include with vars { GO_DIR: <module dir> }; tasks run inside it
   GO_DIR: '{{.GO_DIR | default "."}}'
 
 tasks:
   check:
-    desc: "Vet and test one Go module. Usage: task go:check (include with vars GO_DIR)"
+    desc: "Vet and test one Go module, summarized. Usage: task go:check (set GO_DIR when including)"
+    silent: true
     dir: "{{.GO_DIR}}"
     cmds:
-      - go vet ./...
-      - go test ./...
+      - |
+        # full output goes to a log so a failure keeps its detail without flooding the terminal
+        log="${TMPDIR:-${TEMP:-/tmp}}/crepidoma-go-check-$$.log"
+        rc=0
+        go vet ./... >"$log" 2>&1 || rc=1
+        go test ./... >>"$log" 2>&1 || rc=1
+        echo "ok packages: $(grep -c '^ok' "$log")"
+        if [ "$rc" -ne 0 ]; then
+          grep -E '^(FAIL|--- FAIL|panic:)|\.go:[0-9]+' "$log"
+          echo "full log: $log"
+          exit 1
+        fi
+        rm -f "$log"
+
+  fmt:
+    desc: "gofmt -l -w on GO_DIR; exit 1 listing changed files. Usage: task go:fmt"
+    silent: true
+    dir: "{{.GO_DIR}}"
+    cmds:
+      - |
+        changed=$(gofmt -l -w .) || exit 1
+        if [ -n "$changed" ]; then
+          echo "gofmt rewrote:"
+          echo "$changed"
+          exit 1
+        fi
+
+  fuzz:
+    desc: "Run every Fuzz target for FUZZTIME each, -parallel 1. Usage: task go:fuzz FUZZTIME=10s"
+    silent: true
+    dir: "{{.GO_DIR}}"
+    vars:
+      FUZZTIME: '{{.FUZZTIME | default "10s"}}'
+    env:
+      FUZZTIME: "{{.FUZZTIME}}"
+    cmds:
+      - |
+        # FUZZTIME travels as an environment variable so it is never parsed as shell text.
+        # reject anything but a Go duration so the value never reaches the shell unchecked
+        if ! printf '%s' "$FUZZTIME" | grep -Eq '^([0-9]+(\.[0-9]+)?(ns|us|ms|s|m|h))+$'; then
+          echo "invalid FUZZTIME '$FUZZTIME': use a Go duration such as 10s or 1m30s" >&2
+          exit 1
+        fi
+        rc=0
+        for pkg in $(go list ./...); do
+          for target in $(go test -list '^Fuzz' "$pkg" | grep '^Fuzz'); do
+            echo "fuzz $pkg $target"
+            go test -run '^$' -fuzz "^${target}\$" -fuzztime "$FUZZTIME" -parallel 1 "$pkg" || rc=1
+          done
+        done
+        exit "$rc"
+
+  race:
+    desc: "go test -race; skipped with exit 0 when CGO is unavailable. Usage: task go:race"
+    silent: true
+    dir: "{{.GO_DIR}}"
+    cmds:
+      - |
+        # the race detector needs cgo and a C compiler
+        if [ "$(go env CGO_ENABLED)" != "1" ]; then
+          echo "race skipped: CGO_ENABLED=$(go env CGO_ENABLED)"
+          exit 0
+        fi
+        cc=$(go env CC)
+        if ! command -v "$cc" >/dev/null 2>&1; then
+          echo "race skipped: C compiler '$cc' not found"
+          exit 0
+        fi
+        go test -race ./...

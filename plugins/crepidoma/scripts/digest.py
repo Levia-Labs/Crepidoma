@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Qualify long text before it reaches the main thread (stdlib only).
 
-Reads FILE or stdin and prints at most 20 lines and --max-bytes (1 KB):
+Reads FILE or stdin and prints at most 20 lines and --max-bytes (1 KB). Without --grep and
+--tail the body depends on the kind (digest_kinds.py): Markdown headings, code definitions,
+log FAIL/ERROR/panic/Traceback lines, else the first and last 5 lines, each with its line
+number where it is a match. With either flag:
 `lines <n> bytes <n>`, up to 6 distinct lines matching --grep, then the last
 --tail lines, each cut to 160 characters. Exit code is always 0.
 
@@ -10,14 +13,16 @@ Usage:
   some-command 2>&1 | python digest.py --tail 5
   python digest.py out.txt --grep "timeout|refused" --max-bytes 600
 
-Copied to ~/.claude/bin by `task claude:guard:install`, so it must run in any
-project with plain `python` and import nothing outside the standard library.
+Runs from the plugin scripts folder (bin/digest, `task repo:digest`), so it may import
+its sibling digest_kinds and nothing outside the standard library.
 """
 
 import argparse
 import re
 import sys
 from pathlib import Path
+
+import digest_kinds
 
 DEFAULT_GREP = r"error|fail|exception|traceback|warn|denied"
 MAX_LINES = 20
@@ -65,8 +70,8 @@ def clamp(out: list[str], max_bytes: int) -> str:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Print a bounded digest of a file or stdin.")
     parser.add_argument("file", nargs="?", help="file to read; stdin when omitted")
-    parser.add_argument("--grep", default=DEFAULT_GREP, help="regex for notable lines")
-    parser.add_argument("--tail", type=int, default=12, help="trailing lines to show")
+    parser.add_argument("--grep", default=None, help="regex for notable lines")
+    parser.add_argument("--tail", type=int, default=None, help="trailing lines to show")
     parser.add_argument("--max-bytes", type=int, default=1024, help="hard output cap")
     args = parser.parse_args(argv)
     try:
@@ -77,7 +82,15 @@ def main(argv: list[str] | None = None) -> int:
     text = raw.decode("utf-8", "replace")
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(errors="replace")  # narrow consoles (cp1250) must not crash
-    print(digest(text, args.grep, args.tail, args.max_bytes, size=len(raw)))
+    if args.grep is None and args.tail is None:
+        lines = text.splitlines()
+        head = f"lines {len(lines)} bytes {len(raw)}"
+        body = digest_kinds.body(args.file or "", lines)
+        print(clamp([head, *(cut(x) for x in body)], args.max_bytes))
+        return 0
+    grep = DEFAULT_GREP if args.grep is None else args.grep
+    tail = 12 if args.tail is None else args.tail
+    print(digest(text, grep, tail, args.max_bytes, size=len(raw)))
     return 0
 
 

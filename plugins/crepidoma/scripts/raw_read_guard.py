@@ -51,13 +51,13 @@ def reason(what: str, sub: bool = False) -> str:
     if sub:
         return (
             f"Raw read refused for a subagent ({what}; cap {SUB_LINES} lines or "
-            f"{SUB_BYTES} bytes per call). Use `{DIGEST} <file>`, Read with "
+            f"{SUB_BYTES} bytes per call). Use `task repo:digest -- <file>`, Read with "
             f"offset and limit <= {SUB_LINES}, or `task repo:outline` / "
             "`task repo:section` to locate the part you need."
         )
     return (
         f"Raw read refused in the main thread ({what}). Qualify it first: "
-        f"`{DIGEST} <file>` (or `<cmd> | {DIGEST}`), or hand the read to a "
+        "`task repo:digest -- <file>` (or `<cmd> | digest`), or hand the read to a "
         "haiku agent when prose must be summarised."
     )
 

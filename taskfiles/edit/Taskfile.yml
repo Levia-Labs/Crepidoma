@@ -1,0 +1,29 @@
+version: "3"
+
+vars:
+  EDIT_TOOL: "{{.TASKFILE_DIR}}/../../tools/edit_file.py"
+
+tasks:
+  replace:
+    desc: >-
+      Exact replacement, fails unless OLD occurs N times.
+      Usage: task edit:replace -- FILE --old TEXT --new TEXT [--count N]
+      (or --old-file F --new-file F)
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    requires:
+      vars: [CLI_ARGS]
+    cmds:
+      - uv run --no-project --python ">=3.12" "{{.EDIT_TOOL}}" replace {{.CLI_ARGS}}
+
+  insert-after:
+    desc: >-
+      Insert text after a unique anchor.
+      Usage: task edit:insert-after -- FILE --anchor TEXT --text TEXT [--count N]
+      (or --anchor-file F --text-file F)
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    requires:
+      vars: [CLI_ARGS]
+    cmds:
+      - uv run --no-project --python ">=3.12" "{{.EDIT_TOOL}}" insert-after {{.CLI_ARGS}}

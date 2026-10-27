@@ -27,6 +27,22 @@ tasks:
         uv run --no-project --python ">=3.12" "{{.CI_RUNS}}" fail --lines '{{.LINES | default "20"}}' \
           {{if .REPO}}--repo '{{.REPO}}'{{end}} {{if .SHA}}--sha '{{.SHA}}'{{end}} {{if .RUN}}--run '{{.RUN}}'{{end}}
 
+  failures:
+    desc: >-
+      Latest failed run of a PR (or a run id): failing test names, file:line and error lines only,
+      deduplicated, at most 40 lines. Usage: task ci:failures -- <pr-number|run-id>
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    vars:
+      CI_FAILURES: "{{.TASKFILE_DIR}}/ci_failures.py"
+    preconditions:
+      - sh: "{{if .CLI_ARGS}}true{{else}}false{{end}}"
+        msg: "PR number or run id required. Usage: task ci:failures -- <pr-number|run-id>"
+    cmds:
+      - |
+        command -v gh >/dev/null 2>&1 || { echo "missing gh: install https://cli.github.com" >&2; exit 1; }
+        uv run --no-project --python ">=3.12" "{{.CI_FAILURES}}" {{.CLI_ARGS}}
+
   watch:
     desc: >-
       Wait for a run to appear, watch it, one line per run (exit 0 success, 1 failed, 3 none in TIMEOUT s).

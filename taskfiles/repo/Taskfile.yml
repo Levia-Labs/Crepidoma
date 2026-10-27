@@ -28,6 +28,23 @@ tasks:
     cmds:
       - uv run --no-project --python ">=3.12" "{{.REPO_SCRIPTS}}/repo_nav.py" diff {{.CLI_ARGS}}
 
+  read:
+    desc: "Print at most 60 numbered lines. Usage: task repo:read -- FILE START END"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    requires:
+      vars: [CLI_ARGS]
+    cmds:
+      - uv run --no-project --python ">=3.12" "{{.TASKFILE_DIR}}/../../tools/read_range.py" {{.CLI_ARGS}}
+
+  digest:
+    desc: >-
+      Bounded digest of a file or stdin: size, headings, definitions or failures.
+      Usage: task repo:digest -- <file>
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project --python ">=3.12" "{{.REPO_SCRIPTS}}/digest.py" {{.CLI_ARGS}}
+
   scrub:text:
     desc: "Scrub a text file (PR draft) for private names. Usage: task repo:scrub:text -- <file>"
     silent: true
