@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- feat(hooks): `pre-bash` refuses, for the main thread and subagents, stdin-reading interpreters (`python -`, heredocs into an interpreter), kill by name or image (`taskkill /IM`, `pkill`, `killall`, `Stop-Process -Name`) and raw `git commit` (use `task git:commit`); `git add -A/./--all` stays refused for subagents
+- feat(digest): kind-aware default body (Markdown headings, code definitions, log failures, first and last 5 lines); new `task repo:digest`; the raw-read refusal names it
+
+- feat(folder_readme): `[files]` purposes key on the repo-relative path first (basename fallback); `include` globs merge extra purposes files; `task docs:purpose -- <path> "<text>"` sets a purpose and refreshes READMEs
+
+- fix(semgrep): include patterns match at the repo root and nested (`**/Taskfile.yml` etc.), so consumer runs no longer warn and exit 201
+- feat(git): `git:commit` retries once when a hook only reformatted files, lists staged long files first and prints failed hook lines, commit id and push status; new `git:stage -- <path>...` stages exactly the given paths (subagent-safe in a shared checkout)
+- feat(ci): `ci:failures -- <pr-number|run-id>` prints deduplicated failing test names, file:line and error lines of the latest failed run (at most 40)
+- feat(quality): `quality:long-files:staged` lists staged files over the line cap
+
+- feat(tasks): `edit` (`replace`, `insert-after`), `sdd` (`progress`, `defer`), `review` (`diff`, `relay`) and `code` (`refs`) namespaces and `repo:read`, replacing hand-written edit, ledger, review-relay and grep commands
+- feat(go): `go` task namespace (check, fmt, fuzz, race) and pre-commit hooks `go-check` and `go-fmt`
 - fix(lint): pre-commit eslint hook uses `npx --no-install` so `--config` is honoured; shared eslint config defines browser globals for web/static/public/`*.browser.js` and node globals for `*.mjs`/scripts
 - fix(lint): complete browser and node globals; scope `.mjs` (browser dirs get browser globals) and `.cjs` (commonjs); add `CSS`; ignore `.venv`, `venv`, `.tox` and `.crepidoma`
 - fix(quality): parse jscpd 5 JSON report and skip vendored .crepidoma in bandit; consumer bandit baselines may drop and should be ratcheted down

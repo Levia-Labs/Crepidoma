@@ -1,0 +1,27 @@
+version: "3"
+
+vars:
+  REVIEW_TOOL: "{{.TASKFILE_DIR}}/../../tools/review_files.py"
+
+tasks:
+  diff:
+    desc: "Write log, stat and -U10 diff to a temp file, print its path. Usage: task review:diff -- BASE HEAD [PATH...]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    requires:
+      vars: [CLI_ARGS]
+    cmds:
+      - uv run --no-project --python ">=3.12" "{{.REVIEW_TOOL}}" diff {{.CLI_ARGS}}
+
+  relay:
+    desc: >-
+      Render review findings as a numbered fix list file, print its path.
+      Usage: task review:relay [GATE="gate command"] -- REVIEW_FILE
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    requires:
+      vars: [CLI_ARGS]
+    cmds:
+      - >-
+        uv run --no-project --python ">=3.12" "{{.REVIEW_TOOL}}" relay {{.CLI_ARGS}}
+        {{if .GATE}} --gate {{shellQuote .GATE}}{{end}}

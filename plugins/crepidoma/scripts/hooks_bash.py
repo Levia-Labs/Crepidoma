@@ -12,8 +12,8 @@ from hooks_common import ROOT, deny, tool_input
 GIT_REASON = (
     "Refused: `{cmd}` pushes, discards or sweeps up changes. Other agents share this "
     "checkout. To undo your own edit, re-edit the file; never discard changes you did not "
-    "make. Stage and commit only your own paths: `git add <paths>` and "
-    "`git commit -- <paths>`, never `git add -u/-A/.` or `git commit -a`."
+    "make. Stage only your own paths with `git add <paths>`, never `git add -u/-A/--all/.`; "
+    "the main thread commits through `task git:commit`."
 )
 # One table. Each row: (name, regex over "<subcommand> <args>").
 GIT_DENY = (
@@ -185,8 +185,17 @@ def git_refusal(
 
 
 def pre_bash(event: dict) -> int:
-    # The main thread is not affected: only a subagent's input carries agent_id.
-    if event.get("tool_name") != "Bash" or not event.get("agent_id"):
+    if event.get("tool_name") != "Bash":
         return 0
-    reason = git_refusal(str(tool_input(event).get("command") or ""), cwd=event.get("cwd"))
+    command = str(tool_input(event).get("command") or "")
+    # Imported here: hooks_bash_guards imports this module's helpers.
+    from hooks_bash_guards import bash_refusal
+
+    reason = bash_refusal(command)
+    if reason:
+        return deny(reason)
+    # The git guard is subagent-only: only a subagent's input carries agent_id.
+    if not event.get("agent_id"):
+        return 0
+    reason = git_refusal(command, cwd=event.get("cwd"))
     return deny(reason) if reason else 0

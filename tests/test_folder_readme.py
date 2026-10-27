@@ -2,6 +2,8 @@ from pathlib import Path
 
 import folder_readme as fr
 
+BS = chr(92)  # a Windows path separator, spelled so no layer eats the escape
+
 
 def make(root: Path, rel: str, text: str = "") -> Path:
     path = root / rel
@@ -85,3 +87,50 @@ def test_written_files_use_lf(tmp_path: Path):
 def test_github_folder_never_gets_a_readme():
     # GitHub shows .github/README.md on the repo home page instead of the root README.
     assert ".github" in fr.EXCLUDED
+
+
+def test_path_key_beats_basename_and_accepts_windows_separators(tmp_path: Path):
+    make(tmp_path, "a/entity_test.go", "")
+    make(tmp_path, "b/entity_test.go", "")
+    overrides = {"a" + BS + "entity_test.go": "A tests.", "entity_test.go": "Generic tests."}
+    a_path, b_path = "a/entity_test.go", "b/entity_test.go"
+    assert fr.describe(tmp_path / a_path, overrides, a_path) == "A tests."
+    assert fr.describe(tmp_path / b_path, overrides, b_path) == "Generic tests."
+    toml = '[files]\n"a' + BS * 2 + 'entity_test.go" = "X."\n'
+    purposes, _ = fr.load_purposes(make(tmp_path, "p.toml", toml))
+    assert purposes["files"] == {a_path: "X."}
+    listing = fr.contents(tmp_path, "a", [a_path, b_path], purposes, set())
+    assert "- [`entity_test.go`](entity_test.go) - X." in listing
+
+
+def test_include_merges_and_duplicate_names_both_files(tmp_path: Path):
+    make(tmp_path, "docs/main.toml", 'include = ["main.d/*.toml"]\n[folders]\n"a" = "A."\n')
+    make(tmp_path, "docs/main.d/x.toml", '[folders]\n"b" = "B."\n[files]\n"a/f.py" = "F."\n')
+    purposes, _ = fr.load_purposes(tmp_path / "docs/main.toml")
+    assert purposes == {"folders": {"a": "A.", "b": "B."}, "files": {"a/f.py": "F."}}
+    dup = make(tmp_path, "docs/main.d/y.toml", '[folders]\n"a" = "Again."\n')
+    try:
+        fr.load_purposes(tmp_path / "docs/main.toml")
+    except SystemExit as err:
+        assert "main.toml" in str(err) and str(dup) in str(err)
+    else:
+        raise AssertionError("duplicate key accepted")
+
+
+def test_add_sorts_refuses_duplicate_and_replaces(tmp_path: Path):
+    files = setup(tmp_path)
+    main = make(tmp_path, "p.toml", '# note\n[folders]\n"tasks" = "T."\n"tools/sub" = "S."\n')
+    assert fr.add(tmp_path, files, main, "tools", "Tools.", False) == "folders"
+    lines = main.read_text(encoding="utf-8").splitlines()
+    assert lines[2:5] == ['"tasks" = "T."', '"tools" = "Tools."', '"tools/sub" = "S."']
+    assert fr.add(tmp_path, files, main, "tools" + BS + "run.py", "Runner.", False) == "files"
+    assert '"tools/run.py" = "Runner."' in main.read_text(encoding="utf-8")
+    try:
+        fr.add(tmp_path, files, main, "tools", "Again.", False)
+    except SystemExit as err:
+        assert "--replace" in str(err)
+    else:
+        raise AssertionError("duplicate accepted")
+    fr.add(tmp_path, files, main, "tools", "New.", True)
+    assert '"tools" = "New."' in main.read_text(encoding="utf-8")
+    assert "# note" in main.read_text(encoding="utf-8")

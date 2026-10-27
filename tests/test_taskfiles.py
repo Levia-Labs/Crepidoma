@@ -72,6 +72,10 @@ NAMESPACES = (
     "ci",
     "rtk",
     "setup",
+    "edit",
+    "sdd",
+    "review",
+    "code",
 )
 
 

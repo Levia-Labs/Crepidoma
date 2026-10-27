@@ -7,7 +7,8 @@ One CLI, one subcommand per hook event; each reads the hook's JSON payload on st
   pre-tool-use     before Agent/Task - refuses a catch-all agent type, a model other than
                    sonnet or haiku, a seventh concurrent agent, or any agent while a usage
                    window is at the ceiling
-  pre-bash         before Bash, subagents only - refuses a push or a working-tree discard
+  pre-bash         before Bash - refuses stdin interpreters, kill by name, raw git commit; for
+                   subagents also a push or a working-tree discard
   subagent-start   a dispatched agent began - its reservation becomes a running lane
   subagent-stop    an agent finished - its lane is freed
   stop             end of a turn - runs the dirty gates' tasks, blocks on failure
@@ -119,7 +120,7 @@ def build_parser() -> argparse.ArgumentParser:
     events = parser.add_subparsers(dest="event", required=True, metavar="EVENT")
     events.add_parser("post-tool-use", help="mark a gate dirty after an edit in its scope")
     events.add_parser("pre-tool-use", help="refuse a forbidden, excess or over-budget agent")
-    events.add_parser("pre-bash", help="refuse a subagent's working-tree discard")
+    events.add_parser("pre-bash", help="refuse stdin interpreters, kill by name, raw commit")
     events.add_parser("subagent-start", help="record a running lane")
     events.add_parser("subagent-stop", help="free a lane")
     gate = events.add_parser("stop", help="run the dirty gates; block on failure")

@@ -15,13 +15,15 @@
 - [`budget_view.py`](budget_view.py) - Rendering for budget.py: spans, labels, the usage bar and tab-separated rows.
 - [`ci_runs.py`](ci_runs.py) - Watch a CI run and read its failing-job errors, for this or another GitHub repo.
 - [`digest.py`](digest.py) - Qualify long text before it reaches the main thread (stdlib only).
+- [`digest_kinds.py`](digest_kinds.py) - Kind-aware digest bodies: Markdown headings, code definitions, log failures, head and tail.
 - [`docs_gate.py`](docs_gate.py) - Docs consistency gate: broken links and README file lists, with a ratchet baseline.
 - [`gate_runner.py`](gate_runner.py) - Run gates quietly: one line per task, failure excerpt only on failure.
 - [`git_after_merge.py`](git_after_merge.py) - Reset a repo to its default branch after a PR merge and print one receipt line.
 - [`history.py`](history.py) - Find repeated ad-hoc work in Claude Code history that should become a tool (stdlib only).
-- [`hook_shebang.py`](hook_shebang.py) - Rewrite `#!/bin/sh` to `#!/usr/bin/env sh` in .git/hooks/*.legacy.
+- [`hook_shebang.py`](hook_shebang.py) - Rewrite `#!/bin/sh` to `#!/usr/bin/env sh` in .git/hooks/\*.legacy.
 - [`hooks.py`](hooks.py) - Claude Code hooks: quality gates at the end of a turn and the agent dispatch policy.
 - [`hooks_bash.py`](hooks_bash.py) - The git guard: refuses a subagent's push, working-tree discard or sweeping stage.
+- [`hooks_bash_guards.py`](hooks_bash_guards.py) - Bash guards for every caller: stdin-reading interpreters, kill-by-name, raw commit.
 - [`hooks_budget.py`](hooks_budget.py) - The usage allowance: a cached reading and the refusal when a window is at the ceiling.
 - [`hooks_common.py`](hooks_common.py) - Shared by every hook module: the project root, hook state, the payload and a refusal.
 - [`hooks_pre_tool.py`](hooks_pre_tool.py) - Agent dispatch policy and the lane ledger: PreToolUse, SubagentStart, SubagentStop.

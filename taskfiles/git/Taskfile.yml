@@ -51,18 +51,40 @@ tasks:
       - uv run --no-project --python ">=3.12" "{{.GIT_AM}}" {{.CLI_ARGS}}
 
   commit:
-    desc: 'Stage all, commit, push. Usage: task git:commit -- "message"'
+    desc: >-
+      Stage all, list staged files over the long-file cap, commit (one retry when a hook only
+      reformatted files), push. Prints failed hook lines, commit id, push status.
+      Usage: task git:commit -- "message"
     dir: "{{.USER_WORKING_DIR}}"
     silent: true
+    vars:
+      GIT_COMMIT_RETRY: "{{.TASKFILE_DIR}}/commit_retry.py"
+      GIT_LONG_STAGED: "{{.TASKFILE_DIR}}/../quality/staged_long_files.py"
     preconditions:
       - sh: "{{if .CLI_ARGS}}true{{else}}false{{end}}"
         msg: 'Commit message required. Usage: task git:commit -- "message"'
     cmds:
       - git add -A
-      - git commit -m {{.CLI_ARGS}}
+      - uv run --no-project --python ">=3.12" "{{.GIT_LONG_STAGED}}"
+      - uv run --no-project --python ">=3.12" "{{.GIT_COMMIT_RETRY}}" {{.CLI_ARGS}}
       - |
         if git rev-parse --abbrev-ref '@{u}' >/dev/null 2>&1; then
-          git push
+          git push --quiet && echo "push: ok"
         else
-          git push -u origin HEAD
+          git push --quiet -u origin HEAD && echo "push: ok (upstream set)"
         fi
+
+  stage:
+    desc: >-
+      Stage exactly the given paths and print the staged list; refuses no paths, `.` and paths
+      outside the repo. Subagent-safe in a shared checkout (never `git add -A`).
+      Usage: task git:stage -- <path>...
+    dir: "{{.USER_WORKING_DIR}}"
+    silent: true
+    vars:
+      GIT_STAGE: "{{.TASKFILE_DIR}}/stage_paths.py"
+    preconditions:
+      - sh: "{{if .CLI_ARGS}}true{{else}}false{{end}}"
+        msg: "Paths required. Usage: task git:stage -- <path>..."
+    cmds:
+      - uv run --no-project --python ">=3.12" "{{.GIT_STAGE}}" {{.CLI_ARGS}}

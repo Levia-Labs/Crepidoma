@@ -97,7 +97,7 @@ Full steps are in [docs/migration.md](docs/migration.md). From a Crepidoma sessi
 - [`taskfiles/`](taskfiles/README.md): shared task namespaces
 - [`configs/`](configs/README.md): shared lint, format and security configs
 - [`templates/`](templates/README.md): files a project copies once
-- [`tools/`](tools/README.md): scrub, ratchet, drift, denylist, release and folder README tools
+- [`tools/`](tools/README.md): scrub, ratchet, drift, denylist, release, folder README, edit, read, ledger, review and symbol-reference tools
 - [`docs/`](docs/README.md): guides, ADRs and design history
 
 ## Contributing

@@ -16,3 +16,16 @@
   entry: crepidoma-ratchet long-files --max-lines 300
   language: python
   types: [text]
+- id: go-check
+  name: go vet and test
+  description: Runs task go:check; set GO_DIR through the including Taskfile
+  entry: task go:check
+  language: system
+  pass_filenames: false
+  files: \.go$|go\.(mod|sum)$
+- id: go-fmt
+  name: gofmt
+  description: Rewrites Go files with gofmt and fails when it changed any
+  entry: gofmt -l -w
+  language: system
+  types: [go]

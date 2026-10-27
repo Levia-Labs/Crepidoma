@@ -1,0 +1,23 @@
+version: "3"
+
+vars:
+  SDD_TOOL: "{{.TASKFILE_DIR}}/../../tools/sdd_ledger.py"
+
+tasks:
+  progress:
+    desc: 'Append one line to an SDD ledger, creating it with a title. Usage: task sdd:progress -- LEDGER "LINE"'
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    requires:
+      vars: [CLI_ARGS]
+    cmds:
+      - uv run --no-project --python ">=3.12" "{{.SDD_TOOL}}" progress {{.CLI_ARGS}}
+
+  defer:
+    desc: "Add Low and Minor review findings as debt TODO entries. Usage: task sdd:defer -- REVIEW_FILE [--todo-file F]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    requires:
+      vars: [CLI_ARGS]
+    cmds:
+      - uv run --no-project --python ">=3.12" "{{.SDD_TOOL}}" defer {{.CLI_ARGS}}

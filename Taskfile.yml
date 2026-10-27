@@ -13,6 +13,11 @@ includes:
   ci: ./taskfiles/ci
   rtk: ./taskfiles/rtk
   setup: ./taskfiles/setup
+  go: ./taskfiles/go
+  edit: ./taskfiles/edit
+  sdd: ./taskfiles/sdd
+  review: ./taskfiles/review
+  code: ./taskfiles/code
 
 vars:
   PILLARS: '{{.PILLARS | default ".."}}'
@@ -71,6 +76,11 @@ tasks:
     desc: Write or refresh README.md in every tracked folder
     cmds:
       - uv run python tools/folder_readme.py update
+
+  docs:purpose:
+    desc: 'Set a folder or file purpose and refresh READMEs: task docs:purpose -- <path> "<text>" [--replace]'
+    cmds:
+      - uv run python tools/folder_readme.py add {{.CLI_ARGS}}
 
   test:
     desc: Run pytest
