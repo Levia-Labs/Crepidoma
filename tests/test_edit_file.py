@@ -1,5 +1,14 @@
+import subprocess
+
 import edit_file
 import pytest
+
+
+@pytest.fixture(autouse=True)
+def repo(tmp_path, monkeypatch):
+    """Tools only write inside the git work tree of the working directory."""
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    monkeypatch.chdir(tmp_path)
 
 
 def run(args):
@@ -65,3 +74,49 @@ def test_missing_file_and_empty_old(tmp_path):
     target = tmp_path / "a.txt"
     target.write_text("a", encoding="utf-8")
     assert run(["replace", target, "--old", "", "--new", "b"]) == 1
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        ".git/config",
+        ".claude/x.txt",
+        "settings.json",
+        "sub/settings.local.json",
+        "hooks.json",
+        ".pre-commit-config.yaml",
+    ],
+)
+def test_protected_targets_refused(tmp_path, name):
+    target = tmp_path / name
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text("a\n", encoding="utf-8", newline="")
+    assert run(["replace", target, "--old", "a", "--new", "b"]) == 1
+    assert target.read_text(encoding="utf-8") == "a\n"
+
+
+def test_target_outside_repo_refused(tmp_path_factory):
+    outside = tmp_path_factory.mktemp("outside") / "a.txt"
+    outside.write_text("a\n", encoding="utf-8", newline="")
+    assert run(["replace", outside, "--old", "a", "--new", "b"]) == 1
+    assert outside.read_text(encoding="utf-8") == "a\n"
+
+
+def test_input_files_outside_repo_refused(tmp_path, tmp_path_factory):
+    target = tmp_path / "a.txt"
+    target.write_text("a\n", encoding="utf-8", newline="")
+    secret = tmp_path_factory.mktemp("outside") / "s.txt"
+    secret.write_text("a", encoding="utf-8")
+    assert run(["replace", target, "--old-file", secret, "--new", "b"]) == 1
+    assert run(["replace", target, "--old", "a", "--new-file", secret]) == 1
+    assert run(["insert-after", target, "--anchor", "a", "--text-file", secret]) == 1
+    assert target.read_text(encoding="utf-8") == "a\n"
+
+
+def test_input_file_in_protected_place_refused(tmp_path):
+    target = tmp_path / "a.txt"
+    target.write_text("a\n", encoding="utf-8", newline="")
+    (tmp_path / ".claude").mkdir()
+    text = tmp_path / ".claude" / "t.txt"
+    text.write_text("b", encoding="utf-8")
+    assert run(["replace", target, "--old", "a", "--new-file", text]) == 1

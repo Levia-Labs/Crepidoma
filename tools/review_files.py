@@ -35,14 +35,27 @@ def write_temp(prefix: str, text: str) -> Path:
     return Path(handle.name)
 
 
+def verified(rev: str) -> None:
+    """Refuse option-like values, then confirm the revision names a commit."""
+    if rev.startswith("-"):
+        raise ValueError(f"'{rev}' starts with '-'")
+    git("rev-parse", "--verify", "--end-of-options", f"{rev}^{{commit}}")
+
+
 def diff(base: str, head: str, paths: list[str]) -> int:
     span = f"{base}..{head}"
     tail = ["--", *paths] if paths else []
     try:
+        # a leading '-' in any value would be read by git as an option such as --output=FILE
+        for value in (base, head, *paths):
+            if value.startswith("-"):
+                raise ValueError(f"'{value}' starts with '-'")
+        verified(base)
+        verified(head)
         parts = [
-            "== log ==\n" + git("log", "--oneline", span, *tail),
-            "== stat ==\n" + git("diff", "--stat", span, *tail),
-            "== diff ==\n" + git("diff", "-U10", span, *tail),
+            "== log ==\n" + git("log", "--oneline", "--end-of-options", span, *tail),
+            "== stat ==\n" + git("diff", "--stat", "--end-of-options", span, *tail),
+            "== diff ==\n" + git("diff", "-U10", "--end-of-options", span, *tail),
         ]
     except ValueError as exc:
         print(f"git failed: {exc}", file=sys.stderr)

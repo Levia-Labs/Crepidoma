@@ -43,18 +43,21 @@ tasks:
     dir: "{{.GO_DIR}}"
     vars:
       FUZZTIME: '{{.FUZZTIME | default "10s"}}'
+    env:
+      FUZZTIME: "{{.FUZZTIME}}"
     cmds:
       - |
+        # FUZZTIME travels as an environment variable so it is never parsed as shell text.
         # reject anything but a Go duration so the value never reaches the shell unchecked
-        if ! printf '%s' "{{.FUZZTIME}}" | grep -Eq '^([0-9]+(\.[0-9]+)?(ns|us|ms|s|m|h))+$'; then
-          echo "invalid FUZZTIME '{{.FUZZTIME}}': use a Go duration such as 10s or 1m30s" >&2
+        if ! printf '%s' "$FUZZTIME" | grep -Eq '^([0-9]+(\.[0-9]+)?(ns|us|ms|s|m|h))+$'; then
+          echo "invalid FUZZTIME '$FUZZTIME': use a Go duration such as 10s or 1m30s" >&2
           exit 1
         fi
         rc=0
         for pkg in $(go list ./...); do
           for target in $(go test -list '^Fuzz' "$pkg" | grep '^Fuzz'); do
             echo "fuzz $pkg $target"
-            go test -run '^$' -fuzz "^${target}\$" -fuzztime "{{.FUZZTIME}}" -parallel 1 "$pkg" || rc=1
+            go test -run '^$' -fuzz "^${target}\$" -fuzztime "$FUZZTIME" -parallel 1 "$pkg" || rc=1
           done
         done
         exit "$rc"

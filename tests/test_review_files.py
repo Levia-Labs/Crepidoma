@@ -64,3 +64,16 @@ def test_relay_without_findings_fails(tmp_path):
     review = tmp_path / "r.txt"
     review.write_text("nothing\n", encoding="utf-8")
     assert review_files.main(["relay", str(review)]) == 1
+
+
+def test_option_like_base_head_or_path_refused(tmp_path, monkeypatch):
+    git(tmp_path, "init", "-q")
+    (tmp_path / "a.txt").write_text("1\n", encoding="utf-8")
+    git(tmp_path, "add", ".")
+    git(tmp_path, "commit", "-qm", "base")
+    monkeypatch.chdir(tmp_path)
+    out = tmp_path / "pwned"
+    assert review_files.main(["diff", f"--output={out}", "HEAD"]) == 1
+    assert review_files.main(["diff", "HEAD", f"--output={out}"]) == 1
+    assert review_files.main(["diff", "HEAD", "HEAD", f"--output={out}"]) == 1
+    assert not out.exists()

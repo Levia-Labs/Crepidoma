@@ -15,6 +15,8 @@ import argparse
 import sys
 from pathlib import Path
 
+import path_guard
+
 
 def newline_style(raw: str) -> str:
     return "\r\n" if "\r\n" in raw else "\n"
@@ -46,7 +48,7 @@ def read_raw(path: Path) -> str:
 def pick(args: argparse.Namespace, inline: str) -> str:
     path = getattr(args, f"{inline}_file")
     if path is not None:
-        return read_raw(Path(path))
+        return read_raw(path_guard.checked(Path(path)))
     return getattr(args, inline)
 
 
@@ -72,12 +74,13 @@ def main(argv: list[str] | None = None) -> int:
     replace = args.command == "replace"
     key, value = ("old", "new") if replace else ("anchor", "text")
     try:
-        raw = read_raw(args.file)
+        target = path_guard.checked(args.file)
+        raw = read_raw(target)
         edited, found = apply(raw, pick(args, key), pick(args, value), args.count, not replace)
     except (OSError, ValueError) as exc:
         print(f"edit failed: {exc}", file=sys.stderr)
         return 1
-    with args.file.open("w", encoding="utf-8", newline="") as handle:
+    with target.open("w", encoding="utf-8", newline="") as handle:
         handle.write(edited)
     print(f"{args.file}: {found} replacement(s), {len(edited.splitlines())} lines")
     return 0

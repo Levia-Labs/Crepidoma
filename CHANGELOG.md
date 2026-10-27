@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- fix(security): `review:diff` rejects option-like BASE/HEAD/paths and verifies revisions; `edit:*` and `sdd:*` write only inside the git toplevel, never under `.git/` or `.claude/` (edit also refuses settings, hooks and pre-commit config files); `go:fuzz` passes FUZZTIME through `env:`
 - feat(hooks): `pre-bash` refuses, for the main thread and subagents, stdin-reading interpreters (`python -`, heredocs into an interpreter), kill by name or image (`taskkill /IM`, `pkill`, `killall`, `Stop-Process -Name`) and raw `git commit` (use `task git:commit`); `git add -A/./--all` stays refused for subagents
 - feat(digest): kind-aware default body (Markdown headings, code definitions, log failures, first and last 5 lines); new `task repo:digest`; the raw-read refusal names it
 

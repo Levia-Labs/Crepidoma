@@ -14,6 +14,7 @@
 - [`edit_file.py`](edit_file.py) - Exact text replacement and insertion in one file, with a one-line receipt.
 - [`folder_readme.py`](folder_readme.py) - Keep a README.md in every tracked folder with a generated contents list.
 - [`jscpd_pct.py`](jscpd_pct.py) - Print the total duplicated-lines percent from a jscpd JSON report.
+- [`path_guard.py`](path_guard.py) - Path guard shared by tools that write files named on the command line.
 - [`pin_pillar.py`](pin_pillar.py) - Pin a pillar's Crepidoma submodule to a release tag without discarding changes.
 - [`ratchet.py`](ratchet.py) - Ratchet quality metrics so they never get worse.
 - [`read_range.py`](read_range.py) - Print a numbered line range of a file, at most 60 lines.
