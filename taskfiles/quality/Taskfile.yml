@@ -8,7 +8,7 @@ vars:
   QUALITY_CONFIGS: '{{.QUALITY_CONFIGS | default (printf "%s/../../configs" .TASKFILE_DIR)}}'
   QUALITY_DUP_THRESHOLD: "10"
   # .crepidoma is the vendored submodule in consumers; Crepidoma itself has no such directory.
-  QUALITY_BANDIT_EXCLUDE: "./.crepidoma,*/.crepidoma/*,*/tests/*,*/.venv/*,*/node_modules/*"
+  QUALITY_BANDIT_EXCLUDE: "./.crepidoma,*/.crepidoma/*,./.worktrees,*/.worktrees/*,*/tests/*,*/.venv/*,*/node_modules/*"
   # Member names resolve under QUALITY_NS, derived from the running task so a nested include works.
   QUALITY_FAST_MEMBERS: "long-files docs taskfiles encoding"
   QUALITY_ALL_MEMBERS: "long-files docs types duplication bandit taskfiles encoding"

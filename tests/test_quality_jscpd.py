@@ -42,6 +42,7 @@ def test_bandit_excludes_vendored_crepidoma():
     data = yaml.safe_load(TASKFILE.read_text(encoding="utf-8"))
     exclude = data["vars"]["QUALITY_BANDIT_EXCLUDE"].split(",")
     assert "*/.crepidoma/*" in exclude
+    assert "*/.worktrees/*" in exclude
     assert "./.crepidoma" in exclude
     assert "QUALITY_BANDIT_EXCLUDE" in "\n".join(quality_task("bandit")["cmds"])
     assert not (ROOT / "tools" / ".crepidoma").exists()

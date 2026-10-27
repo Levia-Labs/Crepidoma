@@ -6,7 +6,7 @@
 
 <!-- contents:start -->
 
-- [`hooks_patch.py`](hooks_patch.py) - Patch a hooks name where the split hooks\_\* modules read it.
+- [`hooks_patch.py`](hooks_patch.py) - Patch a hooks name where the split hooks_* modules read it.
 - [`test_agent_pool.py`](test_agent_pool.py) - Tests for `agent_pool`.
 - [`test_agents.py`](test_agents.py) - Tests for `agents`.
 - [`test_allow_tasks.py`](test_allow_tasks.py) - Tests for `allow_tasks`.
@@ -25,7 +25,7 @@
 - [`test_hook_shebang.py`](test_hook_shebang.py) - Tests for `hook_shebang`.
 - [`test_hooks_json.py`](test_hooks_json.py) - Tests for `hooks_json`.
 - [`test_hooks_opt_in.py`](test_hooks_opt_in.py) - Opt-in: the plugin's hooks stay inert in a project that did not enable it.
-- [`test_hooks_plain_module.py`](test_hooks_plain_module.py) - hooks.py is a plain module: patching a name there does not reach the split hooks\_\* parts.
+- [`test_hooks_plain_module.py`](test_hooks_plain_module.py) - hooks.py is a plain module: patching a name there does not reach the split hooks_* parts.
 - [`test_hooks_py.py`](test_hooks_py.py) - hooks.py: gates, the agent dispatch policy, the git guard and the CLI contract.
 - [`test_hooks_stop_gate.py`](test_hooks_stop_gate.py) - CREPIDOMA_STOP_GATE=off switches the plugin Stop gate off; any other value keeps it.
 - [`test_inject_directives.py`](test_inject_directives.py) - Tests for `inject_directives`.
