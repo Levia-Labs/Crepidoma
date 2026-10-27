@@ -1,5 +1,7 @@
 # Changelog
 
+## v0.5.0 - 2026-10-27
+
 ## Unreleased
 
 - fix(security): `review:diff` rejects option-like BASE/HEAD/paths and verifies revisions; `edit:*` and `sdd:*` write only inside the git toplevel, never inside the git directory or `.claude/` (edit also refuses settings, hooks and pre-commit config files); `go:fuzz` passes FUZZTIME through `env:`
