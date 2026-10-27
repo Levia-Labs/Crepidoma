@@ -113,7 +113,19 @@ const commonjsGlobals = readonly(["require", "module", "exports", "__dirname", "
 const browserDirs = ["**/web/**", "**/static/**", "**/public/**"];
 
 export default [
-  { ignores: ["**/dist/**", "**/build/**", "**/node_modules/**", "**/coverage/**"] },
+  {
+    // Virtualenvs ship vendored JS (e.g. pywin32 test scripts on Windows) that is not project code.
+    ignores: [
+      "**/dist/**",
+      "**/build/**",
+      "**/node_modules/**",
+      "**/coverage/**",
+      "**/.venv/**",
+      "**/venv/**",
+      "**/.tox/**",
+      "**/.crepidoma/**",
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {

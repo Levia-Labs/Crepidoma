@@ -48,6 +48,12 @@ def test_eslint_config_has_scoped_globals():
         assert glob in text
 
 
+def test_eslint_config_ignores_vendored_dirs():
+    text = (CONFIGS / "eslint.config.js").read_text(encoding="utf-8")
+    for glob in ("**/.venv/**", "**/node_modules/**", "**/.crepidoma/**"):
+        assert f'"{glob}"' in text
+
+
 FIXTURES = {
     "web/app.js": "document.title = CSS.escape(String(window.innerWidth));\n",
     "web/app.mjs": "export const w = window.innerWidth;\n",
