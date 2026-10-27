@@ -127,3 +127,26 @@ def test_ci_filter_dedupes_and_caps():
     assert out[0] == "FAILED tests/test_a.py::test_x - assert 1 == 2"
     assert out[1] == "src/a.go:12:3: undefined: foo"
     assert len(out) == 40 and "noise line" not in out
+
+
+def test_report_shows_detail_block_capped(capsys):
+    lines = "".join(f"\x1b[31mline{i}\x1b[0m\n" for i in range(20))
+    output = (
+        "black.....Passed\n"
+        "- hook id: black\n"
+        "prettier.....Failed\n"
+        "- hook id: prettier\n"
+        "- exit code: 2\n"
+        "\n"
+        "[error] No matching files. Patterns: .git/COMMIT_EDITMSG\n" + lines + "ruff.....Passed\n"
+    )
+    retry.report(retry.failed_hooks(output), output)
+    out = capsys.readouterr().out
+    assert "prettier.....Failed" in out
+    assert "- exit code: 2" in out
+    assert "[error] No matching files" in out
+    assert "line11" in out
+    assert "line12" not in out
+    assert "\x1b" not in out
+    assert "black" not in out
+    assert "ruff" not in out

@@ -16,6 +16,7 @@ ANSI = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]")
 HOOK_LINE = re.compile(
     r"^(?P<name>.+?)\.{3,}(?P<status>Passed|Failed|Skipped|\(no files to check\).*)$"
 )
+DETAIL_CAP = 15
 
 
 def run(args: list[str]) -> subprocess.CompletedProcess[str]:
@@ -48,8 +49,13 @@ def only_formatted(hooks: list[tuple[str, list[str]]]) -> bool:
 
 def report(hooks: list[tuple[str, list[str]]], output: str) -> None:
     if hooks:
-        for line, _ in hooks:
+        for line, detail in hooks:
             print(line)
+            # Cap per hook: the tool's own error lines are what diagnose a failure.
+            for extra in detail[:DETAIL_CAP]:
+                print(f"  {extra}")
+            if len(detail) > DETAIL_CAP:
+                print(f"  ... {len(detail) - DETAIL_CAP} more lines")
     else:
         print(ANSI.sub("", output).strip())
 
