@@ -1,5 +1,9 @@
 import itertools
+import os
 import random
+import subprocess
+import sys
+from pathlib import Path
 
 import pytest
 import read_range
@@ -129,3 +133,29 @@ def test_multi_errors(tmp_path):
     assert read_range.main([path, "1-2", "--"]) == 2
     assert read_range.main([path, "x-2"]) == 2
     assert read_range.main([path, "1-2", "--", str(tmp_path / "none"), "1-2"]) == 1
+
+
+def test_prints_characters_the_console_code_page_lacks(tmp_path):
+    # A Windows console defaults to a legacy code page; arrows and CJK
+    # used to raise UnicodeEncodeError.
+    path = tmp_path / "u.txt"
+    path.write_text("a → b 日本\n", encoding="utf-8")
+    env = {**os.environ, "PYTHONIOENCODING": "cp1250"}
+    script = Path(read_range.__file__)
+    done = subprocess.run(
+        [sys.executable, str(script), str(path), "1", "1"], capture_output=True, env=env
+    )
+    assert done.returncode == 0, done.stderr.decode("utf-8", "replace")
+    assert done.stdout.decode("utf-8").splitlines() == ["1\ta → b 日本"]
+
+
+def test_multi_range_form_also_prints_utf8_on_a_legacy_code_page(tmp_path):
+    path = tmp_path / "u.txt"
+    path.write_text("a → b\n日本\n", encoding="utf-8")
+    env = {**os.environ, "PYTHONIOENCODING": "cp1250"}
+    script = Path(read_range.__file__)
+    done = subprocess.run(
+        [sys.executable, str(script), str(path), "1-1", "2-2"], capture_output=True, env=env
+    )
+    assert done.returncode == 0, done.stderr.decode("utf-8", "replace")
+    assert "日本" in done.stdout.decode("utf-8")

@@ -98,6 +98,9 @@ def legacy(argv: list[str]) -> int | None:
 
 
 def main(argv: list[str]) -> int:
+    # A Windows console's legacy code page cannot encode every character a UTF-8 file holds.
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
     code = legacy(argv)
     if code is not None:
         return code
