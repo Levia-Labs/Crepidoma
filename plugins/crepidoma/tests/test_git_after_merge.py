@@ -25,6 +25,13 @@ def test_branches_to_delete_excludes_current_and_default():
     assert gam.branches_to_delete(merged, "", "main", "main") == ["dev"]
 
 
+def test_squash_merged_branches_decided_by_pr_state(monkeypatch):
+    replies = {("branch", "--format=%(refname:short)"): (0, "main\nsq\nwip\nfeat/a\n")}
+    monkeypatch.setattr(gam, "git", lambda path, args: replies.get(tuple(args), (0, "")))
+    monkeypatch.setattr(gam, "pr_merged", lambda path, b: b in ("sq", "feat/a"))
+    assert gam.squash_merged("p", ["feat/a"], "main", "main") == ["sq"]
+
+
 @pytest.mark.parametrize("out,n", [("", 0), (" M a\n?? b\n", 2)])
 def test_dirty_count(out, n):
     assert gam.dirty_count(out) == n

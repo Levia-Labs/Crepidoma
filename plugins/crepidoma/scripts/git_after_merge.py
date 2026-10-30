@@ -64,6 +64,31 @@ def step(path: str, name: str, args: list[str]) -> str:
     return out
 
 
+def pr_merged(path: str, branch: str) -> bool:
+    """True when gh reports a MERGED PR for the branch (squash merges are not ancestors)."""
+    try:
+        p = subprocess.run(
+            ["gh", "pr", "list", "--head", branch, "--state", "merged", "--json", "number"],
+            cwd=path,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+    except OSError:
+        return False
+    return p.returncode == 0 and p.stdout.strip() not in ("", "[]")
+
+
+def squash_merged(path: str, known: list[str], default: str, current: str) -> list[str]:
+    rc, out = git(path, ["branch", "--format=%(refname:short)"])
+    if rc != 0:
+        return []
+    skip = {default, current, *known}
+    names = (ln.strip() for ln in out.splitlines())
+    return [b for b in names if b and b not in skip and pr_merged(path, b)]
+
+
 def run(path: str, named: str | None) -> str:
     _, ref = git(path, ["symbolic-ref", "refs/remotes/origin/HEAD"])
     default = default_branch(ref)
@@ -77,6 +102,7 @@ def run(path: str, named: str | None) -> str:
         verbose = step(path, "branch", ["branch", "-vv"])
         current = step(path, "branch", ["branch", "--show-current"]).strip()
         doomed = branches_to_delete(merged, verbose, default, current)
+        doomed += squash_merged(path, doomed, default, current)
     deleted: list[str] = []
     gone: list[str] = []
     for name in doomed:

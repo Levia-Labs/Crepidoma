@@ -115,3 +115,18 @@ tasks:
       GIT_ATTRIBUTION: "{{.TASKFILE_DIR}}/../../plugins/crepidoma/scripts/attribution.py"
     cmds:
       - uv run --no-project --python ">=3.12" "{{.GIT_ATTRIBUTION}}" range {{.CLI_ARGS}}
+
+  land:
+    desc: >-
+      Ship a PR: fix a stale head (close/reopen), refuse conflicts, wait for checks to register and
+      pass, squash-merge, update main, delete the local branch. One line per phase.
+      Usage: task git:land -- [PR] [--repo OWNER/NAME] [--timeout S]
+    dir: "{{.USER_WORKING_DIR}}"
+    silent: true
+    vars:
+      GIT_LAND: "{{.TASKFILE_DIR}}/land.py"
+    preconditions:
+      - sh: 'sh "{{.TASKFILE_DIR}}/repo_guard.sh" "{{.ROOT_DIR}}"'
+        msg: "Refusing: shell in {{.USER_WORKING_DIR}}, -d targets {{.ROOT_DIR}}. cd into the target."
+    cmds:
+      - uv run --no-project --python ">=3.12" "{{.GIT_LAND}}" {{.CLI_ARGS}}
