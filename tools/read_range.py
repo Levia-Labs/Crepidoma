@@ -31,6 +31,9 @@ def main(argv: list[str]) -> int:
     except OSError as exc:
         print(f"unreadable: {exc}", file=sys.stderr)
         return 1
+    # A Windows console's legacy code page cannot encode every character a UTF-8 file holds.
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
     for number in range(start, min(end, len(lines)) + 1):
         print(f"{number}\t{lines[number - 1]}")
     return 0

@@ -1,3 +1,8 @@
+import os
+import subprocess
+import sys
+from pathlib import Path
+
 import read_range
 
 
@@ -27,3 +32,17 @@ def test_end_past_file_is_clamped_and_bad_args_fail(tmp_path, capsys):
     assert read_range.main([path, "5", "2"]) == 2
     assert read_range.main([path, "a", "2"]) == 2
     assert read_range.main([str(tmp_path / "none"), "1", "2"]) == 1
+
+
+def test_prints_characters_the_console_code_page_lacks(tmp_path):
+    # A Windows console defaults to a legacy code page; arrows and CJK
+    # used to raise UnicodeEncodeError.
+    path = tmp_path / "u.txt"
+    path.write_text("a → b 日本\n", encoding="utf-8")
+    env = {**os.environ, "PYTHONIOENCODING": "cp1250"}
+    script = Path(read_range.__file__)
+    done = subprocess.run(
+        [sys.executable, str(script), str(path), "1", "1"], capture_output=True, env=env
+    )
+    assert done.returncode == 0, done.stderr.decode("utf-8", "replace")
+    assert done.stdout.decode("utf-8").splitlines() == ["1\ta → b 日本"]
