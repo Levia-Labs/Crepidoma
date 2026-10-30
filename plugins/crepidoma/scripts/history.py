@@ -10,7 +10,7 @@ top 10 by default, never more than 20 lines or 1 KB; `--report FILE` writes ever
 Usage:
   python history.py commands [--min 3] [--top 10] [--dir DIR] [--report FILE]
   python history.py inline [--min 1] [--dir DIR]
-  python history.py prompts [--min 2] [--prompts FILE]
+  python history.py prompts [--min 2] [--prompts FILE] [--dir DIR]   (--dir ignored)
   python history.py sessions [--dir DIR]
   python history.py untasked [--min 3] [--top 10] [--dir DIR] [--root REPO]
 
@@ -39,6 +39,8 @@ SHELL_TOOLS = ("Bash", "PowerShell")
 HASH = re.compile(r"\b[0-9a-f]{7,40}\b")
 PATH = re.compile(r"(?:[A-Za-z]:)?[\\/]?[\w.~-]+(?:[\\/][\w.~-]+)+[\\/]?")
 NUMBER = re.compile(r"\b\d+(?:\.\d+)*\b")
+RTK_PREFIX = re.compile(r"^rtk (?:proxy )?")
+VARIADIC = re.compile(r"\b([A-Za-z_][A-Za-z0-9_]*)=([\"'])[^\"']*\s[^\"']*\2")
 INLINE = re.compile(
     r"\b(?:python3?|py|node|ruby|perl|php|pwsh|powershell)(?:\.exe)?\s+"
     r"(?:-[A-Za-z]+\s+)*-(?:c|e|E|Command)\b"
@@ -49,8 +51,10 @@ HEREDOC = re.compile(
 
 
 def normalise(text: str) -> str:
-    """Collapse whitespace and replace hashes, paths and numbers with placeholders."""
+    """Drop an rtk prefix, collapse whitespace, replace variadic values, hashes, paths, numbers."""
     text = " ".join(text.split())
+    text = RTK_PREFIX.sub("", text)
+    text = VARIADIC.sub(r"\1=<paths>", text)
     text = PATH.sub("<path>", text)
     text = HASH.sub("<hash>", text)
     return NUMBER.sub("<n>", text)
@@ -157,8 +161,8 @@ def build_parser() -> argparse.ArgumentParser:
             cmd.add_argument("--root", default=".", help="repo whose Taskfiles define the tasks")
         if name == "prompts":
             cmd.add_argument("--prompts", help="prompt log; default ~/.claude/history.jsonl")
-        else:
-            cmd.add_argument("--dir", help="transcript dir; default current project slug")
+        help_dir = "ignored: prompts read the global log" if name == "prompts" else None
+        cmd.add_argument("--dir", help=help_dir or "transcript dir; default current project slug")
     return parser
 
 

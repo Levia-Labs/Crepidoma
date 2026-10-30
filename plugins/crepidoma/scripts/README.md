@@ -30,6 +30,7 @@
 - [`hooks_stop.py`](hooks_stop.py) - Quality gates: PostToolUse marks a gate dirty, Stop runs the dirty gates' tasks.
 - [`inject_directives.py`](inject_directives.py) - SessionStart and SubagentStart hook: emit Crepidoma directives as additional context.
 - [`lanes.py`](lanes.py) - List and reset subagent lanes, and write a save-state note for a later session.
+- [`mine.py`](mine.py) - Mine every Claude Code project folder in one call (stdlib only).
 - [`raw_read_guard.py`](raw_read_guard.py) - PreToolUse hook: keep raw file content out of the main Claude thread (stdlib only).
 - [`repo_nav.py`](repo_nav.py) - Locate code without reading whole files: outline, section, tasks, diff.
 - [`rtk_route.py`](rtk_route.py) - PreToolUse hook: route a command through `rtk` when a project filter matches it (stdlib only).

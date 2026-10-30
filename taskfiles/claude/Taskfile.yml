@@ -2,9 +2,8 @@ version: "3"
 
 vars:
   CLAUDE_CREDENTIALS: "{{.HOME}}/.claude/.credentials.json"
-  # macOS keeps the same credentials blob in the login Keychain instead of on disk.
   CLAUDE_KEYCHAIN_SERVICE: "Claude Code-credentials"
-  # Prints the credentials blob from the file, or from the macOS Keychain when there is no file.
+  # macOS keeps the credentials in the Keychain; this prints the file blob, else the Keychain one.
   CLAUDE_CRED_READ: >-
     if [ -f "{{.CLAUDE_CREDENTIALS}}" ]; then cat "{{.CLAUDE_CREDENTIALS}}";
     elif command -v security > /dev/null 2>&1; then
@@ -211,9 +210,7 @@ tasks:
       - uv run --no-project --python ">=3.12" "{{.CLAUDE_SCRIPTS}}/spend.py" sessions {{.CLI_ARGS}}
 
   spend:*:
-    desc: >-
-      Spend by subcommand: tools, reads, calls, agents, cost.
-      Usage: task claude:spend:<sub> -- [--session ID] [--top N] (calls also takes SESSION/AGENT)
+    desc: "Spend by tools|reads|calls|agents|cost. Usage: task claude:spend:<sub> -- [--session ID] [--top N]"
     silent: true
     dir: "{{.USER_WORKING_DIR}}"
     cmds:
@@ -239,6 +236,20 @@ tasks:
     dir: "{{.USER_WORKING_DIR}}"
     cmds:
       - uv run --no-project --python ">=3.12" "{{.CLAUDE_SCRIPTS}}/history.py" prompts {{.CLI_ARGS}}
+
+  history:untasked:
+    desc: "Repeated commands no task covers. Usage: task claude:history:untasked -- [--min N] [--top N] [--root R]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project --python ">=3.12" "{{.CLAUDE_SCRIPTS}}/history.py" untasked {{.CLI_ARGS}}
+
+  mine:
+    desc: "Mine all projects. Usage: task claude:mine -- [--root D] [--out D] [--top N]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project --python ">=3.12" "{{.CLAUDE_SCRIPTS}}/mine.py" {{.CLI_ARGS}}
 
   lanes:
     desc: "Running and pending lanes. Usage: task claude:lanes"
