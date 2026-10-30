@@ -27,6 +27,7 @@
 - [`hooks_bash_guards.py`](hooks_bash_guards.py) - Bash guards for every caller: stdin-reading interpreters, kill-by-name, raw commit.
 - [`hooks_budget.py`](hooks_budget.py) - The usage allowance: a cached reading and the refusal when a window is at the ceiling.
 - [`hooks_common.py`](hooks_common.py) - Shared by every hook module: the project root, hook state, the payload and a refusal.
+- [`hooks_line_cap.py`](hooks_line_cap.py) - The 300-line source cap, enforced at edit time: PreToolUse refuses, PostToolUse warns.
 - [`hooks_pre_tool.py`](hooks_pre_tool.py) - Agent dispatch policy and the lane ledger: PreToolUse, SubagentStart, SubagentStop.
 - [`hooks_stop.py`](hooks_stop.py) - Quality gates: PostToolUse marks a gate dirty, Stop runs the dirty gates' tasks.
 - [`inject_directives.py`](inject_directives.py) - SessionStart and SubagentStart hook: emit Crepidoma directives as additional context.

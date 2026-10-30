@@ -7,6 +7,9 @@ One CLI, one subcommand per hook event; each reads the hook's JSON payload on st
   pre-tool-use     before Agent/Task - refuses a catch-all agent type, a model other than
                    sonnet or haiku, a seventh concurrent agent, or any agent while a usage
                    window is at the ceiling
+  pre-edit         before Edit/Write/MultiEdit - refuses a change that takes a capped file over
+                   300 lines unless it is baselined and does not grow
+  post-edit        after those - one line `path: N/300 lines` at 270 lines or more
   pre-bash         before Bash - refuses stdin interpreters, kill by name, raw git commit; for
                    subagents also a push or a working-tree discard
   subagent-start   a dispatched agent began - its reservation becomes a running lane
@@ -72,6 +75,7 @@ from hooks_common import (  # noqa: F401
     state_dir,
     tool_input,
 )
+from hooks_line_cap import post_edit, pre_edit
 from hooks_pre_tool import (  # noqa: F401
     AGENT_TOOLS,
     CATCH_ALL,
@@ -120,6 +124,8 @@ def build_parser() -> argparse.ArgumentParser:
     events = parser.add_subparsers(dest="event", required=True, metavar="EVENT")
     events.add_parser("post-tool-use", help="mark a gate dirty after an edit in its scope")
     events.add_parser("pre-tool-use", help="refuse a forbidden, excess or over-budget agent")
+    events.add_parser("pre-edit", help="refuse an edit that pushes a capped file over 300 lines")
+    events.add_parser("post-edit", help="note a capped file at 270 lines or more")
     events.add_parser("pre-bash", help="refuse stdin interpreters, kill by name, raw commit")
     events.add_parser("subagent-start", help="record a running lane")
     events.add_parser("subagent-stop", help="free a lane")
@@ -146,6 +152,8 @@ def main(argv: list[str] | None = None) -> int:
     handlers = {
         "post-tool-use": post_tool_use,
         "pre-tool-use": pre_tool_use,
+        "pre-edit": pre_edit,
+        "post-edit": post_edit,
         "pre-bash": pre_bash,
         "subagent-start": subagent_start,
         "subagent-stop": subagent_stop,

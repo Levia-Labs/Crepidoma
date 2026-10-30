@@ -32,6 +32,7 @@
 - [`test_hooks_stop_gate.py`](test_hooks_stop_gate.py) - CREPIDOMA_STOP_GATE=off switches the plugin Stop gate off; any other value keeps it.
 - [`test_inject_directives.py`](test_inject_directives.py) - Tests for `inject_directives`.
 - [`test_lanes.py`](test_lanes.py) - Tests for `lanes`.
+- [`test_line_cap.py`](test_line_cap.py) - Tests for `line_cap`.
 - [`test_push_guard.py`](test_push_guard.py) - Pushing is main-thread only: settings no longer deny it, so the subagent Bash hook must.
 - [`test_raw_read_guard.py`](test_raw_read_guard.py) - Tests for `raw_read_guard`.
 - [`test_repo_nav.py`](test_repo_nav.py) - Tests for `repo_nav`.
