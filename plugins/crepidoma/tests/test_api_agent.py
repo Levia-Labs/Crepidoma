@@ -104,13 +104,33 @@ def test_bare_bash_becomes_a_scoped_allowlist():
     tools = api_agent.scoped_tools(["Read", "Bash", "Edit"])
     assert "Bash" not in tools
     assert tools[:2] == ["Read", "Edit"]
-    assert all(t.startswith("Bash(") for t in tools[2:])
-    assert "Bash(task:*)" in tools
+    assert all(t.startswith("Bash(task ") for t in tools[2:])
+    # Any-task or raw git would let an agent that can edit a Taskfile or .git/config
+    # run arbitrary commands through a new task or diff.external.
+    assert "Bash(task:*)" not in tools
+    assert not any(t.startswith("Bash(git ") for t in tools)
+    assert "Bash(task test:*)" in tools
 
 
 def test_publishing_tasks_are_denied():
     for rule in ("Bash(task git:commit:*)", "Bash(task git:land:*)", "Bash(task release:*)"):
         assert rule in api_agent.DENY
+
+
+@pytest.mark.parametrize("tool", ["Edit", "Write"])
+@pytest.mark.parametrize(
+    "path", ["**/Taskfile*.yml", "**/taskfiles/**", "**/.git/**", "**/.claude/**"]
+)
+def test_task_definitions_and_git_config_are_not_writable(tool, path):
+    assert f"{tool}({path})" in api_agent.DENY
+
+
+def test_extra_tasks_can_be_allowed():
+    tools = api_agent.scoped_tools(["Bash"], extra_tasks=["py:fmt"])
+    assert "Bash(task py:fmt:*)" in tools
+    assert api_agent.build_parser().parse_args(
+        ["--agent", "a", "--brief", "b", "--allow-task", "x", "--allow-task", "y"]
+    ).allow_task == ["x", "y"]
 
 
 def test_project_settings_are_opt_in(setup):
