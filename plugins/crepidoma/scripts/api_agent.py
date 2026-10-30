@@ -29,7 +29,25 @@ import api_balance
 
 AGENTS_DIR = Path(__file__).resolve().parent.parent / "agents"
 SCRUB = ("CLAUDE_CODE_OAUTH_TOKEN", "ANTHROPIC_AUTH_TOKEN")
-DENY = ["Bash(git push*)", "Bash(gh pr merge*)", "Bash(git reset --hard*)"]
+# An unattended run never gets unrestricted Bash: a prefix denylist under auto-approved Bash
+# is bypassable (`git -C x push`, `sh -c ...`), so bare Bash becomes this allowlist and
+# permission mode dontAsk denies everything else. DENY stays as defence in depth.
+BASH_ALLOW = [
+    "Bash(task:*)",
+    "Bash(git status:*)",
+    "Bash(git diff:*)",
+    "Bash(git log:*)",
+    "Bash(git show:*)",
+]
+DENY = [
+    "Bash(git push*)",
+    "Bash(gh pr merge*)",
+    "Bash(git reset --hard*)",
+    "Bash(task git:commit:*)",
+    "Bash(task git:land:*)",
+    "Bash(task git:after-merge:*)",
+    "Bash(task release:*)",
+]
 RECEIPT_MAX = 10
 
 
@@ -78,17 +96,25 @@ async def run_query(query: Callable, prompt: str, options):
     return final
 
 
+def scoped_tools(tools: list[str]) -> list[str]:
+    """The agent's tools with bare Bash replaced by the scoped allowlist."""
+    kept = [t for t in tools if t != "Bash"]
+    return kept + BASH_ALLOW if "Bash" in tools else kept
+
+
 def build_options(agent: dict, args, options_cls: Callable, env: dict[str, str]):
     return options_cls(
         model=args.model or agent["model"],
         cwd=args.cwd,
-        allowed_tools=agent["tools"],
+        allowed_tools=scoped_tools(agent["tools"]),
         disallowed_tools=list(DENY),
-        permission_mode="acceptEdits",
+        permission_mode="dontAsk",
         max_turns=args.max_turns,
         max_budget_usd=args.max_budget_usd,
         system_prompt=agent["prompt"],
-        setting_sources=["project"],
+        # Project settings can carry hooks that run commands; load them only when asked,
+        # for a checkout the caller trusts.
+        setting_sources=["project"] if args.project_settings else [],
         env={"ANTHROPIC_API_KEY": env["ANTHROPIC_API_KEY"]},
     )
 
@@ -103,6 +129,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--model")
     parser.add_argument("--max-budget-usd", type=float, default=2.0)
     parser.add_argument("--max-turns", type=int, default=60)
+    parser.add_argument(
+        "--project-settings",
+        action="store_true",
+        help="load the cwd's .claude/settings.json and hooks (trusted checkouts only)",
+    )
     return parser
 
 
