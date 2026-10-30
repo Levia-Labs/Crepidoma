@@ -7,6 +7,9 @@ tasks:
     desc: "Short status with counts. Usage: task git:status"
     dir: "{{.USER_WORKING_DIR}}"
     silent: true
+    preconditions:
+      - sh: 'sh "{{.TASKFILE_DIR}}/repo_guard.sh" "{{.ROOT_DIR}}"'
+        msg: "Refusing: shell in {{.USER_WORKING_DIR}}, -d targets {{.ROOT_DIR}}. cd into the target."
     cmds:
       - git status --short --branch
       - |
@@ -17,6 +20,9 @@ tasks:
     desc: "Branch and last commit, one line. Usage: task git:head"
     dir: "{{.USER_WORKING_DIR}}"
     silent: true
+    preconditions:
+      - sh: 'sh "{{.TASKFILE_DIR}}/repo_guard.sh" "{{.ROOT_DIR}}"'
+        msg: "Refusing: shell in {{.USER_WORKING_DIR}}, -d targets {{.ROOT_DIR}}. cd into the target."
     cmds:
       - printf '%s ' "$(git rev-parse --abbrev-ref HEAD)" && git log -1 --format='%h %s'
 
@@ -26,6 +32,9 @@ tasks:
     silent: true
     vars:
       GIT_LOG_N: '{{.N | default "10"}}'
+    preconditions:
+      - sh: 'sh "{{.TASKFILE_DIR}}/repo_guard.sh" "{{.ROOT_DIR}}"'
+        msg: "Refusing: shell in {{.USER_WORKING_DIR}}, -d targets {{.ROOT_DIR}}. cd into the target."
     cmds:
       - git log --oneline -n '{{.GIT_LOG_N}}'
 
@@ -33,6 +42,9 @@ tasks:
     desc: "Changed files. Usage: task git:files"
     dir: "{{.USER_WORKING_DIR}}"
     silent: true
+    preconditions:
+      - sh: 'sh "{{.TASKFILE_DIR}}/repo_guard.sh" "{{.ROOT_DIR}}"'
+        msg: "Refusing: shell in {{.USER_WORKING_DIR}}, -d targets {{.ROOT_DIR}}. cd into the target."
     cmds:
       - git status --short
 
@@ -61,6 +73,8 @@ tasks:
       GIT_COMMIT_RETRY: "{{.TASKFILE_DIR}}/commit_retry.py"
       GIT_LONG_STAGED: "{{.TASKFILE_DIR}}/../quality/staged_long_files.py"
     preconditions:
+      - sh: 'sh "{{.TASKFILE_DIR}}/repo_guard.sh" "{{.ROOT_DIR}}"'
+        msg: "Refusing: shell in {{.USER_WORKING_DIR}}, -d targets {{.ROOT_DIR}}. cd into the target."
       - sh: "{{if .CLI_ARGS}}true{{else}}false{{end}}"
         msg: 'Commit message required. Usage: task git:commit -- "message"'
     cmds:
@@ -84,6 +98,8 @@ tasks:
     vars:
       GIT_STAGE: "{{.TASKFILE_DIR}}/stage_paths.py"
     preconditions:
+      - sh: 'sh "{{.TASKFILE_DIR}}/repo_guard.sh" "{{.ROOT_DIR}}"'
+        msg: "Refusing: shell in {{.USER_WORKING_DIR}}, -d targets {{.ROOT_DIR}}. cd into the target."
       - sh: "{{if .CLI_ARGS}}true{{else}}false{{end}}"
         msg: "Paths required. Usage: task git:stage -- <path>..."
     cmds:
