@@ -29,7 +29,9 @@ tasks:
       - uv run --no-project --python ">=3.12" "{{.REPO_SCRIPTS}}/repo_nav.py" diff {{.CLI_ARGS}}
 
   read:
-    desc: "Print at most 60 numbered lines. Usage: task repo:read -- FILE START END"
+    desc: >-
+      Print at most 60 numbered lines.
+      Usage: task repo:read -- FILE START END | FILE 10-40 80-120 [-- FILE_B 1-20]
     silent: true
     dir: "{{.USER_WORKING_DIR}}"
     requires:

@@ -17,7 +17,7 @@
 - [`path_guard.py`](path_guard.py) - Path guard shared by tools that write files named on the command line.
 - [`pin_pillar.py`](pin_pillar.py) - Pin a pillar's Crepidoma submodule to a release tag without discarding changes.
 - [`ratchet.py`](ratchet.py) - Ratchet quality metrics so they never get worse.
-- [`read_range.py`](read_range.py) - Print a numbered line range of a file, at most 60 lines.
+- [`read_range.py`](read_range.py) - Print numbered line ranges of one or more files, at most 60 lines per call.
 - [`release.py`](release.py) - Bump the plugin version, prepend a CHANGELOG entry, commit and tag. Never pushes.
 - [`review_files.py`](review_files.py) - Review helpers that keep big text out of the chat: write it to a file, print the path.
 - [`scrub_check.py`](scrub_check.py) - Fail when files carry local paths, emails, tokens or denylisted names.
