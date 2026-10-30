@@ -15,6 +15,8 @@
 - [`test_edit_file.py`](test_edit_file.py) - Tests for `edit_file`.
 - [`test_folder_readme.py`](test_folder_readme.py) - Tests for `folder_readme`.
 - [`test_git_commit_retry.py`](test_git_commit_retry.py) - Tests for `git_commit_retry`.
+- [`test_git_env_isolation.py`](test_git_env_isolation.py) - Tests for `git_env_isolation`.
+- [`test_git_task_guards.py`](test_git_task_guards.py) - Tests for `git_task_guards`.
 - [`test_pin_pillar.py`](test_pin_pillar.py) - Tests for `pin_pillar`.
 - [`test_precommit_hooks.py`](test_precommit_hooks.py) - Tests for `precommit_hooks`.
 - [`test_quality_jscpd.py`](test_quality_jscpd.py) - Tests for `quality_jscpd`.

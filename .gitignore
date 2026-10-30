@@ -228,3 +228,9 @@ __marimo__/
 *.pem
 node_modules/
 .superpowers/
+
+# Agent worktrees are nested checkouts; staging them embeds repos
+.claude/worktrees/
+
+# Generated graph output; docs_gate.py and ruff already skip it
+graphify-out/
