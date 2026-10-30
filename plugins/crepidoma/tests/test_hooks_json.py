@@ -34,6 +34,8 @@ def test_every_hooks_py_subcommand_is_wired():
     wired = " ".join(commands())
     for subcommand in (
         "pre-bash",
+        "pre-edit",
+        "post-edit",
         "pre-tool-use",
         "post-tool-use",
         "subagent-start",

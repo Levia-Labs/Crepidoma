@@ -39,6 +39,15 @@
         ]
       },
       {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --no-project --quiet --python \">=3.12\" \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks.py\" pre-edit"
+          }
+        ]
+      },
+      {
         "matcher": "Agent|Task",
         "hooks": [
           {
@@ -58,6 +67,15 @@
       }
     ],
     "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --no-project --quiet --python \">=3.12\" \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks.py\" post-edit"
+          }
+        ]
+      },
       {
         "matcher": "Edit|Write|MultiEdit|NotebookEdit",
         "hooks": [
