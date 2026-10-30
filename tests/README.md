@@ -15,6 +15,8 @@
 - [`test_edit_file.py`](test_edit_file.py) - Tests for `edit_file`.
 - [`test_folder_readme.py`](test_folder_readme.py) - Tests for `folder_readme`.
 - [`test_git_commit_retry.py`](test_git_commit_retry.py) - Tests for `git_commit_retry`.
+- [`test_history.py`](test_history.py) - Tests for `history`.
+- [`test_mine.py`](test_mine.py) - Tests for `mine`.
 - [`test_pin_pillar.py`](test_pin_pillar.py) - Tests for `pin_pillar`.
 - [`test_precommit_hooks.py`](test_precommit_hooks.py) - Tests for `precommit_hooks`.
 - [`test_quality_jscpd.py`](test_quality_jscpd.py) - Tests for `quality_jscpd`.
@@ -26,6 +28,7 @@
 - [`test_review_files.py`](test_review_files.py) - Tests for `review_files`.
 - [`test_scrub_check.py`](test_scrub_check.py) - Tests for `scrub_check`.
 - [`test_sdd_ledger.py`](test_sdd_ledger.py) - Tests for `sdd_ledger`.
+- [`test_spend_reads.py`](test_spend_reads.py) - Tests for `spend_reads`.
 - [`test_taskfiles.py`](test_taskfiles.py) - Tests for `taskfiles`.
 - [`test_templates.py`](test_templates.py) - Tests for `templates`.
 
