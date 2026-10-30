@@ -10,6 +10,8 @@
 
 ## Unreleased
 
+- fix(eslint): shared config gives test files (`**/tests/**`, `*.test.*`, `*.spec.*`, `__tests__`) jest and node globals, so `describe`/`test`/`expect` no longer raise `no-undef`
+- fix(ruff): shared config excludes `docs/superpowers` (plan docs carry unformatted snippets)
 - fix(gate): `gate_runner` replaces characters the console encoding cannot encode (U+25CF on a Windows cp1250 console) instead of raising UnicodeEncodeError
 - fix(security): `review:diff` rejects option-like BASE/HEAD/paths and verifies revisions; `edit:*` and `sdd:*` write only inside the git toplevel, never inside the git directory or `.claude/` (edit also refuses settings, hooks and pre-commit config files); `go:fuzz` passes FUZZTIME through `env:`
 - feat(hooks): `pre-bash` refuses, for the main thread and subagents, stdin-reading interpreters (`python -`, heredocs into an interpreter), kill by name or image (`taskkill /IM`, `pkill`, `killall`, `Stop-Process -Name`) and raw `git commit` (use `task git:commit`); `git add -A/./--all` stays refused for subagents

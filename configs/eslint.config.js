@@ -110,6 +110,25 @@ const nodeGlobals = readonly([
 
 const commonjsGlobals = readonly(["require", "module", "exports", "__dirname", "__filename"]);
 
+const jestGlobals = readonly([
+  "describe",
+  "test",
+  "it",
+  "expect",
+  "beforeAll",
+  "afterAll",
+  "beforeEach",
+  "afterEach",
+  "jest",
+]);
+
+const testFiles = [
+  "**/tests/**/*.{js,mjs,cjs,ts}",
+  "**/*.test.*",
+  "**/*.spec.*",
+  "**/__tests__/**",
+];
+
 const browserDirs = ["**/web/**", "**/static/**", "**/public/**"];
 
 export default [
@@ -145,6 +164,10 @@ export default [
     files: ["**/*.cjs"],
     languageOptions: { sourceType: "commonjs", globals: { ...nodeGlobals, ...commonjsGlobals } },
     rules: { "@typescript-eslint/no-require-imports": "off" },
+  },
+  {
+    files: testFiles,
+    languageOptions: { globals: { ...nodeGlobals, ...jestGlobals } },
   },
   {
     rules: {

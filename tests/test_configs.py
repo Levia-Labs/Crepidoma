@@ -59,6 +59,12 @@ FIXTURES = {
     "web/app.mjs": "export const w = window.innerWidth;\n",
     "scripts/x.mjs": "export const p = process.argv;\n",
     "scripts/x.cjs": "module.exports = require('node:fs');\n",
+    "packages/ts/tests/index.test.js": (
+        "describe('a', () => { test('b', () => { expect(global).toBeDefined(); jest.fn(); }); });\n"
+    ),
+    "src/__tests__/x.js": (
+        "beforeEach(() => {}); it('a', () => { expect(process.argv).toBeTruthy(); });\n"
+    ),
 }
 
 
@@ -100,5 +106,7 @@ def test_eslint_globals_behaviour(eslint_dir):
         assert result.returncode == 0, rel + result.stdout[-400:] + result.stderr[-200:]
     bad = _lint(eslint_dir, "web/bad.js", "export const p = process.argv;\n")
     assert bad.returncode != 0
+    bad_test = _lint(eslint_dir, "src/notatest.js", "describe('a', () => {});\n")
+    assert bad_test.returncode != 0
     bad_mjs = _lint(eslint_dir, "web/bad.mjs", "export const p = process.argv;\n")
     assert bad_mjs.returncode != 0
