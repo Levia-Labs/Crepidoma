@@ -84,6 +84,9 @@ def main(argv: list[str]) -> int:
     if len(argv) != 1:
         print("usage: commit_retry.py <message>", file=sys.stderr)
         return 2
+    # Hook output carries glyphs (e.g. a circle marker) a cp1250 console cannot encode.
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
     return commit(argv[0])
 
 

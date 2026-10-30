@@ -4,11 +4,13 @@ Not a command; `spend.py` imports it. `scan(path, run)` fills a `spend.Run` from
 """
 
 import json
+import re
 import shlex
 from datetime import datetime
 from pathlib import Path
 
 READ_COMMANDS = {"cat", "head", "tail", "sed"}
+SEGMENT = re.compile(r"\r?\n|&&|\|\||[|;&]")
 SUMMARY_CHARS = 60
 
 
@@ -32,27 +34,33 @@ def result_bytes(content: object) -> int:
 
 def bash_read_files(command: str) -> list[str]:
     """Files named by a cat/head/tail/sed invocation (first such command in the string)."""
-    try:
-        tokens = shlex.split(command, posix=True)
-    except ValueError:
-        tokens = command.split()
-    for index, token in enumerate(tokens):
-        if Path(token).name not in READ_COMMANDS:
-            continue
-        name = Path(token).name
-        files: list[str] = []
-        skip_script = name == "sed"
-        for arg in tokens[index + 1 :]:
-            if arg in {"|", "||", "&&", ";", ">", ">>", "2>&1"}:
-                break
-            if arg.startswith("-") or arg.isdigit():
-                continue
-            if skip_script:
-                skip_script = False
-                continue
-            files.append(arg)
-        return files
+    for segment in SEGMENT.split(command.replace("2>&1", "")):
+        files = segment_read_files(segment)
+        if files is not None:
+            return files
     return []
+
+
+def segment_read_files(segment: str) -> list[str] | None:
+    """Files of one simple command, or None when it is not a read command."""
+    try:
+        tokens = shlex.split(segment, posix=True)
+    except ValueError:
+        tokens = segment.split()
+    if not tokens or Path(tokens[0]).name not in READ_COMMANDS:
+        return None
+    skip_script = Path(tokens[0]).name == "sed"
+    files: list[str] = []
+    for arg in tokens[1:]:
+        if arg in {">", ">>", "2>&1"}:
+            break
+        if arg.startswith("-") or arg.isdigit():
+            continue
+        if skip_script:
+            skip_script = False
+            continue
+        files.append(arg)
+    return files
 
 
 def input_summary(params: dict) -> str:
