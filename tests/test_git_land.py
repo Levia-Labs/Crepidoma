@@ -228,3 +228,18 @@ def test_duplicate_check_names_keep_latest_run(capsys):
     fake = happy({("gh", "pr", "checks"): (0, json.dumps(rows))})
     code, _ = go(fake, capsys=capsys)
     assert code == 0
+
+
+def test_lines_print_as_each_phase_happens(capsys):
+    # Output to a file showed nothing until the end, so a long CI wait looked hung.
+    seen = []
+    fake = happy()
+    inner = fake.__call__
+
+    def spy(args):
+        if args[:3] == ["gh", "pr", "merge"]:
+            seen.append(capsys.readouterr().out)
+        return inner(args)
+
+    land.main(["7"], run=spy, sleep=fake.sleep)
+    assert "checks: passed" in seen[0]
