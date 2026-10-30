@@ -49,6 +49,24 @@ def decisive_lines(log: str, cap: int = LOG_CAP) -> list[str]:
     return (hits or [ln[:200] for ln in lines])[-cap:]
 
 
+def dedupe_checks(data: list[dict]) -> list[dict]:
+    """Keep one entry per check name: the most recent run, else the higher job id."""
+
+    def rank(check: dict) -> tuple[str, int]:
+        stamp = str(check.get("completedAt") or check.get("startedAt") or "")
+        job = re.search(r"/job/(\d+)", str(check.get("link", "")))
+        return (stamp if not stamp.startswith("0001") else "", int(job.group(1)) if job else 0)
+
+    best: dict[str, dict] = {}
+    for check in data:
+        if not isinstance(check, dict):
+            continue
+        name = str(check.get("name", "?"))
+        if name not in best or rank(check) >= rank(best[name]):
+            best[name] = check
+    return list(best.values())
+
+
 class Lander:
     def __init__(self, run: Runner, sleep: Callable[[float], None], repo: str | None):
         self.run, self.sleep, self.repo = run, sleep, repo
@@ -97,9 +115,24 @@ class Lander:
         self.say(f"mergeable: {str(state).lower()}")
 
     def checks(self, num: str) -> list[dict]:
-        _rc, out = self.gh(["pr", "checks", num, "--json", "name,bucket,link"])
+        fields = "name,bucket,link,startedAt,completedAt"
+        _rc, out = self.gh(["pr", "checks", num, "--json", fields])
         data = parse_json(out)
-        return data if isinstance(data, list) else []
+        return dedupe_checks(data) if isinstance(data, list) else []
+
+    def annotation(self, link: str, job: str) -> str:
+        """First annotation message of the check run behind a job, or ''."""
+        found = re.search(r"github\.com/([^/]+/[^/]+)/", link)
+        slug = self.repo or (found.group(1) if found else "{owner}/{repo}")
+        rc, out = self.run(["gh", "api", f"repos/{slug}/check-runs/{job}/annotations"])
+        data = parse_json(out)
+        if rc != 0 or not isinstance(data, list):
+            return ""
+        for item in data:
+            msg = str(item.get("message") or "").strip() if isinstance(item, dict) else ""
+            if msg:
+                return msg.splitlines()[0][:200]
+        return ""
 
     def wait_registered(self, num: str, timeout: float) -> list[dict]:
         waited, delay = 0.0, 5.0
@@ -132,7 +165,12 @@ class Lander:
             self.say(f"  {check.get('name', '?')}")
             if not match:
                 continue
-            _, log = self.gh(["run", "view", "--job", match.group(1), "--log-failed"])
+            job = match.group(1)
+            rc, log = self.gh(["run", "view", "--job", job, "--log-failed"])
+            if rc != 0 or not log.strip() or log.lstrip().startswith("log not found"):
+                note = self.annotation(check.get("link", ""), job)
+                self.say(f"    {note or 'no log or annotation'}")
+                continue
             room = max(0, min(LOG_CAP, MAX_LINES - len(self.lines) - 1))
             for ln in decisive_lines(log, room):
                 self.say(f"    {ln}")

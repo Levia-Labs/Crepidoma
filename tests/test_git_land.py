@@ -186,3 +186,45 @@ def test_repo_flag_is_passed_to_gh_and_ls_remote(capsys):
 def test_decisive_lines_caps_and_falls_back_to_tail():
     assert len(land.decisive_lines("\n".join(f"error {i}" for i in range(30)))) == 10
     assert land.decisive_lines("a\nb\nc", 2) == ["b", "c"]
+
+
+def test_unstarted_job_prints_annotation_message(capsys):
+    fake = happy(
+        {
+            ("gh", "pr", "checks"): checks("fail"),
+            ("gh", "run", "view"): (1, "log not found: 90"),
+            ("gh", "api"): (0, json.dumps([{"message": "billing blocked\nmore"}])),
+        }
+    )
+    code, out = go(fake, argv=["7", "--repo", "o/n"], capsys=capsys)
+    assert code == 1
+    assert ["gh", "api", "repos/o/n/check-runs/90/annotations"] in fake.calls
+    assert any("billing blocked" in ln for ln in out)
+    assert not any("log not found" in ln for ln in out)
+
+
+def test_no_log_and_no_annotation_says_so(capsys):
+    fake = happy(
+        {
+            ("gh", "pr", "checks"): checks("fail"),
+            ("gh", "run", "view"): (1, "log not found: 90"),
+            ("gh", "api"): (0, "[]"),
+        }
+    )
+    code, out = go(fake, capsys=capsys)
+    assert code == 1
+    assert any("no log or annotation" in ln for ln in out)
+
+
+def test_duplicate_check_names_keep_latest_run(capsys):
+    old = {"name": "ci", "bucket": "fail", "link": "https://x/runs/1/job/10"}
+    new = {"name": "ci", "bucket": "pass", "link": "https://x/runs/2/job/11"}
+    old["startedAt"], new["startedAt"] = "2026-01-01T00:00:00Z", "2026-01-02T00:00:00Z"
+    lint_a = {"name": "lint", "bucket": "pass", "link": "https://x/runs/2/job/12"}
+    lint_b = {"name": "lint", "bucket": "pass", "link": "https://x/runs/1/job/9"}
+    rows = [old, new, lint_a, lint_b]
+    kept = land.dedupe_checks(rows)
+    assert [(c["name"], c["link"][-2:]) for c in kept] == [("ci", "11"), ("lint", "12")]
+    fake = happy({("gh", "pr", "checks"): (0, json.dumps(rows))})
+    code, _ = go(fake, capsys=capsys)
+    assert code == 0
