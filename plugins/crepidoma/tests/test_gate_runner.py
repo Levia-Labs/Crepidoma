@@ -73,3 +73,17 @@ def test_real_run_missing_binary():
     code, output = gate_runner.run(["definitely-not-a-real-binary-xyz"])
     assert code == 127
     assert "not found" in output
+
+
+def test_unencodable_output_is_replaced_on_cp1250(monkeypatch):
+    import io
+    import sys
+
+    raw = io.BytesIO()
+    stream = io.TextIOWrapper(raw, encoding="cp1250", errors="strict")
+    monkeypatch.setattr(sys, "stdout", stream)
+    monkeypatch.setattr(sys, "stderr", stream)
+    fake_run(monkeypatch, {"*": (1, "Error: ● broke\n")})
+    assert gate_runner.main(["run", "a"]) == 1
+    stream.flush()
+    assert raw.getvalue().decode("cp1250").splitlines()[1] == "Error: ? broke"
