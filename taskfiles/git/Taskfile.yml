@@ -104,3 +104,14 @@ tasks:
         msg: "Paths required. Usage: task git:stage -- <path>..."
     cmds:
       - uv run --no-project --python ">=3.12" "{{.GIT_STAGE}}" {{.CLI_ARGS}}
+
+  attribution:
+    desc: >-
+      Flag Claude co-author trailers and "Generated with Claude Code" lines in commit messages;
+      default range origin/main..HEAD. Usage: task git:attribution -- [REV_RANGE]
+    dir: "{{.USER_WORKING_DIR}}"
+    silent: true
+    vars:
+      GIT_ATTRIBUTION: "{{.TASKFILE_DIR}}/../../plugins/crepidoma/scripts/attribution.py"
+    cmds:
+      - uv run --no-project --python ">=3.12" "{{.GIT_ATTRIBUTION}}" range {{.CLI_ARGS}}

@@ -10,6 +10,12 @@
   entry: crepidoma-scrub
   language: python
   stages: [commit-msg]
+- id: no-ai-attribution
+  name: no AI attribution in commit message
+  description: Rejects Claude co-author trailers and "Generated with Claude Code" lines
+  entry: crepidoma-attribution msg
+  language: python
+  stages: [commit-msg]
 - id: crepidoma-long-files
   name: crepidoma long-file ratchet
   description: Files over 300 lines must be baselined in .ratchet/long-files.baseline and may not grow

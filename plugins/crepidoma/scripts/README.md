@@ -10,6 +10,7 @@
 - [`lint/`](lint/README.md) - Folder.
 - [`agent_pool.py`](agent_pool.py) - Subagent pool: list finished agents of the current session and steer dispatch to reuse them.
 - [`allow_tasks.py`](allow_tasks.py) - Keep .claude/settings.json permissions consistent with the Taskfile interface.
+- [`attribution.py`](attribution.py) - Flag AI attribution (Claude co-author trailers, "Generated with Claude Code") in commit messages.
 - [`budget.py`](budget.py) - Claude usage windows against a ceiling: show, gate, wait.
 - [`budget_auth.py`](budget_auth.py) - OAuth token for budget.py: the Claude credentials file, or the macOS login Keychain.
 - [`budget_view.py`](budget_view.py) - Rendering for budget.py: spans, labels, the usage bar and tab-separated rows.

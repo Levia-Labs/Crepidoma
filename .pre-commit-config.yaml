@@ -62,6 +62,11 @@ repos:
         entry: uv run --no-project --quiet python tools/scrub_check.py
         language: system
         stages: [commit-msg]
+      - id: no-ai-attribution
+        name: no AI attribution in commit message
+        entry: uv run --no-project --quiet python plugins/crepidoma/scripts/attribution.py msg
+        language: system
+        stages: [commit-msg]
       - id: docs-gate
         name: docs links and README file lists
         entry: uv run --no-project --quiet python plugins/crepidoma/scripts/docs_gate.py all

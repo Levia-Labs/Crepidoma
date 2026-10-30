@@ -6,7 +6,7 @@
 
 <!-- contents:start -->
 
-- [`Taskfile.yml`](Taskfile.yml) - Task namespace with 7 tasks.
+- [`Taskfile.yml`](Taskfile.yml) - Task namespace with 8 tasks.
 - [`commit_retry.py`](commit_retry.py) - Commit with one automatic retry when a hook only reformatted files.
 - [`repo_guard.sh`](repo_guard.sh) - File.
 - [`stage_paths.py`](stage_paths.py) - Stage exactly the given paths and print the staged list.
