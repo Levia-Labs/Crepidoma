@@ -30,15 +30,24 @@ import api_balance
 AGENTS_DIR = Path(__file__).resolve().parent.parent / "agents"
 SCRUB = ("CLAUDE_CODE_OAUTH_TOKEN", "ANTHROPIC_AUTH_TOKEN")
 # An unattended run never gets unrestricted Bash: a prefix denylist under auto-approved Bash
-# is bypassable (`git -C x push`, `sh -c ...`), so bare Bash becomes this allowlist and
-# permission mode dontAsk denies everything else. DENY stays as defence in depth.
-BASH_ALLOW = [
-    "Bash(task:*)",
-    "Bash(git status:*)",
-    "Bash(git diff:*)",
-    "Bash(git log:*)",
-    "Bash(git show:*)",
+# is bypassable (`git -C x push`, `sh -c ...`), so bare Bash becomes an allowlist of named
+# tasks and permission mode dontAsk denies everything else. Any-task or raw git is not on it:
+# an agent that can edit a Taskfile or .git/config would turn either into arbitrary commands
+# (a new task, diff.external), so those paths are also write-denied.
+ALLOWED_TASKS = [
+    "test",
+    "lint",
+    "validate",
+    "docs:readmes",
+    "repo:read",
+    "repo:outline",
+    "repo:digest",
+    "git:status",
+    "git:log",
+    "git:head",
+    "git:files",
 ]
+PROTECTED_PATHS = ["**/Taskfile*.yml", "**/taskfiles/**", "**/.git/**", "**/.claude/**"]
 DENY = [
     "Bash(git push*)",
     "Bash(gh pr merge*)",
@@ -47,6 +56,7 @@ DENY = [
     "Bash(task git:land:*)",
     "Bash(task git:after-merge:*)",
     "Bash(task release:*)",
+    *(f"{tool}({path})" for tool in ("Edit", "Write") for path in PROTECTED_PATHS),
 ]
 RECEIPT_MAX = 10
 
@@ -96,17 +106,20 @@ async def run_query(query: Callable, prompt: str, options):
     return final
 
 
-def scoped_tools(tools: list[str]) -> list[str]:
-    """The agent's tools with bare Bash replaced by the scoped allowlist."""
+def scoped_tools(tools: list[str], extra_tasks: list[str] | None = None) -> list[str]:
+    """The agent's tools with bare Bash replaced by an allowlist of named tasks."""
     kept = [t for t in tools if t != "Bash"]
-    return kept + BASH_ALLOW if "Bash" in tools else kept
+    if "Bash" not in tools:
+        return kept
+    names = [*ALLOWED_TASKS, *(extra_tasks or [])]
+    return kept + [f"Bash(task {name}:*)" for name in names]
 
 
 def build_options(agent: dict, args, options_cls: Callable, env: dict[str, str]):
     return options_cls(
         model=args.model or agent["model"],
         cwd=args.cwd,
-        allowed_tools=scoped_tools(agent["tools"]),
+        allowed_tools=scoped_tools(agent["tools"], args.allow_task),
         disallowed_tools=list(DENY),
         permission_mode="dontAsk",
         max_turns=args.max_turns,
@@ -129,6 +142,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--model")
     parser.add_argument("--max-budget-usd", type=float, default=2.0)
     parser.add_argument("--max-turns", type=int, default=60)
+    parser.add_argument(
+        "--allow-task",
+        action="append",
+        default=[],
+        help="also allow `task NAME` (repeatable); defaults cover test, lint and read tasks",
+    )
     parser.add_argument(
         "--project-settings",
         action="store_true",
