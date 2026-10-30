@@ -1,5 +1,4 @@
 version: "3"
-
 vars:
   CLAUDE_CREDENTIALS: "{{.HOME}}/.claude/.credentials.json"
   CLAUDE_KEYCHAIN_SERVICE: "Claude Code-credentials"
@@ -14,6 +13,7 @@ vars:
 includes:
   budget: { taskfile: ./budget.yml, flatten: true }
   sessions: { taskfile: ./sessions.yml, flatten: true }
+  api: { taskfile: ./api.yml, flatten: true }
   skills: ./skills.yml
 
 tasks:

@@ -10,6 +10,8 @@
 - [`test_agent_pool.py`](test_agent_pool.py) - Tests for `agent_pool`.
 - [`test_agents.py`](test_agents.py) - Tests for `agents`.
 - [`test_allow_tasks.py`](test_allow_tasks.py) - Tests for `allow_tasks`.
+- [`test_api_agent.py`](test_api_agent.py) - Tests for `api_agent`.
+- [`test_api_balance.py`](test_api_balance.py) - Tests for `api_balance`.
 - [`test_attribution.py`](test_attribution.py) - Tests for `attribution`.
 - [`test_bash_guards.py`](test_bash_guards.py) - Tests for `bash_guards`.
 - [`test_bash_guards_attribution.py`](test_bash_guards_attribution.py) - Tests for `bash_guards_attribution`.

@@ -1,0 +1,28 @@
+version: "3"
+
+vars:
+  API_SCRIPTS: "{{.TASKFILE_DIR}}/../../plugins/crepidoma/scripts"
+
+tasks:
+  api:balance:
+    desc: "API credit left this cycle, exit 3 under floor. Usage: task claude:api:balance -- [--probe] [--json]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project --python ">=3.12" "{{.API_SCRIPTS}}/api_balance.py" balance {{.CLI_ARGS}}
+
+  api:run:
+    desc: "Run a plugin agent on API credits. Usage: task claude:api:run -- --agent NAME --brief TEXT [...]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    requires:
+      vars: [CLI_ARGS]
+    cmds:
+      - uv run --script "{{.API_SCRIPTS}}/api_agent.py" {{.CLI_ARGS}}
+
+  api:ledger:
+    desc: "API spend per agent this cycle, at most 20 lines. Usage: task claude:api:ledger -- [--since DATE]"
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    cmds:
+      - uv run --no-project --python ">=3.12" "{{.API_SCRIPTS}}/api_balance.py" ledger {{.CLI_ARGS}}
