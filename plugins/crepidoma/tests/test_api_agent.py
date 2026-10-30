@@ -91,10 +91,32 @@ def test_run_scrubs_and_builds_options(setup, monkeypatch, capsys):
     assert opts.allowed_tools == ["Read", "Grep"]
     for rule in ("Bash(git push*)", "Bash(gh pr merge*)", "Bash(git reset --hard*)"):
         assert rule in opts.disallowed_tools
+    assert opts.permission_mode == "dontAsk"
     assert opts.max_budget_usd == 2.0 and opts.max_turns == 60
-    assert opts.setting_sources == ["project"]
+    assert opts.setting_sources == []
     assert opts.system_prompt == "Body prompt."
     assert KEY not in capsys.readouterr().out
+
+
+def test_bare_bash_becomes_a_scoped_allowlist():
+    # A prefix denylist under auto-approved Bash is bypassable (git -C x push, sh -c ...),
+    # so unrestricted Bash is never granted; only listed command prefixes run.
+    tools = api_agent.scoped_tools(["Read", "Bash", "Edit"])
+    assert "Bash" not in tools
+    assert tools[:2] == ["Read", "Edit"]
+    assert all(t.startswith("Bash(") for t in tools[2:])
+    assert "Bash(task:*)" in tools
+
+
+def test_publishing_tasks_are_denied():
+    for rule in ("Bash(task git:commit:*)", "Bash(task git:land:*)", "Bash(task release:*)"):
+        assert rule in api_agent.DENY
+
+
+def test_project_settings_are_opt_in(setup):
+    seen = {}
+    assert run(setup, seen=seen, extra=["--project-settings"]) == 0
+    assert seen["options"].setting_sources == ["project"]
 
 
 def test_model_override(setup):
