@@ -6,7 +6,7 @@
 
 <!-- contents:start -->
 
-- [`Taskfile.yml`](Taskfile.yml) - Task namespace with 20 tasks.
+- [`Taskfile.yml`](Taskfile.yml) - Task namespace with 22 tasks.
 - [`budget.yml`](budget.yml) - YAML config.
 - [`sessions.yml`](sessions.yml) - YAML config.
 - [`skills.yml`](skills.yml) - YAML config.
