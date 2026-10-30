@@ -22,6 +22,14 @@ def test_precommit_template_links_repo():
     assert "commit-msg" in text
 
 
+def test_templates_ship_attribution_guards():
+    settings = json.loads((TEMPLATES / "settings.json").read_text(encoding="utf-8"))
+    assert settings["attribution"] == {"commit": "", "pr": ""}
+    text = (TEMPLATES / ".pre-commit-config.yaml").read_text(encoding="utf-8")
+    assert "id: no-ai-attribution" in text
+    assert "commit-msg" in text.splitlines()[0]
+
+
 def test_taskfile_includes_point_into_submodule():
     text = (TEMPLATES / "Taskfile.includes.yml").read_text(encoding="utf-8")
     assert ".crepidoma/taskfiles/claude" in text

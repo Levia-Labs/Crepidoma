@@ -8,6 +8,8 @@ alternative. The subagent-only git guard stays in hooks_bash.
 import re
 import shlex
 
+from attribution import has_attribution
+
 # hooks_bash imports this module lazily (inside pre_bash), so this import is not circular.
 from hooks_bash import SHELLS, git_args, split_unquoted, strip_prefix
 
@@ -20,6 +22,11 @@ REASONS = {
         "Refused: `{cmd}` kills processes by name or image and can end other agents' work. "
         "Kill only your own PID: `kill <pid>` or `taskkill /PID <pid>`."
     ),
+    "attribution": (
+        "Refused: `{cmd}` carries AI attribution (a Claude co-author trailer, "
+        '"Generated with Claude Code" or noreply@anthropic.com). Directive 30-conventions item 15: '
+        "never add AI attribution to commits, PR or issue bodies or release notes; remove the line."
+    ),
     "commit": (
         "Refused: `{cmd}` is a raw commit. Commit through "
         '`task git:commit -- "<message>"` (main thread only; subagents never commit).'
@@ -30,6 +37,7 @@ HEREDOC = re.compile(r"<<-?\s*['\"]?[A-Za-z_]")
 # Options after which the script text or module is inline, never read from stdin.
 INLINE = re.compile(r"^-(?:[a-zA-Z]*[cmep])$|^--(?:eval|print|command)$")
 POWERSHELL = {"powershell", "pwsh", "cmd"}
+PUBLISH = {("pr", "create"), ("pr", "edit"), ("issue", "create"), ("release", "create")}
 
 
 def head_name(token: str) -> str:
@@ -80,6 +88,22 @@ def segment_kind(tokens: list[str], segment: str) -> tuple[str, str]:
     return "", ""
 
 
+def writes_text(tokens: list[str]) -> str:
+    """Shown command when `tokens` publish a commit, PR, issue or release text, else ""."""
+    tokens = strip_prefix(tokens)
+    if not tokens:
+        return ""
+    head = head_name(tokens[0])
+    if head == "git" and git_args(tokens)[:1] == ["commit"]:
+        return "git commit"
+    if head == "task" and "git:commit" in tokens[1:]:
+        return "task git:commit"
+    sub = tuple(t.lower() for t in tokens[1:3])
+    if head == "gh" and sub in PUBLISH:
+        return "gh " + " ".join(sub)
+    return ""
+
+
 def inner_text(tokens: list[str]) -> str:
     """The script text handed to `sh -c` or `powershell -Command`, or ""."""
     tokens = strip_prefix(tokens)
@@ -102,6 +126,9 @@ def bash_refusal(command: str, depth: int = 0) -> str:
             tokens = shlex.split(part, posix=True)
         except ValueError:
             continue
+        shown = writes_text(tokens)
+        if shown and has_attribution(command):
+            return REASONS["attribution"].format(cmd=shown)
         kind, shown = segment_kind(tokens, part)
         if kind:
             return REASONS[kind].format(cmd=shown)
