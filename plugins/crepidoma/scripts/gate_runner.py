@@ -89,7 +89,16 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def tolerate_unencodable() -> None:
+    """Replace characters the console encoding cannot represent instead of raising."""
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            reconfigure(errors="replace")
+
+
 def main(argv: list[str] | None = None) -> int:
+    tolerate_unencodable()
     parser = build_parser()
     args = parser.parse_args(argv)
     if args.command == "run":
