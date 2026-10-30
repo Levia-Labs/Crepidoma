@@ -75,6 +75,9 @@ class Lander:
     def say(self, line: str) -> None:
         if len(self.lines) < MAX_LINES:
             self.lines.append(line)
+            # Print now, flushed: a CI wait can take minutes, and buffered output to a file
+            # showed nothing until the end, so a run in progress looked hung.
+            print(line, flush=True)
 
     def gh(self, args: list[str]) -> tuple[int, str]:
         return self.run(["gh", *args, *(["-R", self.repo] if self.repo else [])])
@@ -231,9 +234,7 @@ def main(argv: list[str] | None = None, run: Runner = system_run, sleep=time.sle
     parser.add_argument("--timeout", type=float, default=300.0)
     args = parser.parse_args(argv)
     lander = Lander(run, sleep, args.repo)
-    code = lander.land(args.pr, args.timeout)
-    print("\n".join(lander.lines))
-    return code
+    return lander.land(args.pr, args.timeout)
 
 
 if __name__ == "__main__":
