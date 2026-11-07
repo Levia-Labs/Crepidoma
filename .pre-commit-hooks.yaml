@@ -1,6 +1,6 @@
 - id: crepidoma-scrub
   name: crepidoma scrub (paths, emails, tokens, private names)
-  description: Rejects local paths, emails, tokens and names listed in .scrub-denylist
+  description: Rejects local paths, emails not in .scrub-allowlist, tokens and names in .scrub-denylist
   entry: crepidoma-scrub
   language: python
   types: [text]
