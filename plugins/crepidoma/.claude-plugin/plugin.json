@@ -1,6 +1,6 @@
 {
   "name": "crepidoma",
-  "version": "0.6.4",
+  "version": "0.6.5",
   "description": "Shared directives, agents, guard hooks and output tools for Levia Labs pillar projects",
   "author": {
     "name": "Levia Labs"
