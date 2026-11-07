@@ -33,6 +33,22 @@ def test_email_hit_and_allowlist():
     assert scrub_check.scan_text(f"by <{bot}> via {ssh}\n", None) == []
 
 
+def test_repo_allowlist_passes_only_listed_addresses(tmp_path: Path, capsys):
+    listed = "help" + "@" + "corp.io"
+    other = "someone" + "@" + "corp.io"
+    allow_file = tmp_path / "allow"
+    allow_file.write_text(f"# public contacts\n{listed.upper()}\n", encoding="utf-8")
+    page = tmp_path / "page.json"
+    page.write_text(f'"a": "{listed}",\n"b": "{other}",\n', encoding="utf-8")
+    args = ["--allowlist", str(allow_file), "--denylist", str(tmp_path / "none"), str(page)]
+    assert scrub_check.main(args) == 1
+    assert capsys.readouterr().out.splitlines() == [f"{page.as_posix()}:2: email"]
+
+
+def test_missing_allowlist_allows_nothing_extra(tmp_path: Path):
+    assert scrub_check.load_allowlist(tmp_path / "none") == frozenset()
+
+
 def test_token_hit():
     token = "gh" + "p_" + "a" * 36
     assert scrub_check.scan_text(f"t={token}\n", None) == [(1, "token")]

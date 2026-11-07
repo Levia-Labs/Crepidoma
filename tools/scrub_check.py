@@ -1,10 +1,11 @@
 """Fail when files carry local paths, emails, tokens or denylisted names.
 
-Usage: scrub_check.py [--denylist FILE] [--strict] PATH...
+Usage: scrub_check.py [--denylist FILE] [--allowlist FILE] [--strict] PATH...
 Prints `path:line: rule` per hit; exit 1 on any hit, 0 when clean.
 Also serves the commit-msg hook and drafted PR text: any text file works.
 `--strict` exits 2 when a PATH is not a file.
 A line containing `scrub:allow` is skipped. Undecodable files are skipped.
+`.scrub-allowlist` (one address per line) lists emails a repo publishes on purpose.
 """
 
 from __future__ import annotations
@@ -28,9 +29,17 @@ ALLOWED_EMAIL_SUFFIXES = ("@users.noreply.github.com", "@example.com")
 ALLOW_MARKER = "scrub:allow"
 
 
-def allowed_email(address: str) -> bool:
+def allowed_email(address: str, extra: frozenset[str] = frozenset()) -> bool:
     address = address.lower()
-    return address in ALLOWED_EMAILS or address.endswith(ALLOWED_EMAIL_SUFFIXES)
+    return address in ALLOWED_EMAILS or address in extra or address.endswith(ALLOWED_EMAIL_SUFFIXES)
+
+
+def load_allowlist(path: Path | None) -> frozenset[str]:
+    """Exact addresses a pillar publishes on purpose, one per line, `#` comments."""
+    if path is None or not path.is_file():
+        return frozenset()
+    lines = [line.strip().lower() for line in path.read_text(encoding="utf-8").splitlines()]
+    return frozenset(line for line in lines if line and not line.startswith("#"))
 
 
 def load_denylist(path: Path | None) -> re.Pattern[str] | None:
@@ -43,7 +52,9 @@ def load_denylist(path: Path | None) -> re.Pattern[str] | None:
     return re.compile(r"\b(?:" + "|".join(map(re.escape, words)) + r")\b", re.IGNORECASE)
 
 
-def scan_text(text: str, deny: re.Pattern[str] | None) -> list[tuple[int, str]]:
+def scan_text(
+    text: str, deny: re.Pattern[str] | None, allow: frozenset[str] = frozenset()
+) -> list[tuple[int, str]]:
     hits: list[tuple[int, str]] = []
     for number, line in enumerate(text.splitlines(), 1):
         if ALLOW_MARKER in line:
@@ -51,7 +62,7 @@ def scan_text(text: str, deny: re.Pattern[str] | None) -> list[tuple[int, str]]:
         for rule, pattern in RULES.items():
             matches = [m.group() for m in pattern.finditer(line)]
             if rule == "email":
-                matches = [m for m in matches if not allowed_email(m)]
+                matches = [m for m in matches if not allowed_email(m, allow)]
             if matches:
                 hits.append((number, rule))
         if deny is not None and deny.search(line):
@@ -59,21 +70,25 @@ def scan_text(text: str, deny: re.Pattern[str] | None) -> list[tuple[int, str]]:
     return hits
 
 
-def scan_file(path: Path, deny: re.Pattern[str] | None) -> list[tuple[int, str]]:
+def scan_file(
+    path: Path, deny: re.Pattern[str] | None, allow: frozenset[str] = frozenset()
+) -> list[tuple[int, str]]:
     try:
         text = path.read_text(encoding="utf-8")
     except (UnicodeDecodeError, OSError):
         return []
-    return scan_text(text, deny)
+    return scan_text(text, deny, allow)
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--denylist", type=Path, default=Path(".scrub-denylist"))
+    parser.add_argument("--allowlist", type=Path, default=Path(".scrub-allowlist"))
     parser.add_argument("--strict", action="store_true")
     parser.add_argument("paths", nargs="*", type=Path)
     args = parser.parse_args(argv)
     deny = load_denylist(args.denylist)
+    allow = load_allowlist(args.allowlist)
     found = 0
     for path in args.paths:
         if not path.is_file():
@@ -81,7 +96,7 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"{path.as_posix()}: not a file")
                 return 2
             continue
-        for number, rule in scan_file(path, deny):
+        for number, rule in scan_file(path, deny, allow):
             print(f"{path.as_posix()}:{number}: {rule}")
             found += 1
     return 1 if found else 0
