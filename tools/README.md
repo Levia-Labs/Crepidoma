@@ -7,6 +7,16 @@
 
 <!-- contents:start -->
 
+- [`artifact_kit/`](artifact_kit/README.md) - Stylesheet and scripts the artifact builder inlines into a page.
+- [`artifact.py`](artifact.py) - Build self-contained claude.ai artifact pages from a JSON spec.
+- [`artifact_budget.py`](artifact_budget.py) - Text budget of an artifact page: warnings when prose outweighs the widgets.
+- [`artifact_check.py`](artifact_check.py) - Lint claude.ai artifact HTML pages against the publish rules.
+- [`artifact_check_css.py`](artifact_check_css.py) - CSS-side rules of artifact_check: stylesheet parsing, theme tokens and literal colours.
+- [`artifact_examples.py`](artifact_examples.py) - Small working example specs, one per kind, for `artifact.py new`.
+- [`artifact_shapes.py`](artifact_shapes.py) - Field shapes of each artifact section type, and the whole-graph checks.
+- [`artifact_shot.py`](artifact_shot.py) - Screenshot an artifact page with a headless browser, in a forced colour theme.
+- [`artifact_spec.py`](artifact_spec.py) - Validation of an artifact page spec; see artifact_kit/SPEC.md for the schema.
+- [`artifact_widgets.py`](artifact_widgets.py) - Shapes and cross-checks of the correlation widgets: layers, pivot, treemap, sankey, heatmap.
 - [`code_refs.py`](code_refs.py) - List references to a symbol in tracked source files.
 - [`denylist.py`](denylist.py) - Write the scrub denylist: names of private or remote-less repos under a pillars directory.
 - [`drift_check.py`](drift_check.py) - Compare a pillar checkout with Crepidoma-owned files.

@@ -1,0 +1,240 @@
+{
+  "title": "Shop overview",
+  "lang": "en",
+  "eyebrow": "Gallery · every section type",
+  "lede": "One small online shop, shown ten ways. Hover, tap or focus anything.",
+  "stats": [
+    { "value": "10", "label": "widgets" },
+    { "value": "5", "label": "teams" }
+  ],
+  "sections": [
+    {
+      "type": "prose",
+      "title": "Reading this page",
+      "paragraphs": ["Every block answers one question. Notes sit behind hover, focus or tap."]
+    },
+    {
+      "type": "cards",
+      "title": "Teams",
+      "items": [
+        { "title": "Storefront", "body": "Pages and checkout.", "tag": "web", "tone": "c1" },
+        { "title": "Orders", "body": "Stock and shipping.", "tag": "ops", "tone": "c3" },
+        { "title": "Payments", "body": "Cards and refunds.", "tag": "money", "tone": "c4" }
+      ]
+    },
+    {
+      "type": "board",
+      "title": "Status",
+      "statuses": [
+        { "id": "done", "label": "Done", "tone": "keep" },
+        { "id": "doing", "label": "Doing", "tone": "new" },
+        { "id": "hold", "label": "On hold", "tone": "wait" }
+      ],
+      "bands": [
+        {
+          "tone": "keep",
+          "title": "Shipped",
+          "groups": [
+            {
+              "title": "Storefront",
+              "note": "Live since spring.",
+              "items": [
+                { "title": "Product pages", "status": "done", "note": "Photos, sizes, stock." },
+                { "title": "Checkout", "status": "done" }
+              ]
+            }
+          ]
+        },
+        {
+          "tone": "new",
+          "title": "Next",
+          "groups": [
+            {
+              "title": "Orders",
+              "items": [
+                {
+                  "title": "Returns portal",
+                  "status": "doing",
+                  "note": "Label printing is the open part."
+                },
+                { "title": "Gift wrap", "status": "hold" }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "timeline",
+      "id": "plan",
+      "title": "Schedule",
+      "units": ["Q1", "Q2", "Q3", "Q4"],
+      "rows": [
+        { "label": "Returns", "start": 0, "span": 2, "tone": "new", "note": "Portal and labels." },
+        { "label": "Gift wrap", "start": 2, "span": 1, "tone": "wait" },
+        { "label": "Loyalty", "start": 2, "span": 2, "tone": "c3", "note": "Points and tiers." }
+      ]
+    },
+    {
+      "type": "graph",
+      "title": "Dependencies",
+      "categories": [
+        { "id": "front", "label": "Storefront" },
+        { "id": "back", "label": "Backend" }
+      ],
+      "nodes": [
+        { "id": "catalog", "label": "Catalog", "category": "back", "note": "Products and prices." },
+        { "id": "cart", "label": "Cart", "category": "front" },
+        {
+          "id": "pay",
+          "label": "Payment",
+          "category": "back",
+          "flag": "fix",
+          "note": "Retry logic needs a fix."
+        },
+        { "id": "order", "label": "Order", "category": "back" },
+        { "id": "mail", "label": "Receipt", "category": "front" }
+      ],
+      "edges": [
+        ["catalog", "cart"],
+        ["cart", "pay"],
+        ["pay", "order"],
+        ["order", "mail"]
+      ],
+      "start": "pay"
+    },
+    {
+      "type": "layers",
+      "title": "Layers",
+      "layers": [
+        {
+          "id": "ui",
+          "label": "Screens",
+          "blocks": [
+            { "id": "web", "label": "Website", "note": "Browser storefront.", "tone": "c1" },
+            { "id": "app", "label": "Mobile app", "tone": "c1" }
+          ]
+        },
+        {
+          "id": "svc",
+          "label": "Services",
+          "blocks": [
+            {
+              "id": "cartsvc",
+              "label": "Cart",
+              "tone": "new",
+              "note": "Holds baskets for an hour."
+            },
+            { "id": "paysvc", "label": "Payments", "tone": "new" },
+            { "id": "stocksvc", "label": "Stock", "tone": "new" }
+          ]
+        },
+        {
+          "id": "data",
+          "label": "Storage",
+          "blocks": [
+            { "id": "db", "label": "Database", "tone": "keep" },
+            { "id": "files", "label": "Images", "tone": "keep" }
+          ]
+        }
+      ],
+      "links": [
+        ["web", "cartsvc"],
+        ["app", "cartsvc"],
+        ["web", "paysvc"],
+        ["cartsvc", "stocksvc"],
+        ["cartsvc", "db"],
+        ["paysvc", "db"],
+        ["stocksvc", "db"],
+        ["web", "files"]
+      ]
+    },
+    {
+      "type": "pivot",
+      "id": "sales",
+      "title": "Sales",
+      "records": [
+        { "region": "North", "month": "Jan", "units": 120, "revenue": 2400 },
+        { "region": "North", "month": "Feb", "units": 90, "revenue": 1800 },
+        { "region": "North", "month": "Mar", "units": 150, "revenue": 3100 },
+        { "region": "South", "month": "Jan", "units": 60, "revenue": 1300 },
+        { "region": "South", "month": "Feb", "units": 110, "revenue": 2300 },
+        { "region": "South", "month": "Mar", "units": 80, "revenue": 1700 },
+        { "region": "East", "month": "Jan", "units": 40, "revenue": 900 },
+        { "region": "East", "month": "Feb", "units": 45, "revenue": 950 },
+        { "region": "East", "month": "Mar", "units": 70, "revenue": 1500 }
+      ],
+      "dims": ["region", "month"],
+      "measures": ["units", "revenue"],
+      "rows": "region",
+      "cols": "month",
+      "measure": "revenue",
+      "agg": "sum"
+    },
+    {
+      "type": "treemap",
+      "title": "Revenue split",
+      "tree": {
+        "label": "Revenue",
+        "children": [
+          {
+            "label": "Apparel",
+            "children": [
+              { "label": "Shoes", "value": 34, "note": "Best margin." },
+              { "label": "Coats", "value": 21 },
+              { "label": "Socks", "value": 8 }
+            ]
+          },
+          {
+            "label": "Home",
+            "children": [
+              { "label": "Lamps", "value": 18 },
+              { "label": "Rugs", "value": 12 }
+            ]
+          },
+          { "label": "Gifts", "value": 14 }
+        ]
+      }
+    },
+    {
+      "type": "sankey",
+      "title": "Visitor flow",
+      "nodes": [
+        { "id": "visit", "label": "Visits" },
+        { "id": "browse", "label": "Browsing" },
+        { "id": "search", "label": "Search" },
+        { "id": "cart", "label": "Cart" },
+        { "id": "buy", "label": "Purchase" },
+        { "id": "leave", "label": "Left" }
+      ],
+      "flows": [
+        ["visit", "browse", 60],
+        ["visit", "search", 40],
+        ["browse", "cart", 25],
+        ["browse", "leave", 35],
+        ["search", "cart", 22],
+        ["search", "leave", 18],
+        ["cart", "buy", 30],
+        ["cart", "leave", 17]
+      ]
+    },
+    {
+      "type": "heatmap",
+      "title": "Correlations",
+      "scale": "diverging",
+      "rows": ["Price", "Traffic", "Returns"],
+      "cols": ["Price", "Traffic", "Returns"],
+      "cells": [
+        ["Price", "Price", 1],
+        ["Price", "Traffic", -0.62],
+        ["Price", "Returns", 0.18],
+        ["Traffic", "Price", -0.62],
+        ["Traffic", "Traffic", 1],
+        ["Traffic", "Returns", 0.35],
+        ["Returns", "Price", 0.18],
+        ["Returns", "Traffic", 0.35],
+        ["Returns", "Returns", 1]
+      ]
+    }
+  ]
+}

@@ -1,0 +1,146 @@
+{
+  "title": "Launch plan",
+  "lang": "en",
+  "eyebrow": "Example · product launch",
+  "lede": "A small plan for shipping a **website**: what depends on what, what is done, and when each piece lands. Select a node to see its chain.",
+  "stats": [
+    { "value": "8", "label": "tasks" },
+    { "value": "3", "label": "teams" },
+    { "value": "6", "label": "weeks" }
+  ],
+  "sections": [
+    {
+      "type": "graph",
+      "id": "deps",
+      "title": "Dependencies",
+      "lede": "Arrows run from a prerequisite to the task that needs it.",
+      "categories": [
+        { "id": "design", "label": "Design" },
+        { "id": "build", "label": "Build" },
+        { "id": "ship", "label": "Ship" }
+      ],
+      "columns": ["Plan", "Make", "Check", "Release"],
+      "nodes": [
+        {
+          "id": "brief",
+          "label": "Brief",
+          "category": "design",
+          "note": "The goals and the audience, agreed in one page.",
+          "facts": [{ "label": "Output", "items": ["One-page brief", "Success measures"] }]
+        },
+        {
+          "id": "mockups",
+          "label": "Mockups",
+          "category": "design",
+          "note": "Layouts for the three main pages."
+        },
+        {
+          "id": "copy",
+          "label": "Copy",
+          "category": "design",
+          "note": "Text for every page, in `en` and `de`."
+        },
+        {
+          "id": "frontend",
+          "label": "Front end",
+          "category": "build",
+          "note": "Pages built from the mockups.",
+          "flag": "fix",
+          "facts": [{ "label": "Open fix", "items": ["Menu breaks under 400 px"] }]
+        },
+        {
+          "id": "backend",
+          "label": "Back end",
+          "category": "build",
+          "note": "Forms, accounts and the data behind them."
+        },
+        {
+          "id": "tests",
+          "label": "Tests",
+          "category": "build",
+          "note": "Checks that run on every change."
+        },
+        {
+          "id": "review",
+          "label": "Review",
+          "category": "ship",
+          "note": "A walk-through with the whole team."
+        },
+        { "id": "launch", "label": "Launch", "category": "ship", "note": "The site goes live." }
+      ],
+      "edges": [
+        ["brief", "mockups"],
+        ["brief", "copy"],
+        ["mockups", "frontend"],
+        ["copy", "frontend"],
+        ["brief", "backend"],
+        ["frontend", "tests"],
+        ["backend", "tests"],
+        ["tests", "review"],
+        ["review", "launch"]
+      ],
+      "start": "frontend",
+      "mode": "direct"
+    },
+    {
+      "type": "board",
+      "id": "status",
+      "title": "Status",
+      "lede": "Every task sits in the band that matches where it stands.",
+      "statuses": [
+        { "id": "done", "label": "Done", "tone": "keep" },
+        { "id": "doing", "label": "In progress", "tone": "new" },
+        { "id": "hold", "label": "On hold", "tone": "wait" }
+      ],
+      "bands": [
+        {
+          "tone": "keep",
+          "title": "Finished",
+          "lede": "Nothing left to do here.",
+          "groups": [
+            {
+              "title": "Design",
+              "note": "Signed off on **Monday**.",
+              "items": [
+                { "id": "brief", "title": "Brief", "status": "done" },
+                {
+                  "id": "mockups",
+                  "title": "Mockups",
+                  "status": "done",
+                  "note": "Three pages, light and dark."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "tone": "new",
+          "title": "Under way",
+          "groups": [
+            {
+              "title": "Build",
+              "items": [
+                { "title": "Front end", "status": "doing", "note": "Menu fix first." },
+                { "title": "Back end", "status": "doing" },
+                { "title": "Copy", "status": "hold", "note": "Waiting for the German review." }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "timeline",
+      "id": "schedule",
+      "title": "Schedule",
+      "lede": "Bars show the weeks each piece takes.",
+      "units": ["W1", "W2", "W3", "W4", "W5", "W6"],
+      "rows": [
+        { "label": "Design", "start": 0, "span": 2, "tone": "c3", "note": "Brief, mockups, copy" },
+        { "label": "Build", "start": 1, "span": 3, "tone": "c4", "target": "deps" },
+        { "label": "Tests", "start": 3, "span": 2, "tone": "new" },
+        { "label": "Launch", "start": 5, "span": 1, "tone": "keep", "target": "status" }
+      ]
+    }
+  ]
+}

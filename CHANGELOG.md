@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- `artifact:` namespace, `tools/artifact.py` and `tools/artifact_kit/`: build claude.ai artifact pages from a JSON spec, lint any page against the publish contract.
+- `artifact-pages` skill.
+
 ## v0.6.5 - 2026-11-07
 
 ## v0.6.4 - 2026-10-31

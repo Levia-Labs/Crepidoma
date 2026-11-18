@@ -1,0 +1,49 @@
+version: "3"
+
+vars:
+  ARTIFACT_TOOL: "{{.TASKFILE_DIR}}/../../tools/artifact.py"
+
+tasks:
+  new:
+    desc: >-
+      Write a starter artifact spec of one kind, refusing to overwrite.
+      Usage: task artifact:new -- OUT.json [--kind graph|board|timeline|cards]
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    requires:
+      vars: [CLI_ARGS]
+    cmds:
+      - uv run --no-project --python ">=3.12" "{{.ARTIFACT_TOOL}}" new {{.CLI_ARGS}}
+
+  build:
+    desc: >-
+      Validate an artifact spec and render it into one self-contained page, one-line receipt.
+      Usage: task artifact:build -- SPEC.json [-o OUT.html] [--standalone]
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    requires:
+      vars: [CLI_ARGS]
+    cmds:
+      - uv run --no-project --python ">=3.12" "{{.ARTIFACT_TOOL}}" build {{.CLI_ARGS}}
+
+  check:
+    desc: >-
+      Lint artifact pages against the publish contract (title, CDN allowlist, theme tokens, blocked APIs).
+      Usage: task artifact:check -- FILE.html [FILE.html ...]
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    requires:
+      vars: [CLI_ARGS]
+    cmds:
+      - uv run --no-project --python ">=3.12" "{{.ARTIFACT_TOOL}}" check {{.CLI_ARGS}}
+
+  shot:
+    desc: >-
+      Screenshot an artifact page with a headless browser in a forced theme, one-line receipt.
+      Usage: task artifact:shot -- PAGE.html --out PNG [--width 1280] [--height 4000] [--theme light|dark|system]
+    silent: true
+    dir: "{{.USER_WORKING_DIR}}"
+    requires:
+      vars: [CLI_ARGS]
+    cmds:
+      - uv run --no-project --python ">=3.12" "{{.ARTIFACT_TOOL}}" shot {{.CLI_ARGS}}

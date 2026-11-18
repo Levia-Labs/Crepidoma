@@ -8,6 +8,12 @@
 
 - [`fixtures/`](fixtures/README.md) - Folder.
 - [`test_adrs.py`](test_adrs.py) - Tests for `adrs`.
+- [`test_artifact.py`](test_artifact.py) - Tests for `artifact`.
+- [`test_artifact_check.py`](test_artifact_check.py) - Tests for `artifact_check`.
+- [`test_artifact_guards.py`](test_artifact_guards.py) - Tests for `artifact_guards`.
+- [`test_artifact_shot.py`](test_artifact_shot.py) - Tests for `artifact_shot`.
+- [`test_artifact_ui.py`](test_artifact_ui.py) - Tests for `artifact_ui`.
+- [`test_artifact_widgets.py`](test_artifact_widgets.py) - Tests for `artifact_widgets`.
 - [`test_code_refs.py`](test_code_refs.py) - Tests for `code_refs`.
 - [`test_configs.py`](test_configs.py) - Tests for `configs`.
 - [`test_denylist.py`](test_denylist.py) - Tests for `denylist`.

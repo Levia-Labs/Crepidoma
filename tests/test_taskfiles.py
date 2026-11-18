@@ -76,6 +76,7 @@ NAMESPACES = (
     "sdd",
     "review",
     "code",
+    "artifact",
 )
 
 

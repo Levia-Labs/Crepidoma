@@ -18,6 +18,7 @@ includes:
   sdd: ./taskfiles/sdd
   review: ./taskfiles/review
   code: ./taskfiles/code
+  artifact: ./taskfiles/artifact
 
 vars:
   PILLARS: '{{.PILLARS | default ".."}}'

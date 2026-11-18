@@ -17,6 +17,7 @@ includes:
   sdd: .crepidoma/taskfiles/sdd
   review: .crepidoma/taskfiles/review
   code: .crepidoma/taskfiles/code
+  artifact: .crepidoma/taskfiles/artifact
 # Override a shared config dir per include, e.g. use the pillar's root configs:
 #   lint:
 #     taskfile: .crepidoma/taskfiles/lint
