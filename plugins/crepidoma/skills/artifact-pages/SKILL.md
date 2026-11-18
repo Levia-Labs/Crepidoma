@@ -9,7 +9,7 @@ The spec is the source; the page is a build output. Never hand-edit a built page
 
 ## Loop
 
-1. Start from a spec: `task artifact:new -- <dir>/<name>.json --kind graph|board|timeline|cards`, or extend an existing one. Schema: `tools/artifact_kit/SPEC.md` in Crepidoma.
+1. Start from a spec: `task artifact:new -- <dir>/<name>.json --kind graph|board|timeline|cards|layers|pivot|treemap|sankey|heatmap`, or extend an existing one. Schema: `tools/artifact_kit/SPEC.md` in Crepidoma.
 2. Fill it from tool output (graph queries, task lists, TODO, test reports), not from reading files by hand. Ids stay stable across rebuilds so links and the `start` node keep working.
 3. Build: `task artifact:build -- <spec>.json`. Spec errors print as `spec:<json path>: message`; fix them in the spec.
 4. Lint: `task artifact:check -- <page>.html`. Zero errors before publishing; read each warning and fix it or know why it stays.
