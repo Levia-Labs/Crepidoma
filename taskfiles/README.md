@@ -6,6 +6,7 @@
 
 <!-- contents:start -->
 
+- [`artifact/`](artifact/README.md) - Build claude.ai artifact pages from a JSON spec and lint any page.
 - [`ci/`](ci/README.md) - GitHub Actions status, failure excerpts and watch.
 - [`claude/`](claude/README.md) - Claude usage, spend, history, lanes, handoff and plugin checks.
 - [`code/`](code/README.md) - Folder.

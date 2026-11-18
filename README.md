@@ -70,16 +70,17 @@ Full steps are in [docs/migration.md](docs/migration.md). From a Crepidoma sessi
 
 ## What you get
 
-| Layer          | Highlights                                                                                                  |
-| -------------- | ----------------------------------------------------------------------------------------------------------- |
-| **Directives** | Communication style, tool-first loop, conventions, model tiers, shell and safety                            |
-| **Models**     | Opus orchestrates, Sonnet works, Haiku reads and indexes                                                    |
-| **Hooks**      | Compact subagent harness, raw-read guard, subagent and git policy, stop gate                                |
-| **Agents**     | 15 single-job agents, from `scout` and `implementer` to `security-reviewer` and `pillar-migrator`           |
-| **Skills**     | `docs-sweep`, `migrate-pillar`, `python-patterns`, `python-testing`                                         |
-| **Tasks**      | `claude`, `repo`, `todo`, `git`, `graph`, `test`, `quality`, `security`, `ci`, `lint`, `setup`, `go`, `rtk` |
-| **Configs**    | ruff, pyright, prettier, eslint, yamllint, ast-grep, semgrep, gitleaks, zizmor, hadolint                    |
-| **Decisions**  | [Architecture decision records](docs/adr/README.md)                                                         |
+| Layer          | Highlights                                                                                                              |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| **Directives** | Communication style, tool-first loop, conventions, model tiers, shell and safety                                        |
+| **Models**     | Opus orchestrates, Sonnet works, Haiku reads and indexes                                                                |
+| **Hooks**      | Compact subagent harness, raw-read guard, subagent and git policy, stop gate                                            |
+| **Agents**     | 15 single-job agents, from `scout` and `implementer` to `security-reviewer` and `pillar-migrator`                       |
+| **Skills**     | `artifact-pages`, `docs-sweep`, `migrate-pillar`, `python-patterns`, `python-testing`                                   |
+| **Tasks**      | `claude`, `repo`, `todo`, `git`, `graph`, `test`, `quality`, `security`, `ci`, `lint`, `setup`, `go`, `rtk`, `artifact` |
+| **Artifacts**  | JSON spec to one self-contained claude.ai page (graph, board, timeline, cards) and a publish-contract linter            |
+| **Configs**    | ruff, pyright, prettier, eslint, yamllint, ast-grep, semgrep, gitleaks, zizmor, hadolint                                |
+| **Decisions**  | [Architecture decision records](docs/adr/README.md)                                                                     |
 
 ## Levia Labs open source
 
