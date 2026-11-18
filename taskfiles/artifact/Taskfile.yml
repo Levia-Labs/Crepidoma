@@ -7,7 +7,7 @@ tasks:
   new:
     desc: >-
       Write a starter artifact spec of one kind, refusing to overwrite.
-      Usage: task artifact:new -- OUT.json [--kind graph|board|timeline|cards]
+      Usage: task artifact:new -- OUT.json [--kind graph|board|timeline|cards|layers|pivot|treemap|sankey|heatmap]
     silent: true
     dir: "{{.USER_WORKING_DIR}}"
     requires:
