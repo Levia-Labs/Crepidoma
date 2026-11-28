@@ -1,5 +1,5 @@
 import json
-from datetime import UTC, datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import budget
 import budget_auth
@@ -23,31 +23,14 @@ def patch_fetch(monkeypatch, value):
 def test_show_formats_one_line_per_window(monkeypatch, capsys):
     patch_fetch(monkeypatch, (payload(five=42.5), ""))
     assert budget.main(["show"]) == 0
-    lines = capsys.readouterr().out.splitlines()
+    header, *lines = capsys.readouterr().out.splitlines()
+    assert [cell.strip() for cell in header.split("|")] == ["T", "used", "reset", "est.", "recomm."]
     assert len(lines) == 2
-    first = lines[0].split("\t")
-    second = lines[1].split("\t")
-    assert first[:4] == ["5h", "42.5%", "[####......]", "resets"]
-    assert second[:4] == ["7d", "20.0%", "[##........]", "resets"]
+    first = [cell.strip() for cell in lines[0].split("|")]
+    second = [cell.strip() for cell in lines[1].split("|")]
+    assert first[:2] == ["5h", "42.5%"]
+    assert second[:2] == ["7d", "20.0%"]
     assert len(first) == len(second) == 5
-
-
-@pytest.mark.parametrize(
-    ("percent", "bar"),
-    [
-        (0.0, "[..........]"),
-        (3.0, "[..........]"),
-        (5.0, "[#.........]"),
-        (6.0, "[#.........]"),
-        (25.0, "[###.......]"),
-        (47.0, "[#####.....]"),
-        (100.0, "[##########]"),
-        (130.0, "[##########]"),
-        (-5.0, "[..........]"),
-    ],
-)
-def test_bar_rounds_and_clamps(percent, bar):
-    assert budget_view.bar(percent) == bar
 
 
 @pytest.mark.parametrize(
@@ -56,27 +39,6 @@ def test_bar_rounds_and_clamps(percent, bar):
 )
 def test_label(window, label):
     assert budget_view.label(window) == label
-
-
-def test_local_stamp_uses_given_zone():
-    tz = timezone(timedelta(hours=2))
-    assert budget_view.local_stamp("2026-10-21T12:20:00.120166+00:00", tz) == "2026-10-21 14:20"
-    assert budget_view.local_stamp("2026-10-21T23:30:00+00:00", tz) == "2026-10-22 01:30"
-
-
-def test_row_line_known_and_unknown_reset():
-    tz = timezone(timedelta(hours=2))
-    row = {
-        "window": "five_hour",
-        "utilization": 3.0,
-        "resets_at": "2026-10-21T12:20:00+00:00",
-        "seconds_until_reset": 4 * 3600 + 43 * 60,
-    }
-    assert (
-        budget_view.row_line(row, tz) == "5h\t3.0%\t[..........]\tresets\t2026-10-21 14:20 (4h 43m)"
-    )
-    row.update(resets_at=None, seconds_until_reset=None)
-    assert budget_view.row_line(row, tz) == "5h\t3.0%\t[..........]\tresets\tunknown"
 
 
 def test_show_json(monkeypatch, capsys):

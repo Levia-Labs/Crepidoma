@@ -14,6 +14,7 @@ The token is never printed and never placed in a subprocess argv.
 
 import argparse
 import json
+import os
 import sys
 import time
 import urllib.error
@@ -21,7 +22,7 @@ import urllib.request
 from datetime import UTC, datetime
 
 from budget_auth import token
-from budget_view import row_line, span
+from budget_view import pace, span, table
 
 USAGE_URL = "https://api.anthropic.com/api/oauth/usage"
 
@@ -105,15 +106,17 @@ def readings(
         if isinstance(used, bool) or not isinstance(used, (int, float)):
             continue
         reset = parse_reset(window.get("resets_at"))
+        left = max(0, int((reset - now).total_seconds())) if reset else None
+        burnout, estimate = pace(float(used), left, WINDOW_MINUTES[key] * 60) or (None, None)
         rows.append(
             {
                 "window": key,
                 "label": label,
                 "utilization": float(used),
                 "resets_at": reset.isoformat() if reset else None,
-                "seconds_until_reset": (
-                    max(0, int((reset - now).total_seconds())) if reset else None
-                ),
+                "seconds_until_reset": left,
+                "burnout": burnout,
+                "estimate_hours": estimate,
             }
         )
     return rows
@@ -153,8 +156,9 @@ def show(args: argparse.Namespace) -> int:
     if args.json:
         print(json.dumps({"ok": True, "windows": rows}))
         return UNDER
-    for row in rows:
-        print(row_line(row))
+    colour = sys.stdout.isatty() and "NO_COLOR" not in os.environ
+    for line in table(rows, colour):
+        print(line)
     return UNDER
 
 
