@@ -16,6 +16,7 @@
 - [`test_bash_guards.py`](test_bash_guards.py) - Tests for `bash_guards`.
 - [`test_bash_guards_attribution.py`](test_bash_guards_attribution.py) - Tests for `bash_guards_attribution`.
 - [`test_budget.py`](test_budget.py) - Tests for `budget`.
+- [`test_budget_pace.py`](test_budget_pace.py) - Tests for `budget_pace`.
 - [`test_ci_runs.py`](test_ci_runs.py) - Tests for `ci_runs`.
 - [`test_claude_agents.py`](test_claude_agents.py) - Tests for `claude_agents`.
 - [`test_claude_plugins.py`](test_claude_plugins.py) - Tests for `claude_plugins`.
